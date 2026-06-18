@@ -386,10 +386,10 @@ class InfraClicker {
     if (Date.now() - this.lastHistorySample >= 60000) {
       this.state.productionHistory ||= [];
       this.state.productionHistory.push({ time: Date.now(), value: production });
-      if (this.state.productionHistory.length > 4096) {
+      if (this.state.productionHistory.length > 20) {
         const history = this.state.productionHistory;
         const compacted = [];
-        const targetSize = 2048;
+        const targetSize = 20;
         for (let index = 0; index < targetSize; index += 1) {
           const sourceIndex = Math.round(index / (targetSize - 1) * (history.length - 1));
           compacted.push(history[sourceIndex]);

@@ -72,10 +72,10 @@ function renderProductionChart(state) {
     history.push({ time: Date.now(), value: new Economy(state).getBaseProduction() });
   }
 
-  if (history.length > 360) {
+  if (history.length > 20) {
     const sampled = [];
-    for (let index = 0; index < 360; index += 1) {
-      const sourceIndex = Math.round(index / 359 * (history.length - 1));
+    for (let index = 0; index < 20; index += 1) {
+      const sourceIndex = Math.round(index / 19 * (history.length - 1));
       sampled.push(history[sourceIndex]);
     }
     history = sampled;

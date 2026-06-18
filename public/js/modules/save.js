@@ -109,6 +109,11 @@ export class SaveManager {
       productionHistory: Array.isArray(raw?.productionHistory)
         ? raw.productionHistory
           .filter(point => Number.isFinite(point?.time) && Number.isFinite(point?.value) && point.value >= 0)
+          .filter((point, index, history) => {
+            if (history.length <= 20) return true;
+            const slot = Math.round(index / (history.length - 1) * 19);
+            return index === Math.round(slot / 19 * (history.length - 1));
+          })
         : [],
       activeEvent: null
     };
