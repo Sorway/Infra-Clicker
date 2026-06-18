@@ -1,0 +1,136 @@
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Infra Clicker">
+    <span class="brand-mark"><span></span><span></span><span></span></span>
+    <span><strong>INFRA</strong> CLICKER</span>
+  </a>
+  <div class="global-status">
+    <span class="status-dot"></span>
+    <span>PRODUCTION</span>
+    <strong id="header-rps">0 req/s</strong>
+  </div>
+  <nav class="top-actions" aria-label="Actions">
+    <button class="icon-button" id="terminal-toggle" title="Ouvrir le terminal" aria-label="Ouvrir le terminal">&gt;_</button>
+    <button class="icon-button" id="sound-toggle" title="Couper le son" aria-label="Couper le son">♪</button>
+    <button class="icon-button" id="settings-toggle" title="Sauvegarde et paramètres" aria-label="Paramètres">⚙</button>
+  </nav>
+</header>
+
+<main class="dashboard">
+  <aside class="left-panel panel-scroll">
+    <section class="panel-section profile-section">
+      <div class="profile-row">
+        <div class="server-avatar"><span></span></div>
+        <div>
+          <h1>localhost</h1>
+          <p id="infra-title">Homelab improvisé</p>
+        </div>
+      </div>
+      <div class="level-row">
+        <span>NIVEAU <strong id="infra-level">1</strong></span>
+        <span id="level-progress-label">0 / 100</span>
+      </div>
+      <div class="progress"><span id="level-progress"></span></div>
+    </section>
+
+    <section class="panel-section">
+      <div class="section-title"><span>STATISTIQUES</span></div>
+      <div class="metrics">
+        <article class="metric-card metric-wide">
+          <div class="metric-icon cyan">↯</div>
+          <div><span>REQUÊTES TRAITÉES</span><strong id="requests-stat">0</strong></div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span>REQUÊTES / SEC</span><i class="metric-live-dot"></i></div>
+          <strong id="rps-stat">0</strong>
+          <div class="sparkline" id="rps-sparkline" aria-hidden="true"></div>
+        </article>
+        <article class="metric-card">
+          <span>UTILISATEURS</span><strong id="users-stat">1</strong>
+        </article>
+      </div>
+      <div class="resource-row">
+        <div class="resource-header"><span>CPU</span><strong id="cpu-label">4%</strong></div>
+        <div class="progress thin cpu"><span id="cpu-bar"></span><i class="gauge-marker"></i></div>
+      </div>
+      <div class="resource-row">
+        <div class="resource-header"><span>RAM</span><strong id="ram-label">128 MB</strong></div>
+        <div class="progress thin ram"><span id="ram-bar"></span><i class="gauge-marker"></i></div>
+      </div>
+      <div class="resource-row">
+        <div class="resource-header"><span>BANDE PASSANTE</span><strong id="bandwidth-label">0 Kb/s</strong></div>
+        <div class="progress thin network"><span id="bandwidth-bar"></span><i class="gauge-marker"></i></div>
+      </div>
+    </section>
+
+    <section class="panel-section achievements-section">
+      <div class="section-title">
+        <span>SUCCÈS</span>
+        <button class="text-button" id="achievements-open">TOUT VOIR</button>
+      </div>
+      <div id="achievement-preview" class="achievement-preview"></div>
+      <p class="collection-count"><strong id="achievement-count">0</strong> / 80 débloqués</p>
+    </section>
+  </aside>
+
+  <section class="center-stage">
+    <div id="event-banner" class="event-banner hidden">
+      <span class="event-icon">!</span>
+      <div><strong id="event-title"></strong><small id="event-description"></small></div>
+      <div class="event-timer"><span id="event-timer-bar"></span></div>
+    </div>
+
+    <div class="request-counter">
+      <span>REQUÊTES TRAITÉES</span>
+      <strong id="main-counter">0</strong>
+      <small><span id="main-rps">0</span> par seconde</small>
+    </div>
+
+    <div class="server-zone" id="server-zone">
+      <div class="pulse-ring ring-one"></div>
+      <div class="pulse-ring ring-two"></div>
+      <button id="server-button" class="server-button" aria-label="Traiter une requête">
+        <img src="/img/infra-server-v2.png" alt="Cœur serveur Infra Clicker" draggable="false">
+        <span class="server-glow"></span>
+      </button>
+      <div class="rack-floor"></div>
+    </div>
+
+    <button id="process-button" class="process-button">
+      <span>TRAITER</span>
+      <strong id="click-power-label">+1</strong>
+    </button>
+
+    <div class="game-menu-actions">
+      <button id="upgrades-open" class="menu-launch-button upgrades-launch">
+        <span class="menu-launch-icon">⬡</span>
+        <span><strong>Améliorations</strong><small>Optimiser l’infrastructure</small></span>
+        <em id="upgrade-badge">0</em>
+      </button>
+      <button id="certifications-open" class="menu-launch-button certifications-launch">
+        <span class="menu-launch-icon">◆</span>
+        <span><strong>Certifications</strong><small>Bonus permanents</small></span>
+        <em id="cert-points">0</em>
+      </button>
+    </div>
+  </section>
+
+  <aside class="right-panel">
+    <div class="shop-header">
+      <div>
+        <h2>Infrastructure</h2>
+      </div>
+      <div class="buy-modes" aria-label="Quantité d'achat">
+        <button class="buy-mode active" data-amount="1">x1</button>
+        <button class="buy-mode" data-amount="10">x10</button>
+        <button class="buy-mode" data-amount="max">MAX</button>
+      </div>
+    </div>
+    <div class="shop-summary">
+      <span>PRODUCTION TOTALE</span>
+      <strong id="shop-production">0 req/s</strong>
+    </div>
+    <div id="building-list" class="building-list panel-scroll"></div>
+  </aside>
+</main>
+
+<%- include('partials/modals') %>

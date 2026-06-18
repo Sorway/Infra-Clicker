@@ -1,0 +1,88 @@
+<div class="modal-backdrop" id="settings-modal" aria-hidden="true">
+  <section class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <button class="modal-close" data-close="settings-modal">×</button>
+    <h2 id="settings-title">Sauvegarde & paramètres</h2>
+    <div class="theme-settings">
+      <span class="settings-label">THÈME</span>
+      <div class="theme-picker" id="theme-picker">
+        <button class="theme-option active" data-theme="ruby" title="Rouge rubis">
+          <i style="--swatch:#f2a0aa"></i><span>Rubis</span>
+        </button>
+        <button class="theme-option" data-theme="sunset" title="Jaune et orange">
+          <i style="--swatch:#f5c98b"></i><span>Sunset</span>
+        </button>
+        <button class="theme-option" data-theme="lavender" title="Violet lavande">
+          <i style="--swatch:#c7b5ed"></i><span>Lavande</span>
+        </button>
+        <button class="theme-option" data-theme="mint" title="Vert menthe">
+          <i style="--swatch:#9ed8bd"></i><span>Menthe</span>
+        </button>
+        <button class="theme-option" data-theme="ocean" title="Bleu océan">
+          <i style="--swatch:#9ccce8"></i><span>Océan</span>
+        </button>
+      </div>
+    </div>
+    <div class="settings-actions">
+      <button id="save-now" class="primary-button">Sauvegarder maintenant</button>
+      <button id="export-save" class="secondary-button">Exporter JSON</button>
+      <label class="secondary-button file-button">Importer JSON<input id="import-save" type="file" accept=".json,application/json"></label>
+      <button id="reset-game" class="danger-button">Réinitialiser la partie</button>
+    </div>
+    <div class="save-status"><span class="status-dot"></span><span id="save-status">Prêt</span></div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="achievements-modal" aria-hidden="true">
+  <section class="modal achievements-modal" role="dialog" aria-modal="true" aria-labelledby="achievements-title">
+    <button class="modal-close" data-close="achievements-modal">×</button>
+    <h2 id="achievements-title">Succès</h2>
+    <div id="achievement-grid" class="achievement-grid"></div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="upgrades-modal" aria-hidden="true">
+  <section class="modal game-menu-modal" role="dialog" aria-modal="true" aria-labelledby="upgrades-title">
+    <button class="modal-close" data-close="upgrades-modal">×</button>
+    <div class="modal-heading">
+      <span class="modal-heading-icon upgrades-color">⬡</span>
+      <div><h2 id="upgrades-title">Améliorations</h2><p>Choisissez une spécialité.</p></div>
+    </div>
+    <div class="upgrade-filters" id="upgrade-filters"></div>
+    <div id="upgrade-grid" class="upgrade-grid"></div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="certifications-modal" aria-hidden="true">
+  <section class="modal game-menu-modal" role="dialog" aria-modal="true" aria-labelledby="certifications-title">
+    <button class="modal-close" data-close="certifications-modal">×</button>
+    <div class="modal-heading">
+      <span class="modal-heading-icon certifications-color">◆</span>
+      <div><h2 id="certifications-title">Certifications</h2><p>Des bonus conservés après prestige.</p></div>
+    </div>
+    <div class="prestige-summary">
+      <div>
+        <span>PROCHAIN PRESTIGE</span>
+        <strong id="prestige-points-preview">0</strong>
+      </div>
+      <button id="prestige-button" class="danger-button" disabled>PASSER LA CERTIFICATION</button>
+      <small id="prestige-gain">Atteignez 1 million de requêtes.</small>
+    </div>
+    <div id="certification-grid" class="certification-grid"></div>
+  </section>
+</div>
+
+<div class="terminal-window" id="terminal-window" aria-hidden="true">
+  <div class="terminal-titlebar">
+    <span><i></i><i></i><i></i></span>
+    <strong>root@infra-clicker:~</strong>
+    <button id="terminal-close">×</button>
+  </div>
+  <div class="terminal-output" id="terminal-output">
+    <p>InfraOS 1.0.0 — console d'administration</p>
+    <p>Tapez <b>help</b> pour afficher les commandes disponibles.</p>
+  </div>
+  <form id="terminal-form" class="terminal-input-row">
+    <label for="terminal-input">root@infra-clicker:~#</label>
+    <input id="terminal-input" autocomplete="off" spellcheck="false">
+  </form>
+</div>
