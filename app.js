@@ -1,3 +1,4 @@
+require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
@@ -35,7 +36,7 @@ app.use((error, req, res, next) => {
 });
 
 app.listen(port, () => {
-  console.log(`Infra Clicker écoute sur http://localhost:${port}`);
+  console.log(`Server listing on port http://localhost:${port}`);
 });
 
 module.exports = app;
