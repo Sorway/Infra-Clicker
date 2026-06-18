@@ -80,7 +80,8 @@ export class Economy {
     const clickMultiplier = UPGRADES
       .filter(upgrade => this.hasUpgrade(upgrade.id))
       .reduce((multiplier, upgrade) => multiplier * (upgrade.effect.click || 1), 1);
-    return Math.max(1, clickMultiplier * (1 + this.getProduction() * 0.01));
+    const eventClickMultiplier = this.state.activeEvent?.clickMultiplier || 1;
+    return Math.max(1, clickMultiplier * eventClickMultiplier * (1 + this.getProduction() * 0.01));
   }
 
   getEventResistance() {

@@ -57,7 +57,22 @@ export const EVENTS = [
   { id: 'fiber-cut', title: 'Fibre coupée', description: 'Une pelleteuse a trouvé votre backbone.', duration: 20, multiplier: 0.45, type: 'danger' },
   { id: 'ransomware', title: 'Ransomware', description: 'Les sauvegardes hors ligne sauvent la journée.', duration: 30, multiplier: 0.3, type: 'danger' },
   { id: 'traffic', title: 'Pic de trafic', description: 'Votre service devient soudainement populaire.', duration: 25, multiplier: 2.5, type: 'bonus' },
-  { id: 'hackernews', title: 'Buzz Hacker News', description: 'Vous êtes en première page. Tenez bon.', duration: 30, multiplier: 4, type: 'bonus' }
+  { id: 'hackernews', title: 'Buzz Hacker News', description: 'Vous êtes en première page. Tenez bon.', duration: 30, multiplier: 4, type: 'bonus' },
+  { id: 'cache-hit', title: 'Cache Hit massif', description: 'Les réponses sortent directement de la RAM.', duration: 22, multiplier: 2, clickMultiplier: 2, type: 'bonus' },
+  { id: 'autoscaling', title: 'Autoscaling parfait', description: 'Les replicas apparaissent exactement au bon moment.', duration: 28, multiplier: 3, type: 'bonus' },
+  { id: 'sponsor', title: 'Crédit cloud offert', description: 'Le fournisseur finance quelques minutes de calcul.', duration: 1, multiplier: 1, instantSeconds: 180, type: 'bonus' },
+  { id: 'viral-api', title: 'API virale', description: 'Un développeur populaire recommande votre service.', duration: 35, multiplier: 5, type: 'bonus' },
+  { id: 'maintenance', title: 'Maintenance réussie', description: 'Tout redémarre du premier coup. C’est suspect.', duration: 20, multiplier: 1.6, overclockCharge: 30, type: 'bonus' },
+  { id: 'green-energy', title: 'Énergie excédentaire', description: 'Le datacenter exploite un surplus renouvelable.', duration: 30, multiplier: 2.2, type: 'bonus' },
+  { id: 'cdn', title: 'CDN optimisé', description: 'Les contenus sont servis au plus près des utilisateurs.', duration: 26, multiplier: 2.7, type: 'bonus' },
+  { id: 'zero-day', title: 'Zero-day critique', description: 'Un correctif temporaire limite les dégâts.', duration: 24, multiplier: 0.35, clickMultiplier: 0.6, type: 'danger' },
+  { id: 'dns', title: 'Panne DNS', description: 'Le service fonctionne, mais personne ne le trouve.', duration: 20, multiplier: 0.25, type: 'danger' },
+  { id: 'memory-leak', title: 'Fuite mémoire', description: 'La RAM disparaît lentement dans le néant.', duration: 28, multiplier: 0.55, type: 'danger' },
+  { id: 'bad-deploy', title: 'Déploiement du vendredi', description: 'Le rollback est devenu votre plan de soirée.', duration: 22, multiplier: 0.45, type: 'danger' },
+  { id: 'bgp-leak', title: 'Fuite de routes BGP', description: 'Une partie du trafic fait un détour mondial.', duration: 26, multiplier: 0.4, type: 'danger' },
+  { id: 'cooling', title: 'Climatisation en panne', description: 'Les ventilateurs négocient avec la thermodynamique.', duration: 25, multiplier: 0.5, type: 'danger' },
+  { id: 'database-lock', title: 'Base de données verrouillée', description: 'Une transaction refuse obstinément de se terminer.', duration: 18, multiplier: 0.3, type: 'danger' },
+  { id: 'intern', title: 'Commande du stagiaire', description: 'Une commande créative vient de partir en production.', duration: 16, multiplier: 0.6, requestLossPercent: 0.02, type: 'danger' }
 ];
 
 export const CERTIFICATIONS = [

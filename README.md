@@ -164,6 +164,17 @@ Utilisez le menu des paramètres pour exporter régulièrement une copie JSON de
 
 Aucun framework frontend et aucune base de données.
 
+## Configuration de confidentialité
+
+Copiez `.env.example` vers `.env`, puis renseignez les informations réelles :
+
+```env
+PRIVACY_CONTACT=contact@example.com
+HOST_NAME=Nom et coordonnées de l’hébergeur
+```
+
+Le jeu n’utilise aucun cookie publicitaire ou analytique. La progression et les préférences sont stockées uniquement dans le `LocalStorage` du navigateur.
+
 ## Contribution
 
 Les contributions sont les bienvenues :

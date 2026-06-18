@@ -1,0 +1,78 @@
+<header class="topbar stats-topbar">
+  <a class="brand" href="/" aria-label="Retour à Infra Clicker">
+    <span class="brand-mark"><span></span><span></span><span></span></span>
+    <span><strong>INFRA</strong> CLICKER</span>
+  </a>
+  <div class="stats-page-title">
+    <span>OBSERVABILITÉ</span>
+    <strong>Statistiques globales</strong>
+  </div>
+  <nav class="top-actions">
+    <a class="back-to-game" href="/">← Retour au jeu</a>
+  </nav>
+</header>
+
+<main class="stats-page">
+  <section class="stats-hero">
+    <div>
+      <span class="stats-kicker">DEPUIS LE PREMIER DÉPLOIEMENT</span>
+      <h1>Votre infrastructure en chiffres</h1>
+      <p id="stats-period">Chargement de la sauvegarde locale…</p>
+    </div>
+    <div class="stats-health">
+      <span class="status-dot"></span>
+      <div><strong id="stats-status">Données locales</strong><small id="stats-last-save">—</small></div>
+    </div>
+  </section>
+
+  <section id="stats-empty" class="stats-empty hidden">
+    <span>∅</span>
+    <h2>Aucune progression trouvée</h2>
+    <p>Commencez une partie pour alimenter cette page.</p>
+    <a href="/" class="primary-button">Lancer Infra Clicker</a>
+  </section>
+
+  <div id="stats-content" class="stats-content hidden">
+    <section class="stats-grid stats-grid-primary">
+      <article class="lifetime-card accent-blue"><span>REQUÊTES CUMULÉES</span><strong id="stat-lifetime">0</strong><small>Toutes sessions confondues</small></article>
+      <article class="lifetime-card accent-mint"><span>PRODUCTION ACTUELLE</span><strong id="stat-production">0</strong><small>requêtes par seconde</small></article>
+      <article class="lifetime-card accent-lilac"><span>CLICS MANUELS</span><strong id="stat-clicks">0</strong><small id="stat-click-share">0% du trafic</small></article>
+      <article class="lifetime-card accent-orange"><span>TEMPS DE JEU</span><strong id="stat-playtime">0 min</strong><small>Depuis la création</small></article>
+    </section>
+
+    <section class="stats-layout">
+      <article class="stats-panel">
+        <div class="stats-panel-heading"><div><span>INFRASTRUCTURE</span><h2>Parc déployé</h2></div><strong id="stat-buildings-total">0</strong></div>
+        <div id="building-stats" class="building-stats"></div>
+      </article>
+
+      <article class="stats-panel">
+        <div class="stats-panel-heading"><div><span>ACTIVITÉ</span><h2>Records et opérations</h2></div></div>
+        <div class="operation-stats">
+          <div><span>Meilleur combo</span><strong id="stat-best-combo">0</strong></div>
+          <div><span>Requêtes critiques</span><strong id="stat-criticals">0</strong></div>
+          <div><span>Événements résolus</span><strong id="stat-events">0</strong></div>
+          <div><span>Prestiges effectués</span><strong id="stat-prestiges">0</strong></div>
+          <div><span>Commandes utilisées</span><strong id="stat-commands">0</strong></div>
+          <div><span>Alertes anti-triche</span><strong id="stat-anticheat">0</strong></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="stats-grid stats-grid-progress">
+      <article class="progress-stat"><div><span>AMÉLIORATIONS</span><strong id="stat-upgrades">0 / 29</strong></div><div class="stats-progress"><span id="stat-upgrades-bar"></span></div></article>
+      <article class="progress-stat"><div><span>SUCCÈS</span><strong id="stat-achievements">0 / 80</strong></div><div class="stats-progress"><span id="stat-achievements-bar"></span></div></article>
+      <article class="progress-stat"><div><span>CERTIFICATIONS</span><strong id="stat-certifications">0 / 8</strong></div><div class="stats-progress"><span id="stat-certifications-bar"></span></div></article>
+    </section>
+
+    <section class="stats-panel">
+      <div class="stats-panel-heading"><div><span>JOURNAL</span><h2>Informations de sauvegarde</h2></div></div>
+      <div class="save-facts">
+        <div><span>Partie créée</span><strong id="stat-created">—</strong></div>
+        <div><span>Dernière sauvegarde</span><strong id="stat-saved">—</strong></div>
+        <div><span>Version</span><strong id="stat-version">—</strong></div>
+        <div><span>Points de certification</span><strong id="stat-cert-points">0</strong></div>
+      </div>
+    </section>
+  </div>
+</main>

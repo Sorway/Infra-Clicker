@@ -27,6 +27,8 @@
       <button id="export-save" class="secondary-button">Exporter JSON</button>
       <label class="secondary-button file-button">Importer JSON<input id="import-save" type="file" accept=".json,application/json"></label>
       <button id="reset-game" class="danger-button">Réinitialiser la partie</button>
+      <button id="delete-local-data" class="danger-button">Effacer toutes les données locales</button>
+      <a href="/privacy" class="secondary-button privacy-link">Confidentialité et stockage</a>
     </div>
     <div class="save-status"><span class="status-dot"></span><span id="save-status">Prêt</span></div>
     <div class="security-status"><span>⛨</span><div><strong>Protection active</strong><small>Sauvegardes signées et valeurs contrôlées</small></div></div>
@@ -69,6 +71,21 @@
       <small id="prestige-gain">Atteignez 1 million de requêtes.</small>
     </div>
     <div id="certification-grid" class="certification-grid"></div>
+  </section>
+</div>
+
+<div class="modal-backdrop anti-cheat-backdrop" id="anti-cheat-modal" aria-hidden="true">
+  <section class="modal anti-cheat-modal" role="alertdialog" aria-modal="true" aria-labelledby="anti-cheat-title" aria-describedby="anti-cheat-message">
+    <div class="anti-cheat-symbol">⛨</div>
+    <span class="anti-cheat-kicker">SYSTÈME DE PROTECTION</span>
+    <h2 id="anti-cheat-title">Activité suspecte détectée</h2>
+    <p id="anti-cheat-message">Une action invalide a été bloquée.</p>
+    <div class="anti-cheat-details">
+      <span>La progression a été protégée</span>
+      <span>Les valeurs invalides ont été corrigées</span>
+      <span>L’action détectée n’a pas été comptabilisée</span>
+    </div>
+    <button class="anti-cheat-acknowledge" data-close="anti-cheat-modal">J’ai compris</button>
   </section>
 </div>
 

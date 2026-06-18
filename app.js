@@ -17,6 +17,8 @@ app.use((req, res, next) => {
   res.locals.siteUrl = siteUrl;
   res.locals.canonicalUrl = `${siteUrl}${req.path === '/' ? '/' : req.path}`;
   res.locals.socialImageUrl = `${siteUrl}/img/social-preview.png`;
+  res.locals.privacyContact = process.env.PRIVACY_CONTACT || 'Contact via le propriétaire du site';
+  res.locals.hostName = process.env.HOST_NAME || 'Hébergeur du site';
   next();
 });
 app.use(express.json({ limit: '1mb' }));

@@ -20,7 +20,7 @@ class InfraClicker {
     this.audio = new AudioManager(this.state.soundEnabled);
     this.ui = new GameUI(this.state, this.economy);
     this.antiCheat = new AntiCheat(this.state, reason => {
-      this.ui.toast('Protection anti-triche', `${reason}. Action ignorée ou corrigée.`, 'danger');
+      this.ui.showAntiCheat(reason);
     });
     this.achievements = new AchievementManager(this.state, this.economy, this.ui, this.audio);
     this.events = new EventManager(this.state, this.economy, this.ui, this.audio);
@@ -139,6 +139,10 @@ class InfraClicker {
   }
 
   bindNavigation() {
+    document.querySelector('#statistics-link').addEventListener('click', () => {
+      this.saveManager.save(this.state);
+    });
+
     document.querySelectorAll('.center-tab').forEach(tab => tab.addEventListener('click', () => {
       document.querySelectorAll('.center-tab').forEach(item => item.classList.toggle('active', item === tab));
       document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
@@ -157,6 +161,12 @@ class InfraClicker {
     this.bindModal('#achievements-open', '#achievements-modal', () => this.ui.renderAchievements());
     this.bindModal('#upgrades-open', '#upgrades-modal', () => this.ui.renderUpgrades());
     this.bindModal('#certifications-open', '#certifications-modal', () => this.ui.renderCertifications());
+    document.querySelector('#settings-modal').addEventListener('click', event => {
+      const action = event.target.closest('button, .file-button, .privacy-link');
+      if (action && !action.classList.contains('modal-close')) {
+        this.closeModal(document.querySelector('#settings-modal'));
+      }
+    });
     document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => {
       this.closeModal(document.querySelector(`#${button.dataset.close}`));
     }));
@@ -172,17 +182,23 @@ class InfraClicker {
   }
 
   bindModal(triggerSelector, modalSelector, callback) {
-    document.querySelector(triggerSelector).addEventListener('click', () => {
+    const trigger = document.querySelector(triggerSelector);
+    trigger.addEventListener('click', () => {
       const modal = document.querySelector(modalSelector);
+      modal._opener = trigger;
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
       callback?.();
+      setTimeout(() => modal.querySelector('.modal-close')?.focus(), 50);
     });
   }
 
   closeModal(modal) {
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
+    if (!document.querySelector('.modal-backdrop.open')) document.body.classList.remove('modal-open');
+    modal._opener?.focus();
   }
 
   bindSaveControls() {
@@ -219,6 +235,13 @@ class InfraClicker {
       if (!window.confirm('Réinitialiser définitivement toute la progression ?')) return;
       this.replaceState(this.saveManager.reset());
       this.ui.toast('Nouvelle infrastructure', 'La progression a été réinitialisée.', 'danger');
+    });
+    document.querySelector('#delete-local-data').addEventListener('click', () => {
+      if (!window.confirm('Effacer définitivement la progression, le thème et toutes les préférences locales ?')) return;
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('infra-clicker-'))
+        .forEach(key => localStorage.removeItem(key));
+      window.location.reload();
     });
   }
 
@@ -291,6 +314,10 @@ class InfraClicker {
   }
 
   prestige() {
+    if (this.state.certifications.length >= CERTIFICATIONS.length) {
+      this.ui.toast('Prestige terminé', 'Toutes les certifications permanentes sont déjà acquises.', 'info');
+      return;
+    }
     const gain = this.economy.prestigeGain();
     if (gain < 1 || !window.confirm(`Réinitialiser cette infrastructure et gagner ${gain} point(s) de certification ?`)) return;
     const persistent = {

@@ -10,7 +10,7 @@ export class EventManager {
   }
 
   randomDelay() {
-    return (45 + Math.random() * 55) * 1000;
+    return (38 + Math.random() * 50) * 1000;
   }
 
   update() {
@@ -32,11 +32,29 @@ export class EventManager {
 
   startRandomEvent() {
     const template = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-    let multiplier = template.multiplier;
+    let multiplier = template.multiplier ?? 1;
+    const resistance = template.type === 'danger' ? this.economy.getEventResistance() : 0;
     if (template.type === 'danger') {
-      const resistance = this.economy.getEventResistance();
       multiplier = 1 - (1 - multiplier) * (1 - resistance);
     }
+
+    if (template.instantSeconds) {
+      const reward = Math.max(1, this.economy.getBaseProduction()) * template.instantSeconds;
+      this.state.requests += reward;
+      this.state.lifetimeRequests += reward;
+      this.ui.toast('Récompense immédiate', `${Math.round(template.instantSeconds / 60)} minute(s) de production reçue(s).`, 'bonus');
+    }
+
+    if (template.overclockCharge) {
+      this.state.overclockCharge = Math.min(100, (this.state.overclockCharge || 0) + template.overclockCharge);
+    }
+
+    if (template.requestLossPercent) {
+      const effectiveLoss = template.requestLossPercent * (1 - resistance);
+      const lost = this.state.requests * effectiveLoss;
+      this.state.requests = Math.max(0, this.state.requests - lost);
+    }
+
     this.state.activeEvent = {
       ...template,
       multiplier,

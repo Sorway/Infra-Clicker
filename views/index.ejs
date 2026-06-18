@@ -9,6 +9,11 @@
     <strong id="header-rps">0 req/s</strong>
   </div>
   <nav class="top-actions" aria-label="Actions">
+    <a class="icon-button icon-link" id="statistics-link" href="/statistics" title="Statistiques complètes" aria-label="Statistiques complètes">
+      <svg class="stats-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 19V11M12 19V5M19 19v-7"></path>
+      </svg>
+    </a>
     <button class="icon-button" id="terminal-toggle" title="Ouvrir le terminal" aria-label="Ouvrir le terminal">&gt;_</button>
     <button class="icon-button" id="sound-toggle" title="Couper le son" aria-label="Couper le son">♪</button>
     <button class="icon-button" id="settings-toggle" title="Sauvegarde et paramètres" aria-label="Paramètres">⚙</button>
@@ -76,6 +81,7 @@
     <div id="event-banner" class="event-banner hidden">
       <span class="event-icon">!</span>
       <div><strong id="event-title"></strong><small id="event-description"></small></div>
+      <strong id="event-effect" class="event-effect"></strong>
       <div class="event-timer"><span id="event-timer-bar"></span></div>
     </div>
 
@@ -99,6 +105,10 @@
       <span>TRAITER</span>
       <strong id="click-power-label">+1</strong>
     </button>
+    <div class="play-hints" aria-label="Informations de clic">
+      <span><kbd>Espace</kbd> pour traiter</span>
+      <span><i></i> 5% de requête critique</span>
+    </div>
 
     <div class="active-gameplay">
       <div class="combo-meter" id="combo-meter">
@@ -139,9 +149,10 @@
       </div>
     </div>
     <div class="shop-summary">
-      <span>PRODUCTION TOTALE</span>
-      <strong id="shop-production">0 req/s</strong>
+      <div><span>PRODUCTION</span><strong id="shop-production">0 req/s</strong></div>
+      <div><span>ÉQUIPEMENTS</span><strong id="shop-owned">0</strong></div>
     </div>
+    <div class="shop-guidance" id="shop-guidance">Commencez par un Script Bash.</div>
     <div id="building-list" class="building-list panel-scroll"></div>
   </aside>
 </main>

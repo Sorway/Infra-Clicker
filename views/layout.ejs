@@ -2,10 +2,24 @@
 <html lang="fr" data-theme="ocean">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="theme-color" content="#071018">
+  <meta name="color-scheme" content="dark">
+  <meta name="application-name" content="Infra Clicker">
+  <meta name="apple-mobile-web-app-title" content="Infra Clicker">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="<%= description %>">
-  <meta name="robots" content="index, follow">
+  <meta name="keywords" content="clicker, jeu incrémental, sysadmin, DevOps, réseau, Linux, Kubernetes, serveur, infrastructure">
+  <meta name="author" content="Jonathan GP">
+  <meta name="creator" content="Jonathan GP">
+  <meta name="publisher" content="Jonathan GP">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="format-detection" content="telephone=no">
   <title><%= title %></title>
   <link rel="canonical" href="<%= canonicalUrl %>">
 
@@ -30,15 +44,44 @@
 
   <link rel="icon" type="image/png" sizes="192x192" href="/img/favicon.png">
   <link rel="apple-touch-icon" href="/img/favicon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+    <%- JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'VideoGame',
+      name: 'Infra Clicker',
+      url: canonicalUrl,
+      image: socialImageUrl,
+      description,
+      author: {
+        '@type': 'Person',
+        name: 'Jonathan GP'
+      },
+      applicationCategory: 'Game',
+      operatingSystem: 'Web browser',
+      genre: ['Incremental game', 'Simulation', 'Strategy'],
+      inLanguage: 'fr-FR',
+      isAccessibleForFree: true
+    }) %>
+  </script>
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="<%= typeof pageClass !== 'undefined' ? pageClass : '' %>">
   <div class="ambient-grid" aria-hidden="true"></div>
   <%- body %>
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
-  <script type="module" src="/js/game.js"></script>
+  <aside id="privacy-notice" class="privacy-notice hidden" aria-label="Information sur le stockage local">
+    <div>
+      <strong>Vos données restent sur cet appareil</strong>
+      <p>Infra Clicker utilise uniquement le stockage local nécessaire à votre sauvegarde et à vos préférences. Aucun cookie publicitaire ni outil d’analyse n’est utilisé.</p>
+    </div>
+    <div class="privacy-notice-actions">
+      <a href="/privacy">En savoir plus</a>
+      <button id="privacy-notice-accept">Compris</button>
+    </div>
+  </aside>
+  <% if (typeof pageScript !== 'undefined' && pageScript) { %>
+    <script type="module" src="<%= pageScript %>"></script>
+  <% } %>
+  <script src="/js/privacy-notice.js" defer></script>
 </body>
 </html>

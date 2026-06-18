@@ -19,7 +19,7 @@ export class GameUI {
       'click-power-label', 'cpu-label', 'ram-label', 'bandwidth-label', 'infra-level',
       'infra-title', 'level-progress-label', 'achievement-count', 'shop-production',
       'cert-points', 'prestige-gain', 'save-status', 'upgrade-badge', 'combo-label',
-      'combo-hint', 'overclock-status'
+      'combo-hint', 'overclock-status', 'shop-owned'
     ].forEach(id => { this.el[id] = document.getElementById(id); });
   }
 
@@ -45,12 +45,16 @@ export class GameUI {
         <span class="building-icon">${building.icon}</span>
         <span class="building-info">
           <span class="building-name">${building.name}</span>
-          <span class="building-output">${formatNumber(building.baseProduction)} req/s</span>
+          <span class="building-output">
+            <span data-unit-output="${building.id}">${formatNumber(building.baseProduction)} req/s</span>
+            <small data-total-output="${building.id}">0 au total</small>
+          </span>
         </span>
         <span class="building-buy">
           <strong class="building-owned" data-owned="${building.id}">0</strong>
           <span class="building-price" data-price="${building.id}">15</span>
         </span>
+        <span class="building-affordability"><i data-affordability="${building.id}"></i></span>
       </button>
     `).join('');
   }
@@ -128,13 +132,17 @@ export class GameUI {
     document.querySelector('#level-progress').style.width = `${clamp(level.progress * 100, 0, 100)}%`;
 
     const prestigeGain = this.economy.prestigeGain();
+    const allCertificationsOwned = this.state.certifications.length >= CERTIFICATIONS.length;
     const prestigePreview = document.querySelector('#prestige-points-preview');
-    if (prestigePreview) prestigePreview.textContent = prestigeGain;
+    if (prestigePreview) prestigePreview.textContent = allCertificationsOwned ? 'MAX' : prestigeGain;
     const prestigeButton = document.querySelector('#prestige-button');
-    prestigeButton.disabled = prestigeGain < 1;
-    this.el['prestige-gain'].textContent = prestigeGain > 0
-      ? `Gain estimé : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''} de certification.`
-      : 'Atteignez 1 million de requêtes cumulées.';
+    prestigeButton.disabled = prestigeGain < 1 || allCertificationsOwned;
+    prestigeButton.textContent = allCertificationsOwned ? 'TOUTES LES CERTIFICATIONS ACQUISES' : 'PASSER LA CERTIFICATION';
+    this.el['prestige-gain'].textContent = allCertificationsOwned
+      ? 'Progression maximale atteinte : aucun prestige supplémentaire nécessaire.'
+      : prestigeGain > 0
+        ? `Gain estimé : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''} de certification.`
+        : 'Atteignez 1 million de requêtes cumulées.';
 
     this.updateBuildings();
     if (performance.now() - this.lastTelemetryUpdate > 700) {
@@ -165,17 +173,49 @@ export class GameUI {
   }
 
   updateBuildings() {
+    const totalOwned = Object.values(this.state.buildings).reduce((sum, count) => sum + count, 0);
+    this.el['shop-owned'].textContent = formatNumber(totalOwned, 0);
+    const visibleBuildings = [];
+
     BUILDINGS.forEach(building => {
       const card = document.querySelector(`[data-building="${building.id}"]`);
       const purchase = this.economy.getBuildingCost(building, this.buyAmount);
       const isVisible = this.state.lifetimeRequests >= building.baseCost * 0.25 || building.id === 'bash';
-      card.classList.toggle('unaffordable', purchase.amount === 0 || this.state.requests < purchase.cost);
+      const affordable = purchase.amount > 0 && this.state.requests >= purchase.cost;
+      card.classList.toggle('unaffordable', !affordable);
+      card.classList.toggle('affordable', affordable);
       card.classList.toggle('revealed', isVisible);
+      card.setAttribute('aria-disabled', String(!affordable));
       card.querySelector(`[data-owned="${building.id}"]`).textContent = this.state.buildings[building.id];
       card.querySelector(`[data-price="${building.id}"]`).textContent = purchase.amount
         ? `${formatNumber(purchase.cost)} ⚡`
         : '—';
+      const ownedProduction = (this.state.buildings[building.id] || 0)
+        * building.baseProduction
+        * this.economy.getBuildingMultiplier(building.id)
+        * this.economy.getGlobalMultiplier();
+      card.querySelector(`[data-total-output="${building.id}"]`).textContent = `${formatNumber(ownedProduction)} total`;
+      const progress = purchase.cost > 0 ? clamp(this.state.requests / purchase.cost * 100, 0, 100) : 0;
+      card.querySelector(`[data-affordability="${building.id}"]`).style.width = `${progress}%`;
+      card.title = affordable
+        ? `Acheter ${purchase.amount} × ${building.name}`
+        : `Il manque ${formatNumber(Math.max(0, purchase.cost - this.state.requests))} requêtes`;
+      if (isVisible) visibleBuildings.push({ building, card, affordable, purchase });
     });
+
+    document.querySelectorAll('.building-card.recommended').forEach(card => card.classList.remove('recommended'));
+    const recommended = visibleBuildings.filter(item => item.affordable).at(-1);
+    if (recommended) recommended.card.classList.add('recommended');
+
+    const next = visibleBuildings.find(item => !item.affordable && item.purchase.amount > 0);
+    const guidance = document.querySelector('#shop-guidance');
+    if (recommended) {
+      guidance.innerHTML = `<span>Conseillé</span> ${recommended.building.name} est disponible`;
+    } else if (next) {
+      guidance.innerHTML = `<span>Prochain</span> ${next.building.name} dans ${formatNumber(next.purchase.cost - this.state.requests)} requêtes`;
+    } else {
+      guidance.textContent = 'Toute l’infrastructure visible est disponible.';
+    }
   }
 
   updateTelemetry(production) {
@@ -259,12 +299,29 @@ export class GameUI {
     setTimeout(() => toast.remove(), 4700);
   }
 
+  showAntiCheat(reason) {
+    const modal = document.querySelector('#anti-cheat-modal');
+    document.querySelector('#anti-cheat-message').textContent = `${reason}. Cette action a été ignorée ou corrigée.`;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    setTimeout(() => modal.querySelector('.anti-cheat-acknowledge')?.focus(), 50);
+  }
+
   showEvent(event) {
     const banner = document.querySelector('#event-banner');
     banner.classList.remove('hidden', 'danger', 'bonus');
     banner.classList.add(event.type);
     document.querySelector('#event-title').textContent = event.title;
     document.querySelector('#event-description').textContent = event.description;
+    const effects = [];
+    if (event.multiplier > 1) effects.push(`Production x${event.multiplier}`);
+    if (event.multiplier < 1) effects.push(`Production ${Math.round((event.multiplier - 1) * 100)}%`);
+    if (event.clickMultiplier > 1) effects.push(`Clic x${event.clickMultiplier}`);
+    if (event.clickMultiplier < 1) effects.push(`Clic ${Math.round((event.clickMultiplier - 1) * 100)}%`);
+    if (event.instantSeconds) effects.push(`+${Math.round(event.instantSeconds / 60)} min`);
+    if (event.overclockCharge) effects.push(`+${event.overclockCharge}% surcharge`);
+    document.querySelector('#event-effect').textContent = effects.join(' · ');
     this.toast(event.title, event.description, event.type);
   }
 
