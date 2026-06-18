@@ -3,9 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#071018">
   <meta name="description" content="<%= description %>">
+  <meta name="robots" content="index, follow">
   <title><%= title %></title>
+  <link rel="canonical" href="<%= canonicalUrl %>">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="Infra Clicker">
+  <meta property="og:title" content="<%= title %>">
+  <meta property="og:description" content="<%= description %>">
+  <meta property="og:url" content="<%= canonicalUrl %>">
+  <meta property="og:image" content="<%= socialImageUrl %>">
+  <meta property="og:image:secure_url" content="<%= socialImageUrl %>">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Infra Clicker, jeu incrémental SysAdmin, Réseau et DevOps">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= title %>">
+  <meta name="twitter:description" content="<%= description %>">
+  <meta name="twitter:image" content="<%= socialImageUrl %>">
+  <meta name="twitter:image:alt" content="Infra Clicker, jeu incrémental SysAdmin, Réseau et DevOps">
+
   <link rel="icon" type="image/png" sizes="192x192" href="/img/favicon.png">
   <link rel="apple-touch-icon" href="/img/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">

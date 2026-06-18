@@ -1,7 +1,7 @@
 const showGame = (req, res) => {
   res.render('index', {
-    title: 'Infra Clicker · Scale the Internet',
-    description: 'Déployez votre infrastructure, automatisez le trafic et construisez le backbone mondial.'
+    title: 'Infra Clicker — Le clicker SysAdmin & DevOps',
+    description: 'Construisez votre infrastructure, automatisez les requêtes et faites tourner Internet.'
   });
 };
 

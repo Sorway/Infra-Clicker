@@ -6,12 +6,19 @@ const indexRouter = require('./routes/index');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const siteUrl = (process.env.SITE_URL || 'https://clicker.jonathan-gp.fr').replace(/\/$/, '');
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('layout', 'layout');
 
 app.use(expressLayouts);
+app.use((req, res, next) => {
+  res.locals.siteUrl = siteUrl;
+  res.locals.canonicalUrl = `${siteUrl}${req.path === '/' ? '/' : req.path}`;
+  res.locals.socialImageUrl = `${siteUrl}/img/social-preview.png`;
+  next();
+});
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public'), {
