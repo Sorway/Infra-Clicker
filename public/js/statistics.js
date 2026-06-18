@@ -93,8 +93,12 @@ function renderProductionChart(state) {
   }).join(' ');
   const areaPath = `M 0 280 L ${points.replaceAll(' ', ' L ')} L 1000 280 Z`;
   const last = points.split(' ').at(-1).split(',');
+  const scaleValues = [1, 0.75, 0.5, 0.25, 0].map(ratio => minimum + range * ratio);
 
   container.innerHTML = `
+    <div class="chart-y-axis" aria-hidden="true">
+      ${scaleValues.map(value => `<span>${formatNumber(value)} req/s</span>`).join('')}
+    </div>
     <svg viewBox="0 0 1000 280" preserveAspectRatio="none" role="img" aria-label="Évolution de la production">
       <defs>
         <linearGradient id="history-area" x1="0" y1="0" x2="0" y2="1">

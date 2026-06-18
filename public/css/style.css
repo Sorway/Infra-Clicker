@@ -3440,8 +3440,30 @@ label:focus-within {
 .production-chart svg {
   width: 100%;
   height: 100%;
-  padding: 18px 10px 4px;
+  padding: 18px 10px 4px 82px;
   overflow: visible;
+}
+
+.chart-y-axis {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  bottom: 18px;
+  left: 12px;
+  width: 65px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.chart-y-axis span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .history-grid line {
@@ -3826,5 +3848,8 @@ label:focus-within {
   .building-stat-row { grid-template-columns: 34px minmax(0, 1fr); }
   .building-stat-output { grid-column: 2; }
   .production-chart { height: 235px; }
+  .production-chart svg { padding-left: 66px; }
+  .chart-y-axis { width: 50px; left: 8px; }
+  .chart-y-axis span { font-size: 7px; }
   .chart-axis span:nth-child(2) { display: none; }
 }
