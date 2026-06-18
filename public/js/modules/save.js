@@ -26,7 +26,8 @@ function integrityPayload(state) {
     lastTick: state.lastTick,
     lastSaved: state.lastSaved,
     soundEnabled: state.soundEnabled,
-    antiCheatViolations: state.antiCheatViolations
+    antiCheatViolations: state.antiCheatViolations,
+    productionHistory: state.productionHistory
   };
 }
 
@@ -65,6 +66,7 @@ export function createDefaultState() {
     lastManualClick: 0,
     overclockCharge: 0,
     overclockEndsAt: 0,
+    productionHistory: [],
     buildings: Object.fromEntries(BUILDINGS.map(building => [building.id, 0])),
     upgrades: [],
     achievements: [],
@@ -104,6 +106,10 @@ export class SaveManager {
         : [],
       certifications: Array.isArray(raw?.certifications) ? raw.certifications : [],
       commandsUsed: Array.isArray(raw?.commandsUsed) ? raw.commandsUsed : [],
+      productionHistory: Array.isArray(raw?.productionHistory)
+        ? raw.productionHistory
+          .filter(point => Number.isFinite(point?.time) && Number.isFinite(point?.value) && point.value >= 0)
+        : [],
       activeEvent: null
     };
     state.combo = 0;

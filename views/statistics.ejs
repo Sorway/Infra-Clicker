@@ -40,6 +40,17 @@
       <article class="lifetime-card accent-orange"><span>TEMPS DE JEU</span><strong id="stat-playtime">0 min</strong><small>Depuis la création</small></article>
     </section>
 
+    <section class="stats-panel production-chart-panel">
+      <div class="stats-panel-heading chart-heading">
+        <div><span>HISTORIQUE</span><h2>Production dans le temps</h2></div>
+        <div class="chart-summary"><span>PIC</span><strong id="chart-peak">0 req/s</strong></div>
+      </div>
+      <div class="production-chart" id="production-chart">
+        <div class="chart-empty">L’historique se construit automatiquement chaque minute.</div>
+      </div>
+      <div class="chart-axis"><span id="chart-start">Début</span><span>REQUÊTES / SECONDE · HISTORIQUE COMPLET</span><span id="chart-end">Maintenant</span></div>
+    </section>
+
     <section class="stats-layout">
       <article class="stats-panel">
         <div class="stats-panel-heading"><div><span>INFRASTRUCTURE</span><h2>Parc déployé</h2></div><strong id="stat-buildings-total">0</strong></div>

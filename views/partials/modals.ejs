@@ -64,13 +64,32 @@
     </div>
     <div class="prestige-summary">
       <div>
-        <span>PROCHAIN PRESTIGE</span>
+        <span id="prestige-preview-label">PROCHAIN PRESTIGE</span>
         <strong id="prestige-points-preview">0</strong>
       </div>
       <button id="prestige-button" class="danger-button" disabled>PASSER LA CERTIFICATION</button>
       <small id="prestige-gain">Atteignez 1 million de requêtes.</small>
     </div>
     <div id="certification-grid" class="certification-grid"></div>
+  </section>
+</div>
+
+<div class="modal-backdrop prestige-backdrop" id="prestige-confirm-modal" aria-hidden="true">
+  <section class="modal prestige-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="prestige-confirm-title">
+    <button class="modal-close" data-close="prestige-confirm-modal">×</button>
+    <div class="prestige-confirm-icon">◆</div>
+    <span class="prestige-confirm-kicker">NIVEAU D’INFRASTRUCTURE TERMINÉ</span>
+    <h2 id="prestige-confirm-title">Passer au prestige supérieur ?</h2>
+    <p>La progression de ce cycle est arrivée à sa limite. Vous devez reconstruire l’infrastructure pour continuer.</p>
+    <div class="prestige-recap">
+      <div><span>Vous gagnez</span><strong>+1 point de certification</strong></div>
+      <div><span>Réinitialisé</span><strong>Requêtes, bâtiments et améliorations</strong></div>
+      <div><span>Conservé</span><strong>Certifications et succès débloqués</strong></div>
+    </div>
+    <div class="prestige-confirm-actions">
+      <button class="secondary-button" data-close="prestige-confirm-modal">Plus tard</button>
+      <button id="prestige-confirm-button" class="prestige-confirm-button">Passer au prestige supérieur</button>
+    </div>
   </section>
 </div>
 

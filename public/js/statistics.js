@@ -41,6 +41,7 @@ function loadState() {
     state.achievements = Array.isArray(state.achievements) ? state.achievements : [];
     state.certifications = Array.isArray(state.certifications) ? state.certifications : [];
     state.commandsUsed = Array.isArray(state.commandsUsed) ? state.commandsUsed : [];
+    state.productionHistory = Array.isArray(state.productionHistory) ? state.productionHistory : [];
     state.activeEvent = null;
     state.temporaryBonus = null;
     state.overclockEndsAt = 0;
@@ -48,6 +49,78 @@ function loadState() {
   } catch {
     return null;
   }
+}
+
+function renderProductionChart(state) {
+  const container = document.getElementById('production-chart');
+  let history = state.productionHistory
+    .filter(point => Number.isFinite(point?.time) && Number.isFinite(point?.value))
+    .sort((first, second) => first.time - second.time);
+
+  if (history.length < 2) {
+    const fallbackValue = new Economy(state).getBaseProduction();
+    history = [
+      { time: (state.startedAt || Date.now()) , value: 0 },
+      { time: Date.now(), value: fallbackValue }
+    ];
+    container.classList.add('estimated');
+  } else {
+    const startedAt = Number.isFinite(state.startedAt) ? state.startedAt : history[0].time;
+    if (history[0].time > startedAt) {
+      history.unshift({ time: startedAt, value: history[0].value });
+    }
+    history.push({ time: Date.now(), value: new Economy(state).getBaseProduction() });
+  }
+
+  if (history.length > 360) {
+    const sampled = [];
+    for (let index = 0; index < 360; index += 1) {
+      const sourceIndex = Math.round(index / 359 * (history.length - 1));
+      sampled.push(history[sourceIndex]);
+    }
+    history = sampled;
+  }
+
+  const values = history.map(point => point.value);
+  const maximum = Math.max(1, ...values);
+  const minimum = Math.min(...values);
+  const range = Math.max(1, maximum - minimum);
+  const points = history.map((point, index) => {
+    const x = index / (history.length - 1) * 1000;
+    const normalized = (point.value - minimum) / range;
+    const y = 250 - normalized * 205;
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(' ');
+  const areaPath = `M 0 280 L ${points.replaceAll(' ', ' L ')} L 1000 280 Z`;
+  const last = points.split(' ').at(-1).split(',');
+
+  container.innerHTML = `
+    <svg viewBox="0 0 1000 280" preserveAspectRatio="none" role="img" aria-label="Évolution de la production">
+      <defs>
+        <linearGradient id="history-area" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--cyan)" stop-opacity=".32"/>
+          <stop offset="100%" stop-color="var(--cyan)" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="history-line" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="var(--pastel-lilac)"/>
+          <stop offset="55%" stop-color="var(--cyan)"/>
+          <stop offset="100%" stop-color="var(--green)"/>
+        </linearGradient>
+      </defs>
+      <g class="history-grid">
+        <line x1="0" y1="45" x2="1000" y2="45"/><line x1="0" y1="95" x2="1000" y2="95"/>
+        <line x1="0" y1="145" x2="1000" y2="145"/><line x1="0" y1="195" x2="1000" y2="195"/>
+        <line x1="0" y1="245" x2="1000" y2="245"/>
+      </g>
+      <path class="history-area" d="${areaPath}"/>
+      <polyline class="history-line" points="${points}"/>
+      <circle class="history-point" cx="${last[0]}" cy="${last[1]}" r="6"/>
+    </svg>
+    ${container.classList.contains('estimated') ? '<span class="chart-estimated">ESTIMATION — les données réelles arrivent après une minute</span>' : ''}
+  `;
+  setText('chart-peak', `${formatNumber(maximum)} req/s`);
+  setText('chart-start', formatDate(history[0].time));
+  setText('chart-end', formatDate(history.at(-1).time));
 }
 
 function renderBuildings(state, economy) {
@@ -120,6 +193,7 @@ function render() {
   setText('stat-version', state.version || 1);
   setText('stat-cert-points', state.certificationPoints || 0);
   renderBuildings(state, economy);
+  renderProductionChart(state);
 }
 
 render();

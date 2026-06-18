@@ -28,6 +28,7 @@ class InfraClicker {
     this.lastFrame = performance.now();
     this.lastAchievementCheck = 0;
     this.lastIntegrityCheck = 0;
+    this.lastHistorySample = 0;
     this.init();
   }
 
@@ -67,6 +68,10 @@ class InfraClicker {
 
   bindGameActions() {
     const clickHandler = event => {
+      if (this.economy.isPrestigeRequired()) {
+        this.openPrestigeConfirmation();
+        return;
+      }
       if (!this.antiCheat.canProcessClick()) return;
       const now = Date.now();
       this.state.combo = now - this.state.lastManualClick <= 900 ? this.state.combo + 1 : 1;
@@ -122,7 +127,9 @@ class InfraClicker {
       this.ui.updateBuildings();
     }));
 
-    document.querySelector('#prestige-button').addEventListener('click', () => this.prestige());
+    document.querySelector('#prestige-button').addEventListener('click', () => this.openPrestigeConfirmation());
+    document.querySelector('#prestige-lock-button').addEventListener('click', () => this.openPrestigeConfirmation());
+    document.querySelector('#prestige-confirm-button').addEventListener('click', () => this.prestige());
     document.querySelector('#overclock-button').addEventListener('click', () => {
       if (this.state.overclockCharge < 100 || this.state.overclockEndsAt > Date.now()) return;
       this.state.overclockCharge = 0;
@@ -199,6 +206,22 @@ class InfraClicker {
     modal.setAttribute('aria-hidden', 'true');
     if (!document.querySelector('.modal-backdrop.open')) document.body.classList.remove('modal-open');
     modal._opener?.focus();
+  }
+
+  openPrestigeConfirmation() {
+    if (this.state.certifications.length >= CERTIFICATIONS.length) {
+      this.ui.toast('Prestige terminé', 'Toutes les certifications permanentes sont déjà acquises.', 'info');
+      return;
+    }
+    if (!this.economy.isPrestigeRequired()) {
+      this.ui.toast('Prestige indisponible', 'Atteignez 1 million de requêtes pour terminer ce cycle.', 'info');
+      return;
+    }
+    const modal = document.querySelector('#prestige-confirm-modal');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    setTimeout(() => document.querySelector('#prestige-confirm-button')?.focus(), 50);
   }
 
   bindSaveControls() {
@@ -319,7 +342,8 @@ class InfraClicker {
       return;
     }
     const gain = this.economy.prestigeGain();
-    if (gain < 1 || !window.confirm(`Réinitialiser cette infrastructure et gagner ${gain} point(s) de certification ?`)) return;
+    if (gain < 1) return;
+    this.closeModal(document.querySelector('#prestige-confirm-modal'));
     const persistent = {
       certifications: [...this.state.certifications],
       certificationPoints: this.state.certificationPoints + gain,
@@ -348,10 +372,32 @@ class InfraClicker {
     const delta = Math.min(0.25, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
     const production = this.economy.getProduction();
-    const gain = production * delta;
+    const prestigeRequired = this.economy.isPrestigeRequired();
+    const gain = prestigeRequired ? 0 : production * delta;
     this.state.requests += gain;
     this.state.lifetimeRequests += gain;
+    if (this.state.lifetimeRequests >= this.economy.getPrestigeTarget()
+      && this.state.certifications.length < CERTIFICATIONS.length) {
+      this.state.lifetimeRequests = this.economy.getPrestigeTarget();
+      this.state.requests = Math.min(this.state.requests, this.economy.getPrestigeTarget());
+    }
     this.state.lastTick = Date.now();
+
+    if (Date.now() - this.lastHistorySample >= 60000) {
+      this.state.productionHistory ||= [];
+      this.state.productionHistory.push({ time: Date.now(), value: production });
+      if (this.state.productionHistory.length > 4096) {
+        const history = this.state.productionHistory;
+        const compacted = [];
+        const targetSize = 2048;
+        for (let index = 0; index < targetSize; index += 1) {
+          const sourceIndex = Math.round(index / (targetSize - 1) * (history.length - 1));
+          compacted.push(history[sourceIndex]);
+        }
+        this.state.productionHistory = compacted;
+      }
+      this.lastHistorySample = Date.now();
+    }
 
     if (this.state.temporaryBonus && this.state.temporaryBonus.expiresAt <= Date.now()) {
       this.state.temporaryBonus = null;

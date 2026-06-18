@@ -118,10 +118,18 @@ export class GameUI {
     this.el['cert-points'].textContent = this.state.certificationPoints;
     this.el['achievement-count'].textContent = this.state.achievements.length;
     this.updateActiveGameplay();
+    this.updatePrestigeLock();
 
     const availableUpgrades = UPGRADES.filter(upgrade => this.economy.canBuyUpgrade(upgrade)).length;
-    this.el['upgrade-badge'].textContent = availableUpgrades;
-    this.el['upgrade-badge'].classList.toggle('visible', availableUpgrades > 0);
+    const ownedUpgrades = this.state.upgrades.length;
+    this.el['upgrade-badge'].textContent = `${ownedUpgrades}/${UPGRADES.length}`;
+    this.el['upgrade-badge'].classList.add('visible');
+    this.el['upgrade-badge'].classList.toggle('complete', ownedUpgrades >= UPGRADES.length);
+    this.el['upgrade-badge'].title = availableUpgrades > 0
+      ? `${availableUpgrades} amélioration(s) disponible(s)`
+      : ownedUpgrades >= UPGRADES.length
+        ? 'Toutes les améliorations sont installées'
+        : 'Aucune amélioration disponible actuellement';
 
     const level = this.economy.getInfraLevel();
     this.el['infra-level'].textContent = level.level;
@@ -134,7 +142,17 @@ export class GameUI {
     const prestigeGain = this.economy.prestigeGain();
     const allCertificationsOwned = this.state.certifications.length >= CERTIFICATIONS.length;
     const prestigePreview = document.querySelector('#prestige-points-preview');
-    if (prestigePreview) prestigePreview.textContent = allCertificationsOwned ? 'MAX' : prestigeGain;
+    const prestigePreviewLabel = document.querySelector('#prestige-preview-label');
+    if (prestigePreview) {
+      prestigePreview.textContent = allCertificationsOwned
+        ? this.state.prestigeCount
+        : `+${prestigeGain}`;
+    }
+    if (prestigePreviewLabel) {
+      prestigePreviewLabel.textContent = allCertificationsOwned
+        ? 'PRESTIGES EFFECTUÉS'
+        : 'GAIN DU PROCHAIN PRESTIGE';
+    }
     const prestigeButton = document.querySelector('#prestige-button');
     prestigeButton.disabled = prestigeGain < 1 || allCertificationsOwned;
     prestigeButton.textContent = allCertificationsOwned ? 'TOUTES LES CERTIFICATIONS ACQUISES' : 'PASSER LA CERTIFICATION';
@@ -149,6 +167,15 @@ export class GameUI {
       this.updateTelemetry(production);
       this.lastTelemetryUpdate = performance.now();
     }
+  }
+
+  updatePrestigeLock() {
+    const locked = this.economy.isPrestigeRequired();
+    const banner = document.querySelector('#prestige-lock-banner');
+    banner.classList.toggle('hidden', !locked);
+    document.querySelector('#server-zone').classList.toggle('prestige-locked', locked);
+    document.querySelector('#process-button').classList.toggle('prestige-locked', locked);
+    document.querySelector('#process-button').disabled = locked;
   }
 
   updateActiveGameplay() {

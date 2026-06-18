@@ -28,7 +28,7 @@ export class AchievementManager {
       case 'export': return state.exported;
       case 'night': {
         const hour = new Date().getHours();
-        return hour >= 0 && hour < 6;
+        return hour >= 22 || hour < 6;
       }
       case 'muted': return !state.soundEnabled;
       case 'maxBuy': return state.maxBuyUsed;
