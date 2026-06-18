@@ -18,7 +18,8 @@ export class GameUI {
       'header-rps', 'requests-stat', 'rps-stat', 'users-stat', 'main-counter', 'main-rps',
       'click-power-label', 'cpu-label', 'ram-label', 'bandwidth-label', 'infra-level',
       'infra-title', 'level-progress-label', 'achievement-count', 'shop-production',
-      'cert-points', 'prestige-gain', 'save-status', 'upgrade-badge'
+      'cert-points', 'prestige-gain', 'save-status', 'upgrade-badge', 'combo-label',
+      'combo-hint', 'overclock-status'
     ].forEach(id => { this.el[id] = document.getElementById(id); });
   }
 
@@ -112,6 +113,7 @@ export class GameUI {
     this.el['shop-production'].textContent = `${formatNumber(production)} req/s`;
     this.el['cert-points'].textContent = this.state.certificationPoints;
     this.el['achievement-count'].textContent = this.state.achievements.length;
+    this.updateActiveGameplay();
 
     const availableUpgrades = UPGRADES.filter(upgrade => this.economy.canBuyUpgrade(upgrade)).length;
     this.el['upgrade-badge'].textContent = availableUpgrades;
@@ -139,6 +141,27 @@ export class GameUI {
       this.updateTelemetry(production);
       this.lastTelemetryUpdate = performance.now();
     }
+  }
+
+  updateActiveGameplay() {
+    const combo = this.state.combo || 0;
+    const comboMultiplier = Math.min(3, 1 + Math.floor(Math.max(0, combo - 1) / 10) * 0.25);
+    const comboProgress = combo > 0 ? ((combo - 1) % 10 + 1) * 10 : 0;
+    this.el['combo-label'].textContent = `x${comboMultiplier.toFixed(comboMultiplier % 1 ? 2 : 0)}`;
+    this.el['combo-hint'].textContent = combo > 1 ? `${combo} requêtes enchaînées` : 'Enchaînez les requêtes';
+    document.querySelector('#combo-bar').style.width = `${comboProgress}%`;
+    document.querySelector('#combo-meter').classList.toggle('active', combo > 1);
+
+    const button = document.querySelector('#overclock-button');
+    const activeRemaining = Math.max(0, this.state.overclockEndsAt - Date.now());
+    const isActive = activeRemaining > 0;
+    const charge = clamp(this.state.overclockCharge || 0, 0, 100);
+    button.disabled = charge < 100 || isActive;
+    button.classList.toggle('active', isActive);
+    document.querySelector('#overclock-ring').style.setProperty('--charge', `${isActive ? 100 : charge * 3.6}deg`);
+    this.el['overclock-status'].textContent = isActive
+      ? `Production x2 · ${Math.ceil(activeRemaining / 1000)}s`
+      : charge >= 100 ? 'Prête' : `Charge ${Math.floor(charge)}%`;
   }
 
   updateBuildings() {
@@ -190,22 +213,25 @@ export class GameUI {
     `;
   }
 
-  clickEffect(x, y, amount) {
+  clickEffect(x, y, amount, options = {}) {
     const server = document.querySelector('#server-button');
     server.classList.remove('clicked');
     void server.offsetWidth;
     server.classList.add('clicked');
 
     const floating = document.createElement('span');
-    floating.className = 'floating-number';
-    floating.textContent = `+${formatNumber(amount)}`;
+    floating.className = `floating-number ${options.critical ? 'critical' : ''}`;
+    floating.textContent = options.critical ? `CRIT +${formatNumber(amount)}` : `+${formatNumber(amount)}`;
     floating.style.left = `${x}px`;
     floating.style.top = `${y}px`;
     document.body.appendChild(floating);
     setTimeout(() => floating.remove(), 900);
 
-    const colors = ['#22d3ee', '#34d399', '#f59e0b'];
-    for (let index = 0; index < 7; index += 1) {
+    const colors = options.critical
+      ? ['#fff0bd', '#fb7185', '#fbbf24']
+      : ['var(--cyan)', 'var(--green)', 'var(--purple)'];
+    const particleCount = options.critical ? 14 : 7;
+    for (let index = 0; index < particleCount; index += 1) {
       const particle = document.createElement('i');
       particle.className = 'particle';
       particle.style.left = `${x}px`;

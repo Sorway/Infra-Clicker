@@ -151,8 +151,16 @@ const specialAchievements = [
 export const ACHIEVEMENTS = [
   ...milestoneAchievements.map(([id, name, description, type, value]) => ({ id, name, description, type, value })),
   ...buildingAchievements,
-  ...specialAchievements
-].slice(0, 80);
+  ...specialAchievements.map(([id, name, description, type, value]) => ({ id, name, description, type, value }))
+]
+  .filter(achievement => (
+    achievement
+    && typeof achievement.id === 'string'
+    && typeof achievement.name === 'string'
+    && typeof achievement.description === 'string'
+    && typeof achievement.type === 'string'
+  ))
+  .slice(0, 80);
 
 export const INFRA_LEVELS = [
   [0, 'Homelab improvisé'],

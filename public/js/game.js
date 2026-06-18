@@ -1,4 +1,5 @@
 import { AchievementManager } from './modules/achievements.js';
+import { AntiCheat } from './modules/anticheat.js';
 import { AudioManager } from './modules/audio.js';
 import { BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
 import { Economy } from './modules/economy.js';
@@ -18,11 +19,15 @@ class InfraClicker {
     this.economy = new Economy(this.state);
     this.audio = new AudioManager(this.state.soundEnabled);
     this.ui = new GameUI(this.state, this.economy);
+    this.antiCheat = new AntiCheat(this.state, reason => {
+      this.ui.toast('Protection anti-triche', `${reason}. Action ignorée ou corrigée.`, 'danger');
+    });
     this.achievements = new AchievementManager(this.state, this.economy, this.ui, this.audio);
     this.events = new EventManager(this.state, this.economy, this.ui, this.audio);
     this.terminal = new Terminal(this.state, this.economy, this.ui, () => this.achievements.check());
     this.lastFrame = performance.now();
     this.lastAchievementCheck = 0;
+    this.lastIntegrityCheck = 0;
     this.init();
   }
 
@@ -35,6 +40,10 @@ class InfraClicker {
     this.bindSaveControls();
     this.updateSoundButton();
     this.ui.update();
+    if (this.state.loadWarning) {
+      setTimeout(() => this.ui.toast('Protection anti-triche', this.state.loadWarning, 'danger'), 400);
+      delete this.state.loadWarning;
+    }
     this.loop(performance.now());
     this.autosaveTimer = setInterval(() => this.saveManager.save(this.state), 10000);
     window.addEventListener('beforeunload', () => this.saveManager.save(this.state));
@@ -58,14 +67,25 @@ class InfraClicker {
 
   bindGameActions() {
     const clickHandler = event => {
-      const power = this.economy.getClickPower();
+      if (!this.antiCheat.canProcessClick()) return;
+      const now = Date.now();
+      this.state.combo = now - this.state.lastManualClick <= 900 ? this.state.combo + 1 : 1;
+      this.state.lastManualClick = now;
+      this.state.bestCombo = Math.max(this.state.bestCombo || 0, this.state.combo);
+      const comboMultiplier = Math.min(3, 1 + Math.floor((this.state.combo - 1) / 10) * 0.25);
+      const critical = Math.random() < 0.05;
+      const power = this.economy.getClickPower() * comboMultiplier * (critical ? 10 : 1);
       this.state.requests += power;
       this.state.lifetimeRequests += power;
       this.state.manualClicks += 1;
+      if (critical) this.state.criticalClicks += 1;
+      if (this.state.overclockEndsAt <= now) {
+        this.state.overclockCharge = Math.min(100, this.state.overclockCharge + (critical ? 8 : 1));
+      }
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX || rect.left + rect.width / 2;
       const y = event.clientY || rect.top + rect.height / 2;
-      this.ui.clickEffect(x, y, power);
+      this.ui.clickEffect(x, y, power, { critical, comboMultiplier });
       this.audio.click();
     };
     document.querySelector('#server-button').addEventListener('click', clickHandler);
@@ -103,6 +123,13 @@ class InfraClicker {
     }));
 
     document.querySelector('#prestige-button').addEventListener('click', () => this.prestige());
+    document.querySelector('#overclock-button').addEventListener('click', () => {
+      if (this.state.overclockCharge < 100 || this.state.overclockEndsAt > Date.now()) return;
+      this.state.overclockCharge = 0;
+      this.state.overclockEndsAt = Date.now() + 30000;
+      this.audio.event(false);
+      this.ui.toast('Surcharge activée', 'Production doublée pendant 30 secondes.', 'bonus');
+    });
     document.querySelector('#sound-toggle').addEventListener('click', () => {
       this.state.soundEnabled = !this.state.soundEnabled;
       this.audio.setEnabled(this.state.soundEnabled);
@@ -166,12 +193,18 @@ class InfraClicker {
     document.querySelector('#export-save').addEventListener('click', () => {
       this.state.exported = true;
       this.achievements.check();
+      this.saveManager.save(this.state);
       downloadJson(`infra-clicker-${new Date().toISOString().slice(0, 10)}.json`, this.state);
       this.ui.toast('Sauvegarde exportée', 'Le fichier JSON est prêt.', 'info');
     });
     document.querySelector('#import-save').addEventListener('change', async event => {
       const file = event.target.files[0];
       if (!file) return;
+      if (file.size > 1024 * 1024) {
+        this.ui.toast('Import impossible', 'Le fichier dépasse la limite de 1 Mo.', 'danger');
+        event.target.value = '';
+        return;
+      }
       try {
         const imported = this.saveManager.import(await file.text());
         this.replaceState(imported);
@@ -192,7 +225,7 @@ class InfraClicker {
   initTheme() {
     const themes = ['ruby', 'sunset', 'lavender', 'mint', 'ocean'];
     const savedTheme = localStorage.getItem('infra-clicker-theme');
-    const initialTheme = themes.includes(savedTheme) ? savedTheme : 'ruby';
+    const initialTheme = themes.includes(savedTheme) ? savedTheme : 'ocean';
     this.applyTheme(initialTheme);
 
     document.querySelector('#theme-picker').addEventListener('click', event => {
@@ -296,6 +329,9 @@ class InfraClicker {
     if (this.state.temporaryBonus && this.state.temporaryBonus.expiresAt <= Date.now()) {
       this.state.temporaryBonus = null;
     }
+    if (this.state.combo > 0 && Date.now() - this.state.lastManualClick > 1200) {
+      this.state.combo = 0;
+    }
 
     this.events.update();
     this.ui.update();
@@ -304,6 +340,10 @@ class InfraClicker {
       this.achievements.check();
       if (this.state.achievements.length !== previousCount) this.ui.renderAchievements();
       this.lastAchievementCheck = now;
+    }
+    if (now - this.lastIntegrityCheck > 1000) {
+      this.antiCheat.validateState();
+      this.lastIntegrityCheck = now;
     }
     requestAnimationFrame(timestamp => this.loop(timestamp));
   }

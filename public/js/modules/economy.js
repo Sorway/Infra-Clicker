@@ -72,7 +72,8 @@ export class Economy {
     const temporaryMultiplier = this.state.temporaryBonus?.expiresAt > Date.now()
       ? this.state.temporaryBonus.multiplier
       : 1;
-    return this.getBaseProduction() * eventMultiplier * temporaryMultiplier;
+    const overclockMultiplier = this.state.overclockEndsAt > Date.now() ? 2 : 1;
+    return this.getBaseProduction() * eventMultiplier * temporaryMultiplier * overclockMultiplier;
   }
 
   getClickPower() {

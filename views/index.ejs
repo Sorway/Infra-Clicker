@@ -89,7 +89,7 @@
       <div class="pulse-ring ring-one"></div>
       <div class="pulse-ring ring-two"></div>
       <button id="server-button" class="server-button" aria-label="Traiter une requête">
-        <img src="/img/infra-server-v3.png" alt="Micro-datacenter Infra Clicker" draggable="false">
+        <img src="/img/infra-server-transparent.png" alt="Serveur interactif Infra Clicker" draggable="false">
         <span class="server-glow"></span>
       </button>
       <div class="rack-floor"></div>
@@ -99,6 +99,19 @@
       <span>TRAITER</span>
       <strong id="click-power-label">+1</strong>
     </button>
+
+    <div class="active-gameplay">
+      <div class="combo-meter" id="combo-meter">
+        <div><span>COMBO</span><strong id="combo-label">x1</strong></div>
+        <div class="combo-track"><span id="combo-bar"></span></div>
+        <small id="combo-hint">Enchaînez les requêtes</small>
+      </div>
+      <button id="overclock-button" class="overclock-button" disabled>
+        <span class="overclock-icon">ϟ</span>
+        <span><strong>Surcharge</strong><small id="overclock-status">Charge 0%</small></span>
+        <i class="overclock-ring" id="overclock-ring"></i>
+      </button>
+    </div>
 
     <div class="game-menu-actions">
       <button id="upgrades-open" class="menu-launch-button upgrades-launch">
