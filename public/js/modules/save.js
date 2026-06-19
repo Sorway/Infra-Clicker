@@ -1,11 +1,22 @@
-import { ACHIEVEMENTS, BUILDINGS, PERMANENT_SKILLS } from './data.js';
+import { ACHIEVEMENTS, BUILDINGS } from './data.js';
 
 const SAVE_KEY = 'infra-clicker-save-v1';
 const SAVE_VERSION = 1;
 const INTEGRITY_SALT = 'infra-clicker::integrity::2026';
 
-function integrityPayload(state) {
-  return {
+const LEGACY_SKILL_COSTS = {
+  automation: 1,
+  capacity: 2,
+  finops: 2,
+  sre: 3,
+  edge: 3,
+  platform: 4,
+  resilience: 5,
+  architect: 8
+};
+
+function integrityPayload(state, includeLegacySkills = false) {
+  const payload = {
     version: state.version,
     requests: state.requests,
     lifetimeRequests: state.lifetimeRequests,
@@ -29,15 +40,15 @@ function integrityPayload(state) {
     soundEnabled: state.soundEnabled,
     antiCheatViolations: state.antiCheatViolations,
     productionHistory: state.productionHistory
-    ,
-    permanentSkills: state.permanentSkills,
-    dailyMissions: state.dailyMissions,
-    totalBuildingsPurchased: state.totalBuildingsPurchased
   };
+  if (includeLegacySkills) payload.permanentSkills = state.permanentSkills;
+  payload.dailyMissions = state.dailyMissions;
+  payload.totalBuildingsPurchased = state.totalBuildingsPurchased;
+  return payload;
 }
 
-function checksum(state) {
-  const input = `${INTEGRITY_SALT}:${JSON.stringify(integrityPayload(state))}`;
+function checksum(state, includeLegacySkills = false) {
+  const input = `${INTEGRITY_SALT}:${JSON.stringify(integrityPayload(state, includeLegacySkills))}`;
   let hash = 2166136261;
   for (let index = 0; index < input.length; index += 1) {
     hash ^= input.charCodeAt(index);
@@ -47,7 +58,9 @@ function checksum(state) {
 }
 
 function hasValidIntegrity(state) {
-  return typeof state.integrity === 'string' && state.integrity === checksum(state);
+  if (typeof state.integrity !== 'string') return false;
+  if (state.integrity === checksum(state)) return true;
+  return Object.hasOwn(state, 'permanentSkills') && state.integrity === checksum(state, true);
 }
 
 function hasValidStructure(state) {
@@ -74,7 +87,6 @@ export function createDefaultState() {
     overclockCharge: 0,
     overclockEndsAt: 0,
     productionHistory: [],
-    permanentSkills: [],
     dailyMissions: null,
     totalBuildingsPurchased: 0,
     buildings: Object.fromEntries(BUILDINGS.map(building => [building.id, 0])),
@@ -106,6 +118,10 @@ export class SaveManager {
 
   normalize(raw) {
     const defaults = createDefaultState();
+    const legacySkills = Array.isArray(raw?.permanentSkills)
+      ? [...new Set(raw.permanentSkills.filter(id => Object.hasOwn(LEGACY_SKILL_COSTS, id)))]
+      : [];
+    const refundedPoints = legacySkills.reduce((total, id) => total + LEGACY_SKILL_COSTS[id], 0);
     const state = {
       ...defaults,
       ...raw,
@@ -125,12 +141,11 @@ export class SaveManager {
             return index === Math.round(slot / 19 * (history.length - 1));
           })
         : [],
-      permanentSkills: Array.isArray(raw?.permanentSkills)
-        ? [...new Set(raw.permanentSkills.filter(id => PERMANENT_SKILLS.some(skill => skill.id === id)))]
-        : [],
+      certificationPoints: Math.max(0, Number(raw?.certificationPoints) || 0) + refundedPoints,
       dailyMissions: raw?.dailyMissions && typeof raw.dailyMissions === 'object' ? raw.dailyMissions : null,
       activeEvent: null
     };
+    delete state.permanentSkills;
     state.combo = 0;
     state.lastManualClick = 0;
     state.allTimeRequests = Number.isFinite(raw?.allTimeRequests) ? raw.allTimeRequests : state.lifetimeRequests;

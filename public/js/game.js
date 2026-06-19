@@ -2,7 +2,6 @@ import { AchievementManager } from './modules/achievements.js';
 import { AntiCheat } from './modules/anticheat.js';
 import { AudioManager } from './modules/audio.js';
 import { BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
-import { PERMANENT_SKILLS } from './modules/data.js';
 import { Economy } from './modules/economy.js';
 import { EventManager } from './modules/events.js';
 import { MissionManager } from './modules/missions.js';
@@ -123,10 +122,6 @@ class InfraClicker {
       const card = event.target.closest('[data-certification]');
       if (card) this.buyCertification(card.dataset.certification);
     });
-    document.querySelector('#skill-tree').addEventListener('click', event => {
-      const card = event.target.closest('[data-skill]');
-      if (card) this.buySkill(card.dataset.skill);
-    });
     document.querySelector('#missions-grid').addEventListener('click', event => {
       const button = event.target.closest('[data-mission-claim]');
       if (!button) return;
@@ -134,7 +129,6 @@ class InfraClicker {
         this.audio.achievement();
         this.ui.toast('Mission terminée', 'La récompense a été ajoutée.', 'achievement');
         this.ui.renderMissions(this.missions);
-        this.ui.renderSkillTree();
       }
     });
 
@@ -186,10 +180,7 @@ class InfraClicker {
     this.bindModal('#settings-toggle', '#settings-modal');
     this.bindModal('#achievements-open', '#achievements-modal', () => this.ui.renderAchievements());
     this.bindModal('#upgrades-open', '#upgrades-modal', () => this.ui.renderUpgrades());
-    this.bindModal('#certifications-open', '#certifications-modal', () => {
-      this.ui.renderCertifications();
-      this.ui.renderSkillTree();
-    });
+    this.bindModal('#certifications-open', '#certifications-modal', () => this.ui.renderCertifications());
     this.bindModal('#missions-open', '#missions-modal', () => this.ui.renderMissions(this.missions));
     document.querySelector('#settings-modal').addEventListener('click', event => {
       const action = event.target.closest('button, .file-button, .privacy-link');
@@ -356,22 +347,8 @@ class InfraClicker {
     this.state.certifications.push(id);
     this.audio.achievement();
     this.ui.renderCertifications();
-    this.ui.renderSkillTree();
     this.ui.toast(`Certification ${certification.name}`, certification.description, 'achievement');
     this.achievements.check();
-  }
-
-  buySkill(id) {
-    const skill = PERMANENT_SKILLS.find(item => item.id === id);
-    if (!skill || this.state.permanentSkills.includes(id)) return;
-    const required = !skill.requires || this.state.permanentSkills.includes(skill.requires);
-    const anyRequired = !skill.requiresAny || skill.requiresAny.some(requiredId => this.state.permanentSkills.includes(requiredId));
-    if (!required || !anyRequired || this.state.certificationPoints < skill.cost) return;
-    this.state.certificationPoints -= skill.cost;
-    this.state.permanentSkills.push(id);
-    this.audio.achievement();
-    this.ui.renderSkillTree();
-    this.ui.toast('Compétence débloquée', skill.description, 'achievement');
   }
 
   prestige() {
@@ -389,7 +366,6 @@ class InfraClicker {
       achievements: [...this.state.achievements],
       commandsUsed: [...this.state.commandsUsed],
       soundEnabled: this.state.soundEnabled,
-      permanentSkills: [...this.state.permanentSkills],
       allTimeRequests: this.state.allTimeRequests || this.state.lifetimeRequests,
       totalBuildingsPurchased: this.state.totalBuildingsPurchased || 0,
       productionHistory: [...this.state.productionHistory],

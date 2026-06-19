@@ -1,4 +1,4 @@
-import { BUILDINGS, CERTIFICATIONS, INFRA_LEVELS, PERMANENT_SKILLS, UPGRADES } from './data.js';
+import { BUILDINGS, CERTIFICATIONS, INFRA_LEVELS, UPGRADES } from './data.js';
 
 export class Economy {
   constructor(state) {
@@ -17,10 +17,7 @@ export class Economy {
     const upgrades = UPGRADES
       .filter(upgrade => this.hasUpgrade(upgrade.id))
       .reduce((reduction, upgrade) => reduction + (upgrade.effect.costReduction || 0), 0);
-    const skills = PERMANENT_SKILLS
-      .filter(skill => this.state.permanentSkills?.includes(skill.id))
-      .reduce((reduction, skill) => reduction + (skill.effect.costReduction || 0), 0);
-    return upgrades + skills;
+    return upgrades;
   }
 
   getBuildingUnitCost(building, ownedOffset = 0) {
@@ -55,10 +52,7 @@ export class Economy {
     const certificationMultiplier = CERTIFICATIONS
       .filter(certification => this.state.certifications.includes(certification.id))
       .reduce((total, certification) => total + certification.bonus, 1);
-    const skillMultiplier = PERMANENT_SKILLS
-      .filter(skill => this.state.permanentSkills?.includes(skill.id))
-      .reduce((multiplier, skill) => multiplier * (skill.effect.production || 1), 1);
-    return upgradeMultiplier * certificationMultiplier * skillMultiplier;
+    return upgradeMultiplier * certificationMultiplier;
   }
 
   getBuildingMultiplier(buildingId) {
@@ -89,20 +83,14 @@ export class Economy {
       .filter(upgrade => this.hasUpgrade(upgrade.id))
       .reduce((multiplier, upgrade) => multiplier * (upgrade.effect.click || 1), 1);
     const eventClickMultiplier = this.state.activeEvent?.clickMultiplier || 1;
-    const skillClickMultiplier = PERMANENT_SKILLS
-      .filter(skill => this.state.permanentSkills?.includes(skill.id))
-      .reduce((multiplier, skill) => multiplier * (skill.effect.click || 1), 1);
-    return Math.max(1, clickMultiplier * skillClickMultiplier * eventClickMultiplier * (1 + this.getProduction() * 0.01));
+    return Math.max(1, clickMultiplier * eventClickMultiplier * (1 + this.getProduction() * 0.01));
   }
 
   getEventResistance() {
     const upgrades = UPGRADES
       .filter(upgrade => this.hasUpgrade(upgrade.id))
       .reduce((total, upgrade) => total + (upgrade.effect.eventResistance || 0), 0);
-    const skills = PERMANENT_SKILLS
-      .filter(skill => this.state.permanentSkills?.includes(skill.id))
-      .reduce((total, skill) => total + (skill.effect.eventResistance || 0), 0);
-    return Math.min(0.85, upgrades + skills);
+    return Math.min(0.85, upgrades);
   }
 
   canBuyUpgrade(upgrade) {

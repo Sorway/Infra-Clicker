@@ -1,4 +1,4 @@
-import { ACHIEVEMENTS, BUILDINGS, CERTIFICATIONS, INFRA_LEVELS, PERMANENT_SKILLS, UPGRADES } from './data.js';
+import { ACHIEVEMENTS, BUILDINGS, CERTIFICATIONS, INFRA_LEVELS, UPGRADES } from './data.js';
 import { clamp, formatNumber, randomBetween } from './utils.js';
 
 export class GameUI {
@@ -19,7 +19,7 @@ export class GameUI {
       'click-power-label', 'cpu-label', 'ram-label', 'bandwidth-label', 'infra-level',
       'infra-title', 'level-progress-label', 'achievement-count', 'shop-production',
       'cert-points', 'prestige-gain', 'save-status', 'upgrade-badge', 'combo-label',
-      'combo-hint', 'overclock-status', 'shop-owned', 'skill-points', 'missions-badge'
+      'combo-hint', 'overclock-status', 'shop-owned', 'missions-badge'
     ].forEach(id => { this.el[id] = document.getElementById(id); });
   }
 
@@ -28,7 +28,6 @@ export class GameUI {
     this.renderBuildings();
     this.renderUpgrades();
     this.renderCertifications();
-    this.renderSkillTree();
     this.renderAchievements();
   }
 
@@ -88,25 +87,6 @@ export class GameUI {
     }).join('');
   }
 
-  renderSkillTree() {
-    this.el['skill-points'].textContent = this.state.certificationPoints;
-    document.querySelector('#skill-tree').innerHTML = PERMANENT_SKILLS.map((skill, index) => {
-      const owned = this.state.permanentSkills?.includes(skill.id);
-      const required = !skill.requires || this.state.permanentSkills?.includes(skill.requires);
-      const anyRequired = !skill.requiresAny || skill.requiresAny.some(id => this.state.permanentSkills?.includes(id));
-      const locked = !required || !anyRequired;
-      const affordable = this.state.certificationPoints >= skill.cost;
-      return `
-        <button class="skill-node ${owned ? 'owned' : ''} ${locked ? 'locked' : ''} ${affordable ? 'affordable' : ''}"
-          data-skill="${skill.id}" style="--skill-index:${index}">
-          <span class="skill-node-icon">${skill.icon}</span>
-          <span><strong>${skill.name}</strong><small>${skill.description}</small></span>
-          <em>${owned ? 'ACQUISE' : `${skill.cost} CP`}</em>
-        </button>
-      `;
-    }).join('');
-  }
-
   renderMissions(manager) {
     if (!manager || !document.querySelector('#missions-grid')) return;
     manager.ensureToday();
@@ -130,6 +110,28 @@ export class GameUI {
         </article>
       `;
     }).join('');
+    const tomorrow = this.state.dailyMissions.next;
+    const tomorrowList = document.querySelector('#tomorrow-missions-list');
+    if (tomorrow && tomorrowList) {
+      const date = new Date(`${tomorrow.date}T12:00:00`);
+      document.querySelector('#tomorrow-missions-date').textContent = date.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      });
+      tomorrowList.innerHTML = tomorrow.missions.map(mission => {
+        const reward = mission.reward.certificationPoints
+          ? `+${mission.reward.certificationPoints} CP`
+          : `+${formatNumber(mission.reward.requests)} requêtes`;
+        return `
+          <article>
+            <span>${mission.id === 'requests' ? '↯' : mission.id === 'buildings' ? '▦' : '!'}</span>
+            <div><strong>${mission.name}</strong><small>${mission.description} · ${formatNumber(mission.target)}</small></div>
+            <em>${reward}</em>
+          </article>
+        `;
+      }).join('');
+    }
   }
 
   renderAchievements() {
@@ -161,7 +163,6 @@ export class GameUI {
     this.el['click-power-label'].textContent = `+${formatNumber(clickPower)}`;
     this.el['shop-production'].textContent = `${formatNumber(production)} req/s`;
     this.el['cert-points'].textContent = this.state.certificationPoints;
-    this.el['skill-points'].textContent = this.state.certificationPoints;
     this.el['achievement-count'].textContent = this.state.achievements.length;
     this.updateActiveGameplay();
     this.updatePrestigeLock();
@@ -413,7 +414,6 @@ export class GameUI {
   refreshCollections() {
     this.renderUpgrades();
     this.renderCertifications();
-    this.renderSkillTree();
     this.renderAchievements();
   }
 }
