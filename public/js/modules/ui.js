@@ -1,4 +1,4 @@
-import { ACHIEVEMENTS, BUILDINGS, CERTIFICATIONS, INFRA_LEVELS, UPGRADES } from './data.js';
+import { ACHIEVEMENTS, BUILDINGS, CERTIFICATIONS, INFRA_LEVELS, PERMANENT_SKILLS, UPGRADES } from './data.js';
 import { clamp, formatNumber, randomBetween } from './utils.js';
 
 export class GameUI {
@@ -19,7 +19,7 @@ export class GameUI {
       'click-power-label', 'cpu-label', 'ram-label', 'bandwidth-label', 'infra-level',
       'infra-title', 'level-progress-label', 'achievement-count', 'shop-production',
       'cert-points', 'prestige-gain', 'save-status', 'upgrade-badge', 'combo-label',
-      'combo-hint', 'overclock-status', 'shop-owned'
+      'combo-hint', 'overclock-status', 'shop-owned', 'skill-points', 'missions-badge'
     ].forEach(id => { this.el[id] = document.getElementById(id); });
   }
 
@@ -28,6 +28,7 @@ export class GameUI {
     this.renderBuildings();
     this.renderUpgrades();
     this.renderCertifications();
+    this.renderSkillTree();
     this.renderAchievements();
   }
 
@@ -87,6 +88,50 @@ export class GameUI {
     }).join('');
   }
 
+  renderSkillTree() {
+    this.el['skill-points'].textContent = this.state.certificationPoints;
+    document.querySelector('#skill-tree').innerHTML = PERMANENT_SKILLS.map((skill, index) => {
+      const owned = this.state.permanentSkills?.includes(skill.id);
+      const required = !skill.requires || this.state.permanentSkills?.includes(skill.requires);
+      const anyRequired = !skill.requiresAny || skill.requiresAny.some(id => this.state.permanentSkills?.includes(id));
+      const locked = !required || !anyRequired;
+      const affordable = this.state.certificationPoints >= skill.cost;
+      return `
+        <button class="skill-node ${owned ? 'owned' : ''} ${locked ? 'locked' : ''} ${affordable ? 'affordable' : ''}"
+          data-skill="${skill.id}" style="--skill-index:${index}">
+          <span class="skill-node-icon">${skill.icon}</span>
+          <span><strong>${skill.name}</strong><small>${skill.description}</small></span>
+          <em>${owned ? 'ACQUISE' : `${skill.cost} CP`}</em>
+        </button>
+      `;
+    }).join('');
+  }
+
+  renderMissions(manager) {
+    if (!manager || !document.querySelector('#missions-grid')) return;
+    manager.ensureToday();
+    const missions = this.state.dailyMissions.missions;
+    const ready = missions.filter(mission => !mission.claimed && manager.progress(mission) >= mission.target).length;
+    const remaining = missions.filter(mission => !mission.claimed).length;
+    this.el['missions-badge'].textContent = ready > 0 ? ready : remaining;
+    this.el['missions-badge'].classList.toggle('complete', remaining === 0);
+    document.querySelector('#missions-grid').innerHTML = missions.map(mission => {
+      const progress = Math.min(mission.target, manager.progress(mission));
+      const complete = progress >= mission.target;
+      const reward = mission.reward.certificationPoints
+        ? `+${mission.reward.certificationPoints} CP`
+        : `+${formatNumber(mission.reward.requests)} requêtes`;
+      return `
+        <article class="mission-card ${complete ? 'complete' : ''} ${mission.claimed ? 'claimed' : ''}">
+          <div class="mission-card-heading"><span>${mission.id === 'requests' ? '↯' : mission.id === 'buildings' ? '▦' : '!'}</span><div><strong>${mission.name}</strong><small>${mission.description}</small></div></div>
+          <div class="mission-progress-label"><span>${formatNumber(progress)} / ${formatNumber(mission.target)}</span><em>${reward}</em></div>
+          <div class="mission-progress"><span style="width:${progress / mission.target * 100}%"></span></div>
+          <button data-mission-claim="${mission.id}" ${!complete || mission.claimed ? 'disabled' : ''}>${mission.claimed ? 'RÉCUPÉRÉE' : complete ? 'RÉCUPÉRER' : 'EN COURS'}</button>
+        </article>
+      `;
+    }).join('');
+  }
+
   renderAchievements() {
     const html = ACHIEVEMENTS.map(achievement => {
       const unlocked = this.state.achievements.includes(achievement.id);
@@ -116,6 +161,7 @@ export class GameUI {
     this.el['click-power-label'].textContent = `+${formatNumber(clickPower)}`;
     this.el['shop-production'].textContent = `${formatNumber(production)} req/s`;
     this.el['cert-points'].textContent = this.state.certificationPoints;
+    this.el['skill-points'].textContent = this.state.certificationPoints;
     this.el['achievement-count'].textContent = this.state.achievements.length;
     this.updateActiveGameplay();
     this.updatePrestigeLock();
@@ -367,6 +413,7 @@ export class GameUI {
   refreshCollections() {
     this.renderUpgrades();
     this.renderCertifications();
+    this.renderSkillTree();
     this.renderAchievements();
   }
 }

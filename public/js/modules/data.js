@@ -86,6 +86,17 @@ export const CERTIFICATIONS = [
   { id: 'cissp', name: 'CISSP', cost: 8, icon: 'S', description: 'Double la production permanente.', bonus: 1 }
 ];
 
+export const PERMANENT_SKILLS = [
+  { id: 'automation', name: 'Automatisation', icon: 'A', cost: 1, description: '+15% de production permanente.', effect: { production: 1.15 } },
+  { id: 'capacity', name: 'Capacity Planning', icon: 'C', cost: 2, requires: 'automation', description: '+25% de production permanente.', effect: { production: 1.25 } },
+  { id: 'finops', name: 'FinOps', icon: 'F', cost: 2, requires: 'automation', description: '-8% sur le coût des bâtiments.', effect: { costReduction: 0.08 } },
+  { id: 'sre', name: 'SRE', icon: 'S', cost: 3, requires: 'capacity', description: '+20% de résistance aux incidents.', effect: { eventResistance: 0.2 } },
+  { id: 'edge', name: 'Edge Computing', icon: 'E', cost: 3, requires: 'capacity', description: 'Puissance de clic x2.', effect: { click: 2 } },
+  { id: 'platform', name: 'Platform Engineering', icon: 'P', cost: 4, requires: 'finops', description: '+50% de production permanente.', effect: { production: 1.5 } },
+  { id: 'resilience', name: 'Résilience globale', icon: 'R', cost: 5, requires: 'sre', description: '+35% de résistance aux incidents.', effect: { eventResistance: 0.35 } },
+  { id: 'architect', name: 'Architecte Internet', icon: '∞', cost: 8, requires: 'edge', requiresAny: ['platform', 'resilience'], description: 'Double la production permanente.', effect: { production: 2 } }
+];
+
 const milestoneAchievements = [
   ['first-request', 'Hello, World!', 'Traiter votre première requête.', 'requests', 1],
   ['ping', 'Ping 8.8.8.8', 'Traiter 8 requêtes.', 'requests', 8],

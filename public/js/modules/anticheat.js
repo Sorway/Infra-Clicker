@@ -24,8 +24,8 @@ export class AntiCheat {
   validateState() {
     const violations = [];
     const numericFields = [
-      'requests', 'lifetimeRequests', 'manualClicks', 'criticalClicks', 'bestCombo',
-      'certificationPoints', 'prestigeCount', 'eventsCompleted', 'overclockCharge'
+      'requests', 'lifetimeRequests', 'allTimeRequests', 'manualClicks', 'criticalClicks', 'bestCombo',
+      'certificationPoints', 'prestigeCount', 'eventsCompleted', 'overclockCharge', 'totalBuildingsPurchased'
     ];
 
     numericFields.forEach(field => {

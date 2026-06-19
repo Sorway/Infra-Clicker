@@ -42,6 +42,7 @@ export class EventManager {
       const reward = Math.max(1, this.economy.getBaseProduction()) * template.instantSeconds;
       this.state.requests += reward;
       this.state.lifetimeRequests += reward;
+      this.state.allTimeRequests = (this.state.allTimeRequests || 0) + reward;
       this.ui.toast('Récompense immédiate', `${Math.round(template.instantSeconds / 60)} minute(s) de production reçue(s).`, 'bonus');
     }
 

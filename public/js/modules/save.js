@@ -1,4 +1,4 @@
-import { ACHIEVEMENTS, BUILDINGS } from './data.js';
+import { ACHIEVEMENTS, BUILDINGS, PERMANENT_SKILLS } from './data.js';
 
 const SAVE_KEY = 'infra-clicker-save-v1';
 const SAVE_VERSION = 1;
@@ -9,6 +9,7 @@ function integrityPayload(state) {
     version: state.version,
     requests: state.requests,
     lifetimeRequests: state.lifetimeRequests,
+    allTimeRequests: state.allTimeRequests,
     manualClicks: state.manualClicks,
     criticalClicks: state.criticalClicks,
     bestCombo: state.bestCombo,
@@ -28,6 +29,10 @@ function integrityPayload(state) {
     soundEnabled: state.soundEnabled,
     antiCheatViolations: state.antiCheatViolations,
     productionHistory: state.productionHistory
+    ,
+    permanentSkills: state.permanentSkills,
+    dailyMissions: state.dailyMissions,
+    totalBuildingsPurchased: state.totalBuildingsPurchased
   };
 }
 
@@ -48,6 +53,7 @@ function hasValidIntegrity(state) {
 function hasValidStructure(state) {
   const finiteNonNegative = value => Number.isFinite(value) && value >= 0;
   if (!finiteNonNegative(state.requests) || !finiteNonNegative(state.lifetimeRequests)) return false;
+  if (state.allTimeRequests !== undefined && !finiteNonNegative(state.allTimeRequests)) return false;
   if (!state.buildings || typeof state.buildings !== 'object' || Array.isArray(state.buildings)) return false;
   if (!Array.isArray(state.upgrades) || !Array.isArray(state.achievements) || !Array.isArray(state.certifications)) return false;
   if (state.upgrades.length > 100 || state.achievements.length > 200 || state.certifications.length > 50) return false;
@@ -59,6 +65,7 @@ export function createDefaultState() {
     version: SAVE_VERSION,
     requests: 0,
     lifetimeRequests: 0,
+    allTimeRequests: 0,
     manualClicks: 0,
     criticalClicks: 0,
     bestCombo: 0,
@@ -67,6 +74,9 @@ export function createDefaultState() {
     overclockCharge: 0,
     overclockEndsAt: 0,
     productionHistory: [],
+    permanentSkills: [],
+    dailyMissions: null,
+    totalBuildingsPurchased: 0,
     buildings: Object.fromEntries(BUILDINGS.map(building => [building.id, 0])),
     upgrades: [],
     achievements: [],
@@ -115,10 +125,18 @@ export class SaveManager {
             return index === Math.round(slot / 19 * (history.length - 1));
           })
         : [],
+      permanentSkills: Array.isArray(raw?.permanentSkills)
+        ? [...new Set(raw.permanentSkills.filter(id => PERMANENT_SKILLS.some(skill => skill.id === id)))]
+        : [],
+      dailyMissions: raw?.dailyMissions && typeof raw.dailyMissions === 'object' ? raw.dailyMissions : null,
       activeEvent: null
     };
     state.combo = 0;
     state.lastManualClick = 0;
+    state.allTimeRequests = Number.isFinite(raw?.allTimeRequests) ? raw.allTimeRequests : state.lifetimeRequests;
+    state.totalBuildingsPurchased = Number.isFinite(raw?.totalBuildingsPurchased)
+      ? raw.totalBuildingsPurchased
+      : Object.values(state.buildings).reduce((sum, count) => sum + count, 0);
     return state;
   }
 

@@ -174,7 +174,7 @@ function render() {
 
   setText('stats-period', `Partie active depuis ${formatDuration(elapsed)}`);
   setText('stats-last-save', `Sauvegardé ${formatDate(state.lastSaved)}`);
-  setText('stat-lifetime', formatNumber(state.lifetimeRequests));
+  setText('stat-lifetime', formatNumber(state.allTimeRequests || state.lifetimeRequests));
   setText('stat-production', formatNumber(production));
   setText('stat-clicks', formatNumber(state.manualClicks || 0));
   setText('stat-click-share', `${clickShare.toFixed(2).replace('.', ',')}% du trafic cumulé`);
