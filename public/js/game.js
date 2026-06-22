@@ -28,6 +28,7 @@ class InfraClicker {
     this.lastFrame = performance.now();
     this.lastProductionAt = Date.now();
     this.lastAchievementCheck = 0;
+    this.lastMissionUpdate = 0;
     this.lastHistorySample = 0;
     this.lastUiUpdate = 0;
     this.isDesynced = false;
@@ -564,9 +565,12 @@ class InfraClicker {
     const uiInterval = this.ui.performanceMode ? 250 : 100;
     if (now - this.lastUiUpdate >= uiInterval) {
       this.events.update();
-      this.missions.update();
       this.ui.update();
       this.lastUiUpdate = now;
+    }
+    if (now - this.lastMissionUpdate >= 1000) {
+      this.missions.update();
+      this.lastMissionUpdate = now;
     }
     if (now - this.lastAchievementCheck > 1000) {
       const previousCount = this.state.achievements.length;

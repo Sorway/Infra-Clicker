@@ -611,10 +611,11 @@ button { color: inherit; }
   z-index: 3;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  contain: layout paint;
+  will-change: transform;
 }
 
 .server-button:hover { transform: translateY(-5px) scale(1.025); filter: drop-shadow(0 25px 35px rgba(0, 0, 0, .6)) brightness(1.08); }
-.server-button.clicked { animation: serverClick .32s cubic-bezier(.2, .9, .3, 1.4); }
 .server-button img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; pointer-events: none; }
 .server-glow { position: absolute; inset: 24% 15%; z-index: -1; background: rgba(34, 211, 238, .22); filter: blur(30px); border-radius: 50%; animation: glowPulse 2.3s infinite; }
 
@@ -847,6 +848,8 @@ button { color: inherit; }
   pointer-events: none;
   text-shadow: 0 0 12px var(--cyan);
   animation: floatNumber .9s ease-out forwards;
+  contain: layout paint;
+  will-change: transform, opacity;
 }
 
 .particle {
@@ -858,6 +861,8 @@ button { color: inherit; }
   pointer-events: none;
   box-shadow: 0 0 8px currentColor;
   animation: particleFly .7s ease-out forwards;
+  contain: strict;
+  will-change: transform, opacity;
 }
 
 .toast-container {
@@ -1037,7 +1042,6 @@ button { color: inherit; }
 .error-page a { color: var(--cyan); }
 
 @keyframes statusPulse { 50% { opacity: .5; box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); } }
-@keyframes serverClick { 40% { transform: scale(.91) translateY(7px); } 75% { transform: scale(1.04) translateY(-3px); } }
 @keyframes glowPulse { 50% { opacity: .55; transform: scale(1.15); } }
 @keyframes ringPulse { 0% { opacity: 0; transform: rotateX(68deg) scale(.65); } 50% { opacity: .6; } 100% { opacity: 0; transform: rotateX(68deg) scale(1.15); } }
 @keyframes floatNumber { to { opacity: 0; transform: translate(-20px, -85px) scale(1.25); } }

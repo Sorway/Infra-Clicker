@@ -10,8 +10,13 @@ export class GameUI {
     this.rpsHistory = Array(20).fill(0);
     this.lastTelemetryUpdate = 0;
     this.lastBuildingsUpdate = 0;
+    this.lastSecondaryUpdate = 0;
     this.lastCompletedAt = Number(state.completedAt) || 0;
     this.renderCache = new Map();
+    this.styleCache = new Map();
+    this.buildingElements = new Map();
+    this.recommendedBuilding = null;
+    this.serverAnimation = null;
     this.performanceMode = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
       || (navigator.deviceMemory && navigator.deviceMemory <= 4);
@@ -25,6 +30,14 @@ export class GameUI {
     this.renderCache.set(element, value);
   }
 
+  setStyle(element, property, value) {
+    if (!element) return;
+    const key = `${property}:${value}`;
+    if (this.styleCache.get(element) === key) return;
+    element.style.setProperty(property, value);
+    this.styleCache.set(element, key);
+  }
+
   cacheElements() {
     this.el = {};
     [
@@ -32,12 +45,22 @@ export class GameUI {
       'click-power-label', 'cpu-label', 'ram-label', 'bandwidth-label', 'infra-level',
       'infra-title', 'level-progress-label', 'achievement-count', 'shop-production',
       'cert-points', 'prestige-gain', 'save-status', 'upgrade-badge', 'combo-label',
-      'combo-hint', 'overclock-status', 'shop-owned', 'missions-badge'
+      'combo-hint', 'overclock-status', 'shop-owned', 'missions-badge', 'achievement-total',
+      'upgrade-filters', 'building-list', 'upgrade-grid', 'certification-grid',
+      'missions-grid', 'tomorrow-missions-list', 'tomorrow-missions-date',
+      'achievement-grid', 'achievement-preview', 'level-progress', 'prestige-points-preview',
+      'prestige-preview-label', 'prestige-button', 'header-prestige-button',
+      'header-prestige-gain', 'header-capacity-label', 'header-saturation',
+      'header-capacity-bar', 'prestige-capacity', 'combo-bar', 'combo-meter',
+      'overclock-button', 'overclock-ring', 'shop-guidance', 'cpu-bar', 'ram-bar',
+      'bandwidth-bar', 'rps-sparkline', 'server-button', 'toast-container',
+      'event-banner', 'event-title', 'event-description', 'event-effect', 'event-timer-bar'
     ].forEach(id => { this.el[id] = document.getElementById(id); });
+    this.el.headerCapacity = document.querySelector('.header-capacity');
   }
 
   renderStatic() {
-    document.querySelector('#achievement-total').textContent = ACHIEVEMENTS.length;
+    this.setText(this.el['achievement-total'], String(ACHIEVEMENTS.length));
     this.renderUpgradeFilters();
     this.renderBuildings();
     this.renderUpgrades();
@@ -47,13 +70,13 @@ export class GameUI {
 
   renderUpgradeFilters() {
     const categories = ['Tous', ...new Set(UPGRADES.map(upgrade => upgrade.category))];
-    document.querySelector('#upgrade-filters').innerHTML = categories.map(category => (
+    this.el['upgrade-filters'].innerHTML = categories.map(category => (
       `<button class="filter-button ${category === this.activeUpgradeCategory ? 'active' : ''}" data-category="${category}">${category}</button>`
     )).join('');
   }
 
   renderBuildings() {
-    const container = document.querySelector('#building-list');
+    const container = this.el['building-list'];
     container.innerHTML = BUILDINGS.map((building, index) => `
       <button class="building-card" data-building="${building.id}" style="--delay:${index * 35}ms">
         <span class="building-icon">${building.icon}</span>
@@ -71,11 +94,21 @@ export class GameUI {
         <span class="building-affordability"><i data-affordability="${building.id}"></i></span>
       </button>
     `).join('');
+    this.buildingElements = new Map(BUILDINGS.map(building => {
+      const card = container.querySelector(`[data-building="${building.id}"]`);
+      return [building.id, {
+        card,
+        owned: card.querySelector(`[data-owned="${building.id}"]`),
+        price: card.querySelector(`[data-price="${building.id}"]`),
+        totalOutput: card.querySelector(`[data-total-output="${building.id}"]`),
+        affordability: card.querySelector(`[data-affordability="${building.id}"]`)
+      }];
+    }));
   }
 
   renderUpgrades() {
     const filtered = UPGRADES.filter(upgrade => this.activeUpgradeCategory === 'Tous' || upgrade.category === this.activeUpgradeCategory);
-    document.querySelector('#upgrade-grid').innerHTML = filtered.map(upgrade => {
+    this.el['upgrade-grid'].innerHTML = filtered.map(upgrade => {
       const owned = this.state.upgrades.includes(upgrade.id);
       const locked = upgrade.requires && !this.state.upgrades.includes(upgrade.requires);
       const requirement = locked ? UPGRADES.find(item => item.id === upgrade.requires)?.name : '';
@@ -89,7 +122,7 @@ export class GameUI {
   }
 
   renderCertifications() {
-    document.querySelector('#certification-grid').innerHTML = CERTIFICATIONS.map(certification => {
+    this.el['certification-grid'].innerHTML = CERTIFICATIONS.map(certification => {
       const owned = this.state.certifications.includes(certification.id);
       return `
         <button class="cert-card ${owned ? 'owned' : ''}" data-certification="${certification.id}">
@@ -102,14 +135,14 @@ export class GameUI {
   }
 
   renderMissions(manager) {
-    if (!manager || !document.querySelector('#missions-grid')) return;
+    if (!manager || !this.el['missions-grid']) return;
     manager.ensureToday();
     const missions = this.state.dailyMissions.missions;
     const ready = missions.filter(mission => !mission.claimed && manager.progress(mission) >= mission.target).length;
     const remaining = missions.filter(mission => !mission.claimed).length;
     this.el['missions-badge'].textContent = ready > 0 ? ready : remaining;
     this.el['missions-badge'].classList.toggle('complete', remaining === 0);
-    document.querySelector('#missions-grid').innerHTML = missions.map(mission => {
+    this.el['missions-grid'].innerHTML = missions.map(mission => {
       const progress = Math.min(mission.target, manager.progress(mission));
       const complete = progress >= mission.target;
       const reward = mission.reward.certificationPoints
@@ -125,10 +158,10 @@ export class GameUI {
       `;
     }).join('');
     const tomorrow = this.state.dailyMissions.next;
-    const tomorrowList = document.querySelector('#tomorrow-missions-list');
+    const tomorrowList = this.el['tomorrow-missions-list'];
     if (tomorrow && tomorrowList) {
       const date = new Date(`${tomorrow.date}T12:00:00`);
-      document.querySelector('#tomorrow-missions-date').textContent = date.toLocaleDateString('fr-FR', {
+      this.el['tomorrow-missions-date'].textContent = date.toLocaleDateString('fr-FR', {
         weekday: 'long',
         day: 'numeric',
         month: 'long'
@@ -158,9 +191,9 @@ export class GameUI {
         </article>
       `;
     }).join('');
-    document.querySelector('#achievement-grid').innerHTML = html;
+    this.el['achievement-grid'].innerHTML = html;
     const recent = ACHIEVEMENTS.filter(achievement => this.state.achievements.includes(achievement.id)).slice(-3).reverse();
-    document.querySelector('#achievement-preview').innerHTML = recent.length
+    this.el['achievement-preview'].innerHTML = recent.length
       ? recent.map(achievement => `<div class="mini-achievement"><span>◆</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div></div>`).join('')
       : '<p class="empty-state">Traitez votre première requête pour commencer.</p>';
   }
@@ -190,9 +223,25 @@ export class GameUI {
     this.setText(this.el['achievement-count'], String(this.state.achievements.length));
     this.updateActiveGameplay();
 
+    const currentTime = performance.now();
+    if (currentTime - this.lastSecondaryUpdate > (this.performanceMode ? 1000 : 500)) {
+      this.updateSecondary();
+      this.lastSecondaryUpdate = currentTime;
+    }
+    if (currentTime - this.lastBuildingsUpdate > (this.performanceMode ? 1500 : 750)) {
+      this.updateBuildings();
+      this.lastBuildingsUpdate = currentTime;
+    }
+    if (currentTime - this.lastTelemetryUpdate > (this.performanceMode ? 2500 : 1500)) {
+      this.updateTelemetry(production);
+      this.lastTelemetryUpdate = currentTime;
+    }
+  }
+
+  updateSecondary() {
     const availableUpgrades = UPGRADES.filter(upgrade => this.economy.canBuyUpgrade(upgrade)).length;
     const ownedUpgrades = this.state.upgrades.length;
-    this.el['upgrade-badge'].textContent = `${ownedUpgrades}/${UPGRADES.length}`;
+    this.setText(this.el['upgrade-badge'], `${ownedUpgrades}/${UPGRADES.length}`);
     this.el['upgrade-badge'].classList.add('visible');
     this.el['upgrade-badge'].classList.toggle('complete', ownedUpgrades >= UPGRADES.length);
     this.el['upgrade-badge'].title = availableUpgrades > 0
@@ -202,95 +251,86 @@ export class GameUI {
         : 'Aucune amélioration disponible actuellement';
 
     const level = this.economy.getInfraLevel();
-    this.el['infra-level'].textContent = level.level;
-    this.el['infra-title'].textContent = level.title;
-    this.el['level-progress-label'].textContent = level.next
+    this.setText(this.el['infra-level'], String(level.level));
+    this.setText(this.el['infra-title'], level.title);
+    this.setText(this.el['level-progress-label'], level.next
       ? `${formatNumber(this.state.lifetimeRequests)} / ${formatNumber(level.next)}`
-      : 'MAX';
-    document.querySelector('#level-progress').style.width = `${clamp(level.progress * 100, 0, 100)}%`;
+      : 'MAX');
+    this.setStyle(this.el['level-progress'], 'width', `${clamp(level.progress * 100, 0, 100)}%`);
 
     const prestigeGain = this.economy.prestigeGain();
     const allCertificationsOwned = this.state.certifications.length >= CERTIFICATIONS.length;
     const canPrestige = prestigeGain >= 1;
-    const prestigePreview = document.querySelector('#prestige-points-preview');
-    const prestigePreviewLabel = document.querySelector('#prestige-preview-label');
+    const prestigePreview = this.el['prestige-points-preview'];
+    const prestigePreviewLabel = this.el['prestige-preview-label'];
     if (prestigePreview) {
-      prestigePreview.textContent = allCertificationsOwned
+      this.setText(prestigePreview, allCertificationsOwned
         ? this.state.prestigeCount
-        : `+${prestigeGain}`;
+        : `+${prestigeGain}`);
     }
     if (prestigePreviewLabel) {
-      prestigePreviewLabel.textContent = allCertificationsOwned
+      this.setText(prestigePreviewLabel, allCertificationsOwned
         ? 'PRESTIGES EFFECTUÉS'
-        : 'GAIN DU PROCHAIN PRESTIGE';
+        : 'GAIN DU PROCHAIN PRESTIGE');
     }
-    const prestigeButton = document.querySelector('#prestige-button');
+    const prestigeButton = this.el['prestige-button'];
     prestigeButton.disabled = !canPrestige;
-    prestigeButton.textContent = allCertificationsOwned ? 'RECONSTRUIRE LA CAPACITÉ' : 'RECONSTRUIRE ET PRESTIGER';
-    const headerPrestigeButton = document.querySelector('#header-prestige-button');
+    this.setText(prestigeButton, allCertificationsOwned ? 'RECONSTRUIRE LA CAPACITÉ' : 'RECONSTRUIRE ET PRESTIGER');
+    const headerPrestigeButton = this.el['header-prestige-button'];
     headerPrestigeButton.disabled = !canPrestige;
-    document.querySelector('#header-prestige-gain').textContent = allCertificationsOwned
-      ? 'MAX'
-      : `+${prestigeGain}`;
-    this.el['prestige-gain'].textContent = allCertificationsOwned
+    this.setText(this.el['header-prestige-gain'], allCertificationsOwned ? 'MAX' : `+${prestigeGain}`);
+    this.setText(this.el['prestige-gain'], allCertificationsOwned
       ? canPrestige
         ? 'Progression maximale atteinte. Une reconstruction restaure la capacité sans ajouter de points.'
         : 'Progression maximale atteinte. La reconstruction sera disponible à 1 million de requêtes.'
       : prestigeGain > 0
         ? `Gain actuel : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''}. Prochain palier à ${formatNumber(this.economy.nextPrestigeThreshold())}.`
-        : 'Prestige disponible à partir de 1 million de requêtes sur ce cycle.';
+        : 'Prestige disponible à partir de 1 million de requêtes sur ce cycle.');
     const capacity = this.economy.getCapacityStatus();
     const capacityPercent = Math.round(capacity.efficiency * 100);
     const displayPercent = Math.round(capacity.percent);
-    document.querySelector('#header-capacity-label').textContent = capacity.label;
-    document.querySelector('#header-saturation').textContent = `${displayPercent}%`;
-    document.querySelector('#header-capacity-bar').style.width = `${displayPercent}%`;
-    document.querySelector('.header-capacity').classList.toggle('saturated', capacity.saturated);
-    document.querySelector('.header-capacity').title = capacity.saturated
+    this.setText(this.el['header-capacity-label'], capacity.label);
+    this.setText(this.el['header-saturation'], `${displayPercent}%`);
+    this.setStyle(this.el['header-capacity-bar'], 'width', `${displayPercent}%`);
+    this.el.headerCapacity.classList.toggle('saturated', capacity.saturated);
+    this.el.headerCapacity.title = capacity.saturated
       ? `Saturation ${displayPercent}% · efficacité ${capacityPercent}%`
       : `Charge de capacité ${displayPercent}% · saturation à ${formatNumber(100e6)} requêtes`;
-    document.querySelector('#prestige-capacity').textContent = capacity.efficiency >= 0.999
+    this.setText(this.el['prestige-capacity'], capacity.efficiency >= 0.999
       ? 'Capacité disponible : 100 %. La saturation commence à 100 millions de requêtes.'
-      : `Capacité saturée : efficacité ${capacityPercent} %. Un prestige restaure 100 %.`;
-
-    if (performance.now() - this.lastBuildingsUpdate > (this.performanceMode ? 1000 : 500)) {
-      this.updateBuildings();
-      this.lastBuildingsUpdate = performance.now();
-    }
-    if (performance.now() - this.lastTelemetryUpdate > (this.performanceMode ? 2000 : 1000)) {
-      this.updateTelemetry(production);
-      this.lastTelemetryUpdate = performance.now();
-    }
+      : `Capacité saturée : efficacité ${capacityPercent} %. Un prestige restaure 100 %.`);
   }
 
   updateActiveGameplay() {
     const combo = this.state.combo || 0;
     const comboMultiplier = Math.min(3, 1 + Math.floor(Math.max(0, combo - 1) / 10) * 0.25);
     const comboProgress = combo > 0 ? ((combo - 1) % 10 + 1) * 10 : 0;
-    this.el['combo-label'].textContent = `x${comboMultiplier.toFixed(comboMultiplier % 1 ? 2 : 0)}`;
-    this.el['combo-hint'].textContent = combo > 1 ? `${combo} requêtes enchaînées` : 'Enchaînez les requêtes';
-    document.querySelector('#combo-bar').style.width = `${comboProgress}%`;
-    document.querySelector('#combo-meter').classList.toggle('active', combo > 1);
+    this.setText(this.el['combo-label'], `x${comboMultiplier.toFixed(comboMultiplier % 1 ? 2 : 0)}`);
+    this.setText(this.el['combo-hint'], combo > 1 ? `${combo} requêtes enchaînées` : 'Enchaînez les requêtes');
+    this.setStyle(this.el['combo-bar'], 'width', `${comboProgress}%`);
+    this.el['combo-meter'].classList.toggle('active', combo > 1);
 
-    const button = document.querySelector('#overclock-button');
+    const button = this.el['overclock-button'];
     const activeRemaining = Math.max(0, this.state.overclockEndsAt - Date.now());
     const isActive = activeRemaining > 0;
     const charge = clamp(this.state.overclockCharge || 0, 0, 100);
     button.disabled = charge < 100 || isActive;
     button.classList.toggle('active', isActive);
-    document.querySelector('#overclock-ring').style.setProperty('--charge', `${isActive ? 100 : charge * 3.6}deg`);
-    this.el['overclock-status'].textContent = isActive
+    this.setStyle(this.el['overclock-ring'], '--charge', `${isActive ? 100 : charge * 3.6}deg`);
+    this.setText(this.el['overclock-status'], isActive
       ? `Production x2 · ${Math.ceil(activeRemaining / 1000)}s`
-      : charge >= 100 ? 'Prête' : `Charge ${Math.floor(charge)}%`;
+      : charge >= 100 ? 'Prête' : `Charge ${Math.floor(charge)}%`);
   }
 
   updateBuildings() {
     const totalOwned = Object.values(this.state.buildings).reduce((sum, count) => sum + count, 0);
-    this.el['shop-owned'].textContent = formatNumber(totalOwned, 0);
+    this.setText(this.el['shop-owned'], formatNumber(totalOwned, 0));
     const visibleBuildings = [];
+    const globalMultiplier = this.economy.getGlobalMultiplier();
 
     BUILDINGS.forEach(building => {
-      const card = document.querySelector(`[data-building="${building.id}"]`);
+      const elements = this.buildingElements.get(building.id);
+      const { card } = elements;
       const purchase = this.economy.getBuildingCost(building, this.buyAmount);
       const isVisible = this.state.lifetimeRequests >= building.baseCost * 0.25 || building.id === 'bash';
       const affordable = purchase.amount > 0 && this.state.requests >= purchase.cost;
@@ -298,35 +338,43 @@ export class GameUI {
       card.classList.toggle('affordable', affordable);
       card.classList.toggle('revealed', isVisible);
       card.setAttribute('aria-disabled', String(!affordable));
-      card.querySelector(`[data-owned="${building.id}"]`).textContent = this.state.buildings[building.id];
-      card.querySelector(`[data-price="${building.id}"]`).textContent = purchase.amount
+      this.setText(elements.owned, String(this.state.buildings[building.id]));
+      this.setText(elements.price, purchase.amount
         ? `${formatNumber(purchase.cost)} ⚡`
-        : '—';
+        : '—');
       const ownedProduction = (this.state.buildings[building.id] || 0)
         * building.baseProduction
         * this.economy.getBuildingMultiplier(building.id)
-        * this.economy.getGlobalMultiplier();
-      card.querySelector(`[data-total-output="${building.id}"]`).textContent = `${formatNumber(ownedProduction)} total`;
+        * globalMultiplier;
+      this.setText(elements.totalOutput, `${formatNumber(ownedProduction)} total`);
       const progress = purchase.cost > 0 ? clamp(this.state.requests / purchase.cost * 100, 0, 100) : 0;
-      card.querySelector(`[data-affordability="${building.id}"]`).style.width = `${progress}%`;
+      this.setStyle(elements.affordability, 'width', `${progress}%`);
       card.title = affordable
         ? `Acheter ${purchase.amount} × ${building.name}`
         : `Il manque ${formatNumber(Math.max(0, purchase.cost - this.state.requests))} requêtes`;
       if (isVisible) visibleBuildings.push({ building, card, affordable, purchase });
     });
 
-    document.querySelectorAll('.building-card.recommended').forEach(card => card.classList.remove('recommended'));
     const recommended = visibleBuildings.filter(item => item.affordable).at(-1);
-    if (recommended) recommended.card.classList.add('recommended');
+    if (this.recommendedBuilding !== recommended?.card) {
+      this.recommendedBuilding?.classList.remove('recommended');
+      recommended?.card.classList.add('recommended');
+      this.recommendedBuilding = recommended?.card || null;
+    }
 
     const next = visibleBuildings.find(item => !item.affordable && item.purchase.amount > 0);
-    const guidance = document.querySelector('#shop-guidance');
+    const guidance = this.el['shop-guidance'];
+    let guidanceHtml;
     if (recommended) {
-      guidance.innerHTML = `<span>Conseillé</span> ${recommended.building.name} est disponible`;
+      guidanceHtml = `<span>Conseillé</span> ${recommended.building.name} est disponible`;
     } else if (next) {
-      guidance.innerHTML = `<span>Prochain</span> ${next.building.name} dans ${formatNumber(next.purchase.cost - this.state.requests)} requêtes`;
+      guidanceHtml = `<span>Prochain</span> ${next.building.name} dans ${formatNumber(next.purchase.cost - this.state.requests)} requêtes`;
     } else {
-      guidance.textContent = 'Toute l’infrastructure visible est disponible.';
+      guidanceHtml = 'Toute l’infrastructure visible est disponible.';
+    }
+    if (this.renderCache.get(guidance) !== guidanceHtml) {
+      guidance.innerHTML = guidanceHtml;
+      this.renderCache.set(guidance, guidanceHtml);
     }
   }
 
@@ -335,12 +383,12 @@ export class GameUI {
     const ramMb = 128 + Object.values(this.state.buildings).reduce((sum, value) => sum + value, 0) * 16;
     const ramPercent = clamp(Math.log10(ramMb) * 14, 6, 94);
     const bandwidth = production * 8;
-    this.el['cpu-label'].textContent = `${Math.round(cpu)}%`;
-    this.el['ram-label'].textContent = ramMb >= 1024 ? `${formatNumber(ramMb / 1024)} GB` : `${Math.round(ramMb)} MB`;
-    this.el['bandwidth-label'].textContent = `${formatNumber(bandwidth)}b/s`;
-    document.querySelector('#cpu-bar').style.width = `${cpu}%`;
-    document.querySelector('#ram-bar').style.width = `${ramPercent}%`;
-    document.querySelector('#bandwidth-bar').style.width = `${clamp(Math.log10(bandwidth + 1) * 12, 1, 95)}%`;
+    this.setText(this.el['cpu-label'], `${Math.round(cpu)}%`);
+    this.setText(this.el['ram-label'], ramMb >= 1024 ? `${formatNumber(ramMb / 1024)} GB` : `${Math.round(ramMb)} MB`);
+    this.setText(this.el['bandwidth-label'], `${formatNumber(bandwidth)}b/s`);
+    this.setStyle(this.el['cpu-bar'], 'width', `${cpu}%`);
+    this.setStyle(this.el['ram-bar'], 'width', `${ramPercent}%`);
+    this.setStyle(this.el['bandwidth-bar'], 'width', `${clamp(Math.log10(bandwidth + 1) * 12, 1, 95)}%`);
     this.rpsHistory.push(production);
     this.rpsHistory.shift();
     const max = Math.max(...this.rpsHistory, 1);
@@ -350,7 +398,7 @@ export class GameUI {
       return `${x.toFixed(2)},${y.toFixed(2)}`;
     }).join(' ');
     const lastPoint = points.split(' ').at(-1).split(',');
-    document.querySelector('#rps-sparkline').innerHTML = `
+    this.el['rps-sparkline'].innerHTML = `
       <svg viewBox="0 0 100 36" preserveAspectRatio="none">
         <defs>
           <linearGradient id="spark-area" x1="0" y1="0" x2="0" y2="1">
@@ -366,10 +414,16 @@ export class GameUI {
   }
 
   clickEffect(x, y, amount, options = {}) {
-    const server = document.querySelector('#server-button');
-    server.classList.remove('clicked');
-    void server.offsetWidth;
-    server.classList.add('clicked');
+    const server = this.el['server-button'];
+    this.serverAnimation?.cancel();
+    if (server.animate) {
+      this.serverAnimation = server.animate([
+        { transform: 'scale(1) translateY(0)' },
+        { transform: 'scale(.91) translateY(7px)', offset: .4 },
+        { transform: 'scale(1.04) translateY(-3px)', offset: .75 },
+        { transform: 'scale(1) translateY(0)' }
+      ], { duration: 320, easing: 'cubic-bezier(.2, .9, .3, 1.4)' });
+    }
 
     const floating = document.createElement('span');
     floating.className = `floating-number ${options.critical ? 'critical' : ''}`;
@@ -382,7 +436,8 @@ export class GameUI {
     const colors = options.critical
       ? ['#fff0bd', '#fb7185', '#fbbf24']
       : ['var(--cyan)', 'var(--green)', 'var(--purple)'];
-    const particleCount = this.performanceMode ? (options.critical ? 4 : 0) : (options.critical ? 14 : 7);
+    const particleCount = this.performanceMode ? (options.critical ? 3 : 0) : (options.critical ? 8 : 3);
+    const fragment = document.createDocumentFragment();
     for (let index = 0; index < particleCount; index += 1) {
       const particle = document.createElement('i');
       particle.className = 'particle';
@@ -391,9 +446,10 @@ export class GameUI {
       particle.style.setProperty('--tx', `${randomBetween(-75, 75)}px`);
       particle.style.setProperty('--ty', `${randomBetween(-95, -25)}px`);
       particle.style.background = colors[index % colors.length];
-      document.body.appendChild(particle);
+      fragment.appendChild(particle);
       setTimeout(() => particle.remove(), 700);
     }
+    document.body.appendChild(fragment);
   }
 
   celebrateMaxProgress() {
@@ -445,7 +501,7 @@ export class GameUI {
   }
 
   toast(title, message, type = 'info') {
-    const container = document.querySelector('#toast-container');
+    const container = this.el['toast-container'];
     const visibleToasts = container.querySelectorAll('.toast');
     if (visibleToasts.length >= 3) {
       visibleToasts[0].remove();
@@ -460,11 +516,11 @@ export class GameUI {
   }
 
   showEvent(event) {
-    const banner = document.querySelector('#event-banner');
+    const banner = this.el['event-banner'];
     banner.classList.remove('hidden', 'danger', 'bonus');
     banner.classList.add(event.type);
-    document.querySelector('#event-title').textContent = event.title;
-    document.querySelector('#event-description').textContent = event.description;
+    this.setText(this.el['event-title'], event.title);
+    this.setText(this.el['event-description'], event.description);
     const effects = [];
     if (event.multiplier > 1) effects.push(`Production x${event.multiplier}`);
     if (event.multiplier < 1) effects.push(`Production ${Math.round((event.multiplier - 1) * 100)}%`);
@@ -472,18 +528,18 @@ export class GameUI {
     if (event.clickMultiplier < 1) effects.push(`Clic ${Math.round((event.clickMultiplier - 1) * 100)}%`);
     if (event.instantSeconds) effects.push(`+${Math.round(event.instantSeconds / 60)} min`);
     if (event.overclockCharge) effects.push(`+${event.overclockCharge}% surcharge`);
-    document.querySelector('#event-effect').textContent = effects.join(' · ');
+    this.setText(this.el['event-effect'], effects.join(' · '));
     this.toast(event.title, event.description, event.type);
   }
 
   updateEvent(event) {
     const remaining = Math.max(0, event.endsAt - Date.now());
     const percent = remaining / (event.duration * 1000) * 100;
-    document.querySelector('#event-timer-bar').style.width = `${percent}%`;
+    this.setStyle(this.el['event-timer-bar'], 'width', `${percent}%`);
   }
 
   hideEvent(event) {
-    document.querySelector('#event-banner').classList.add('hidden');
+    this.el['event-banner'].classList.add('hidden');
     if (!this.state.commandsUsed.includes(`event:${event.id}`)) this.state.commandsUsed.push(`event:${event.id}`);
     this.toast('Incident résolu', `${event.title} est terminé.`, 'info');
   }
