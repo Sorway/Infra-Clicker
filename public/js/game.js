@@ -56,12 +56,12 @@ class InfraClicker {
       delete this.state.loadWarning;
     }
     this.loop(performance.now());
-    this.autosaveTimer = setInterval(() => this.saveManager.save(this.state), 10000);
+    this.autosaveTimer = setInterval(() => this.saveManager.save(this.state), 30000);
     this.serverSyncTimer = setInterval(() => {
       this.server.load(this.state).then(() => this.ui.update()).catch(() => {});
-    }, 1000);
+    }, 10000);
     this.updateOnlinePlayers();
-    this.presenceTimer = setInterval(() => this.updateOnlinePlayers(), 10000);
+    this.presenceTimer = setInterval(() => this.updateOnlinePlayers(), 20000);
     window.addEventListener('beforeunload', () => this.saveManager.save(this.state));
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.saveManager.save(this.state);
@@ -130,10 +130,6 @@ class InfraClicker {
 
   bindGameActions() {
     const clickHandler = async event => {
-      if (this.economy.isPrestigeRequired()) {
-        this.openPrestigeConfirmation();
-        return;
-      }
       if (!this.antiCheat.canProcessClick()) return;
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX || rect.left + rect.width / 2;
@@ -193,7 +189,6 @@ class InfraClicker {
     }));
 
     document.querySelector('#prestige-button').addEventListener('click', () => this.openPrestigeConfirmation());
-    document.querySelector('#prestige-lock-button').addEventListener('click', () => this.openPrestigeConfirmation());
     document.querySelector('#prestige-confirm-button').addEventListener('click', () => this.prestige());
     document.querySelector('#overclock-button').addEventListener('click', async () => {
       if (this.state.overclockCharge < 100 || this.state.overclockEndsAt > Date.now()) return;
@@ -283,10 +278,13 @@ class InfraClicker {
       this.ui.toast('Prestige terminé', 'Toutes les certifications permanentes sont déjà acquises.', 'info');
       return;
     }
-    if (!this.economy.isPrestigeRequired()) {
-      this.ui.toast('Prestige indisponible', 'Atteignez 1 million de requêtes pour terminer ce cycle.', 'info');
+    if (this.economy.prestigeGain() < 1) {
+      this.ui.toast('Prestige indisponible', 'Atteignez 1 million de requêtes sur ce cycle.', 'info');
       return;
     }
+    const gain = this.economy.prestigeGain();
+    document.querySelector('#prestige-confirm-gain').textContent =
+      `+${gain} point${gain > 1 ? 's' : ''} de certification`;
     const modal = document.querySelector('#prestige-confirm-modal');
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
@@ -415,7 +413,8 @@ class InfraClicker {
     if (gain < 1) return;
     this.closeModal(document.querySelector('#prestige-confirm-modal'));
     try {
-      await this.server.action(this.state, 'prestige');
+      const result = await this.server.action(this.state, 'prestige');
+      this.lastPrestigeGain = result.gain;
     } catch (error) {
       this.ui.toast('Prestige refusé', error.message, 'danger');
       return;
@@ -423,7 +422,7 @@ class InfraClicker {
     this.ui.refreshCollections();
     this.ui.update();
     this.audio.prestige();
-    this.ui.toast('Infrastructure reconstruite', `${gain} point(s) de certification obtenus.`, 'achievement');
+    this.ui.toast('Infrastructure reconstruite', `${this.lastPrestigeGain || gain} point(s) de certification obtenus.`, 'achievement');
     this.achievements.check();
     this.saveManager.save(this.state);
   }

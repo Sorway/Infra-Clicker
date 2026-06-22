@@ -69,7 +69,6 @@ export class Economy {
   }
 
   getProduction() {
-    if (this.isPrestigeRequired()) return 0;
     const eventMultiplier = this.state.activeEvent?.multiplier || 1;
     const temporaryMultiplier = this.state.temporaryBonus?.expiresAt > Date.now()
       ? this.state.temporaryBonus.multiplier
@@ -100,16 +99,17 @@ export class Economy {
   }
 
   prestigeGain() {
-    return this.state.lifetimeRequests >= this.getPrestigeTarget() ? 1 : 0;
+    if (this.state.lifetimeRequests < this.getPrestigeTarget()) return 0;
+    return Math.floor(Math.log10(this.state.lifetimeRequests / this.getPrestigeTarget())) + 1;
+  }
+
+  nextPrestigeThreshold() {
+    const gain = this.prestigeGain();
+    return this.getPrestigeTarget() * Math.pow(10, Math.max(0, gain));
   }
 
   getPrestigeTarget() {
     return 1e6;
-  }
-
-  isPrestigeRequired() {
-    return this.state.lifetimeRequests >= this.getPrestigeTarget()
-      && this.state.certifications.length < CERTIFICATIONS.length;
   }
 
   getInfraLevel() {

@@ -17,9 +17,9 @@ router.use((req, res, next) => {
 
 router.get('/state', async (req, res, next) => {
   try {
-    const payload = await transactSession(req, res, async (state, id, connection) => ({
+    const payload = await transactSession(req, res, (state, id, session) => ({
       state: publicState(state),
-      profile: await getProfile(connection, id)
+      profile: getProfile(session)
     }));
     res.json(payload);
   } catch (error) {
@@ -29,9 +29,9 @@ router.get('/state', async (req, res, next) => {
 
 router.post('/profile', async (req, res, next) => {
   try {
-    const payload = await transactSession(req, res, async (state, id, connection) => ({
+    const payload = await transactSession(req, res, async (state, id, session) => ({
       state: publicState(state),
-      profile: await setProfile(connection, id, req.body?.username)
+      profile: await setProfile(session, req.body?.username)
     }));
     res.json(payload);
   } catch (error) {

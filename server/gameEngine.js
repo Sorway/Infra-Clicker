@@ -4,6 +4,11 @@ const MAX_CLICKS_PER_SECOND = 25;
 const MAX_OFFLINE_SECONDS = 8 * 60 * 60;
 const PRESTIGE_TARGET = 1e6;
 
+function prestigeGain(requests) {
+  if (requests < PRESTIGE_TARGET) return 0;
+  return Math.floor(Math.log10(requests / PRESTIGE_TARGET)) + 1;
+}
+
 function createState() {
   const now = Date.now();
   return {
@@ -69,16 +74,10 @@ function clickPower(state) {
 function settle(state) {
   const now = Date.now();
   const elapsed = Math.min(MAX_OFFLINE_SECONDS, Math.max(0, (now - state.lastTick) / 1000));
-  if (state.lifetimeRequests < PRESTIGE_TARGET || state.certifications.length >= CERTIFICATIONS.length) {
-    const gain = production(state) * elapsed;
-    state.requests += gain;
-    state.lifetimeRequests += gain;
-    state.allTimeRequests += gain;
-  }
-  if (state.certifications.length < CERTIFICATIONS.length && state.lifetimeRequests >= PRESTIGE_TARGET) {
-    state.lifetimeRequests = PRESTIGE_TARGET;
-    state.requests = Math.min(state.requests, PRESTIGE_TARGET);
-  }
+  const gain = production(state) * elapsed;
+  state.requests += gain;
+  state.lifetimeRequests += gain;
+  state.allTimeRequests += gain;
   if (now - state.lastManualClick > 1200) state.combo = 0;
   state.lastTick = now;
   state.lastSaved = now;
@@ -171,7 +170,8 @@ function applyAction(state, action = {}) {
   }
 
   if (action.type === 'prestige') {
-    if (state.lifetimeRequests < PRESTIGE_TARGET) violation(state, 'Prestige indisponible', 409);
+    const gain = prestigeGain(state.lifetimeRequests);
+    if (gain < 1) violation(state, 'Prestige indisponible', 409);
     if (state.certifications.length >= CERTIFICATIONS.length) violation(state, 'Toutes les certifications sont acquises', 409);
     const originalStartedAt = state.startedAt;
     const persistent = {
@@ -180,14 +180,14 @@ function applyAction(state, action = {}) {
       criticalClicks: state.criticalClicks,
       bestCombo: state.bestCombo,
       certifications: [...state.certifications],
-      certificationPoints: state.certificationPoints + 1,
+      certificationPoints: state.certificationPoints + gain,
       prestigeCount: state.prestigeCount + 1,
       totalBuildingsPurchased: state.totalBuildingsPurchased,
       startedAt: originalStartedAt,
       antiCheatViolations: state.antiCheatViolations
     };
     Object.assign(state, createState(), persistent);
-    return { gain: 1 };
+    return { gain };
   }
 
   if (action.type === 'overclock') {
@@ -206,4 +206,4 @@ function publicState(state) {
   return { ...safeState, production: production(state) };
 }
 
-module.exports = { applyAction, createState, publicState };
+module.exports = { applyAction, createState, prestigeGain, publicState };

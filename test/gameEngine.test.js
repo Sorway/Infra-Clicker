@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { applyAction, createState, publicState } = require('../server/gameEngine');
+const {
+  applyAction,
+  createState,
+  prestigeGain,
+  publicState
+} = require('../server/gameEngine');
 
 test('ignore les valeurs économiques envoyées avec une action', () => {
   const state = createState();
@@ -52,4 +57,37 @@ test('conserve le temps de jeu cumulé après un prestige', () => {
   assert.equal(state.startedAt, startedAt);
   assert.equal(state.prestigeCount, 1);
   assert.equal(state.lifetimeRequests, 0);
+});
+
+test('ne bloque plus la progression après un million de requêtes', () => {
+  const state = createState();
+  state.lifetimeRequests = 1e6;
+  state.requests = 1e6;
+  state.buildings.bash = 10;
+  state.lastTick = Date.now() - 1000;
+
+  const before = state.lifetimeRequests;
+  publicState(state);
+
+  assert.ok(state.lifetimeRequests > before);
+  assert.ok(state.requests > 1e6);
+});
+
+test('augmente progressivement le gain de prestige', () => {
+  assert.equal(prestigeGain(999999), 0);
+  assert.equal(prestigeGain(1e6), 1);
+  assert.equal(prestigeGain(10e6), 2);
+  assert.equal(prestigeGain(100e6), 3);
+  assert.equal(prestigeGain(10e9), 5);
+});
+
+test('accorde le gain progressif lors du prestige', () => {
+  const state = createState();
+  state.lifetimeRequests = 100e6;
+  state.requests = 100e6;
+
+  const result = applyAction(state, { type: 'prestige' });
+
+  assert.equal(result.gain, 3);
+  assert.equal(state.certificationPoints, 3);
 });

@@ -166,7 +166,6 @@ export class GameUI {
     this.el['cert-points'].textContent = this.state.certificationPoints;
     this.el['achievement-count'].textContent = this.state.achievements.length;
     this.updateActiveGameplay();
-    this.updatePrestigeLock();
 
     const availableUpgrades = UPGRADES.filter(upgrade => this.economy.canBuyUpgrade(upgrade)).length;
     const ownedUpgrades = this.state.upgrades.length;
@@ -203,27 +202,18 @@ export class GameUI {
     }
     const prestigeButton = document.querySelector('#prestige-button');
     prestigeButton.disabled = prestigeGain < 1 || allCertificationsOwned;
-    prestigeButton.textContent = allCertificationsOwned ? 'TOUTES LES CERTIFICATIONS ACQUISES' : 'PASSER LA CERTIFICATION';
+    prestigeButton.textContent = allCertificationsOwned ? 'TOUTES LES CERTIFICATIONS ACQUISES' : 'RECONSTRUIRE ET PRESTIGER';
     this.el['prestige-gain'].textContent = allCertificationsOwned
       ? 'Progression maximale atteinte : aucun prestige supplémentaire nécessaire.'
       : prestigeGain > 0
-        ? `Gain estimé : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''} de certification.`
-        : 'Atteignez 1 million de requêtes cumulées.';
+        ? `Gain actuel : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''}. Prochain palier à ${formatNumber(this.economy.nextPrestigeThreshold())}.`
+        : 'Prestige disponible à partir de 1 million de requêtes sur ce cycle.';
 
     this.updateBuildings();
     if (performance.now() - this.lastTelemetryUpdate > 700) {
       this.updateTelemetry(production);
       this.lastTelemetryUpdate = performance.now();
     }
-  }
-
-  updatePrestigeLock() {
-    const locked = this.economy.isPrestigeRequired();
-    const banner = document.querySelector('#prestige-lock-banner');
-    banner.classList.toggle('hidden', !locked);
-    document.querySelector('#server-zone').classList.toggle('prestige-locked', locked);
-    document.querySelector('#process-button').classList.toggle('prestige-locked', locked);
-    document.querySelector('#process-button').disabled = locked;
   }
 
   updateActiveGameplay() {

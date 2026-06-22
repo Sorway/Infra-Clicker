@@ -6,7 +6,7 @@ const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const indexRouter = require('./routes/index');
 const gameApiRouter = require('./routes/gameApi');
-const { initializeDatabase } = require('./server/gameStore');
+const { closeDatabase, initializeDatabase } = require('./server/gameStore');
 const { attachClientNetwork } = require('./server/clientNetwork');
 
 const app = express();
@@ -58,9 +58,23 @@ app.use((error, req, res, next) => {
 async function start() {
   console.log(`[App] Démarrage demandé sur le port ${port}`);
   await initializeDatabase();
-  return app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`[App] Server listing on port ${port}`);
   });
+  let shuttingDown = false;
+  const shutdown = signal => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[App] ${signal} reçu — sauvegarde du cache avant arrêt`);
+    server.close(async () => {
+      await closeDatabase();
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 15000).unref();
+  };
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+  process.once('SIGINT', () => shutdown('SIGINT'));
+  return server;
 }
 
 if (require.main === module) {

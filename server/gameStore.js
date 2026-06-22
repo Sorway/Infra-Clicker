@@ -13,6 +13,9 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET est obligatoire en production');
 }
 
+const CACHE_FLUSH_MS = Math.max(2000, Number(process.env.CACHE_FLUSH_MS) || 10000);
+const CACHE_TTL_MS = Math.max(60000, Number(process.env.CACHE_TTL_MS) || 30 * 60 * 1000);
+const LEADERBOARD_CACHE_MS = Math.max(5000, Number(process.env.LEADERBOARD_CACHE_MS) || 15000);
 const cookieSecret = process.env.SESSION_SECRET || 'infra-clicker-development-secret-change-me';
 const configuredHost = process.env.DB_HOST || '127.0.0.1';
 const hostWithPort = configuredHost.match(/^([^:]+):(\d+)$/);
@@ -33,7 +36,11 @@ const pool = mariadb.createPool({
   bigIntAsNumber: true
 });
 
+const sessionCache = new Map();
+const sessionLocks = new Map();
 let initialization;
+let leaderboardCache = { expiresAt: 0, players: [] };
+let maintenanceTimer;
 
 function missingDatabaseVariables() {
   return ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME']
@@ -42,9 +49,7 @@ function missingDatabaseVariables() {
 
 async function connectAndPrepareDatabase() {
   const missing = missingDatabaseVariables();
-  if (missing.length) {
-    throw new Error(`Configuration MariaDB incomplète : ${missing.join(', ')}`);
-  }
+  if (missing.length) throw new Error(`Configuration MariaDB incomplète : ${missing.join(', ')}`);
 
   console.log(`[MariaDB] Tentative de connexion à ${databaseConfig.host}:${databaseConfig.port}`);
   const connection = await pool.getConnection();
@@ -55,18 +60,21 @@ async function connectAndPrepareDatabase() {
   } finally {
     connection.release();
   }
+
+  if (!maintenanceTimer) {
+    maintenanceTimer = setInterval(runCacheMaintenance, CACHE_FLUSH_MS);
+    maintenanceTimer.unref();
+    console.log(`[Cache] Sessions actives en mémoire — flush ${CACHE_FLUSH_MS} ms, TTL ${CACHE_TTL_MS} ms`);
+  }
 }
 
 function initializeDatabase() {
   if (!initialization) {
-    initialization = connectAndPrepareDatabase()
-      .catch(error => {
-        initialization = null;
-        console.error(
-          `[MariaDB] Échec de connexion (${error.code || error.errno || 'ERREUR'}) : ${error.message}`
-        );
-        throw error;
-      });
+    initialization = connectAndPrepareDatabase().catch(error => {
+      initialization = null;
+      console.error(`[MariaDB] Échec de connexion (${error.code || error.errno || 'ERREUR'}) : ${error.message}`);
+      throw error;
+    });
   }
   return initialization;
 }
@@ -102,14 +110,7 @@ function parseCookies(header = '') {
 
 function setSessionCookie(res, id) {
   const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-  res.append(
-    'Set-Cookie',
-    `infra_session=${signedCookie(id)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000${secure}`
-  );
-}
-
-function countryFromRequest(req) {
-  return req.clientNetwork?.countryCode || 'XX';
+  res.append('Set-Cookie', `infra_session=${signedCookie(id)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000${secure}`);
 }
 
 function normalizeUsername(value) {
@@ -127,97 +128,190 @@ function usernameKey(username) {
   return username.normalize('NFKC').toLocaleLowerCase('fr-FR');
 }
 
-async function transactSession(req, res, handler) {
-  await initializeDatabase();
-  const connection = await pool.getConnection();
+async function withSessionLock(id, callback) {
+  const previous = sessionLocks.get(id) || Promise.resolve();
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  sessionLocks.set(id, gate);
+  await previous;
+  try {
+    return await callback();
+  } finally {
+    release();
+    if (sessionLocks.get(id) === gate) sessionLocks.delete(id);
+  }
+}
 
+function profileFromRow(row = {}) {
+  return {
+    username: row.username || null,
+    countryCode: String(row.country_code || 'XX').trim().toUpperCase()
+  };
+}
+
+async function loadCachedSession(id) {
+  const cached = sessionCache.get(id);
+  if (cached) {
+    cached.lastAccess = Date.now();
+    return cached;
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    const rows = await connection.query(
+      'SELECT username, country_code FROM game_sessions WHERE id = ?',
+      [id]
+    );
+    if (!rows.length) return null;
+    const state = await loadState(connection, id);
+    if (!state) return null;
+    const entry = {
+      id,
+      state,
+      profile: profileFromRow(rows[0]),
+      countryCode: profileFromRow(rows[0]).countryCode,
+      dirty: false,
+      lastAccess: Date.now(),
+      lastSeen: Date.now()
+    };
+    sessionCache.set(id, entry);
+    return entry;
+  } finally {
+    connection.release();
+  }
+}
+
+async function createCachedSession(res) {
+  const id = sessionId();
+  const state = createState();
+  const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const cookies = parseCookies(req.headers.cookie);
-    let id = verifiedId(cookies.infra_session);
-    let state;
-
-    if (id) {
-      const rows = await connection.query(
-        'SELECT id FROM game_sessions WHERE id = ? FOR UPDATE',
-        [id]
-      );
-      if (rows.length) state = await loadState(connection, id);
-    }
-
-    if (!state) {
-      id = sessionId();
-      state = createState();
-      await createSession(connection, id, state);
-      setSessionCookie(res, id);
-    }
-
-    const detectedCountry = countryFromRequest(req);
-    await connection.query(
-      `UPDATE game_sessions
-          SET last_seen_at = CURRENT_TIMESTAMP(3),
-              country_code = CASE
-                WHEN ? <> 'XX' THEN ?
-                ELSE country_code
-              END
-        WHERE id = ?`,
-      [detectedCountry, detectedCountry, id]
-    );
-    if (process.env.NETWORK_DEBUG === 'true') {
-      console.log(`[Network] session=${id.slice(0, 8)}… pays-enregistré=${detectedCountry}`);
-    }
-    const result = await handler(state, id, connection);
-    await saveState(connection, id, state);
+    await createSession(connection, id, state);
     await connection.commit();
-    return result;
   } catch (error) {
     await connection.rollback();
-    console.error(
-      `[MariaDB] Transaction annulée (${error.code || error.errno || 'ERREUR'}) : ${error.message}`
+    throw error;
+  } finally {
+    connection.release();
+  }
+  const entry = {
+    id,
+    state,
+    profile: { username: null, countryCode: 'XX' },
+    countryCode: 'XX',
+    dirty: false,
+    lastAccess: Date.now(),
+    lastSeen: Date.now()
+  };
+  sessionCache.set(id, entry);
+  setSessionCookie(res, id);
+  return entry;
+}
+
+async function resolveSession(req, res) {
+  const cookies = parseCookies(req.headers.cookie);
+  const id = verifiedId(cookies.infra_session);
+  return (id && await loadCachedSession(id)) || createCachedSession(res);
+}
+
+async function persistEntry(entry) {
+  if (!entry.dirty) return;
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.query(
+      `UPDATE game_sessions
+          SET last_seen_at = FROM_UNIXTIME(? / 1000),
+              country_code = CASE WHEN ? <> 'XX' THEN ? ELSE country_code END
+        WHERE id = ?`,
+      [entry.lastSeen, entry.countryCode, entry.countryCode, entry.id]
     );
+    await saveState(connection, entry.id, entry.state);
+    await connection.commit();
+    entry.dirty = false;
+  } catch (error) {
+    await connection.rollback();
+    console.error(`[Cache] Échec du flush ${entry.id.slice(0, 8)}… : ${error.message}`);
     throw error;
   } finally {
     connection.release();
   }
 }
 
-async function getProfile(connection, sessionId) {
-  const rows = await connection.query(
-    'SELECT username, country_code FROM game_sessions WHERE id = ?',
-    [sessionId]
-  );
-  return rows.length ? {
-    username: rows[0].username || null,
-    countryCode: String(rows[0].country_code || 'XX').trim().toUpperCase()
-  } : null;
+async function flushSession(id) {
+  return withSessionLock(id, async () => {
+    const entry = sessionCache.get(id);
+    if (entry) await persistEntry(entry);
+  });
 }
 
-async function setProfile(connection, sessionId, username) {
+async function flushAllSessions() {
+  await Promise.allSettled([...sessionCache.keys()].map(flushSession));
+}
+
+async function runCacheMaintenance() {
+  const now = Date.now();
+  for (const [id, entry] of sessionCache) {
+    if (entry.dirty) await flushSession(id).catch(() => {});
+    if (!entry.dirty && now - entry.lastAccess > CACHE_TTL_MS) sessionCache.delete(id);
+  }
+}
+
+async function transactSession(req, res, handler) {
+  await initializeDatabase();
+  const entry = await resolveSession(req, res);
+  return withSessionLock(entry.id, async () => {
+    entry.lastAccess = Date.now();
+    entry.lastSeen = Date.now();
+    const detectedCountry = req.clientNetwork?.countryCode || 'XX';
+    if (detectedCountry !== 'XX') {
+      entry.countryCode = detectedCountry;
+      entry.profile.countryCode = detectedCountry;
+    }
+    const result = await handler(entry.state, entry.id, entry);
+    entry.dirty = true;
+    if (process.env.NETWORK_DEBUG === 'true') {
+      console.log(`[Network] session=${entry.id.slice(0, 8)}… pays-cache=${entry.countryCode}`);
+    }
+    return result;
+  });
+}
+
+function getProfile(entry) {
+  return { ...entry.profile };
+}
+
+async function setProfile(entry, username) {
   const normalized = normalizeUsername(username);
   const key = usernameKey(normalized);
-  const duplicates = await connection.query(
-    'SELECT 1 FROM game_sessions WHERE username_key = ? AND id <> ? LIMIT 1',
-    [key, sessionId]
-  );
-  if (duplicates.length) {
-    throw Object.assign(new Error('Ce pseudo est déjà utilisé.'), { status: 409 });
-  }
+  const connection = await pool.getConnection();
   try {
+    const duplicates = await connection.query(
+      'SELECT 1 FROM game_sessions WHERE username_key = ? AND id <> ? LIMIT 1',
+      [key, entry.id]
+    );
+    if (duplicates.length) throw Object.assign(new Error('Ce pseudo est déjà utilisé.'), { status: 409 });
     await connection.query(
       'UPDATE game_sessions SET username = ?, username_key = ? WHERE id = ?',
-      [normalized, key, sessionId]
+      [normalized, key, entry.id]
     );
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
       throw Object.assign(new Error('Ce pseudo est déjà utilisé.'), { status: 409 });
     }
     throw error;
+  } finally {
+    connection.release();
   }
-  return getProfile(connection, sessionId);
+  entry.profile.username = normalized;
+  leaderboardCache.expiresAt = 0;
+  return getProfile(entry);
 }
 
 async function getLeaderboard(limit = 100) {
   await initializeDatabase();
+  if (leaderboardCache.expiresAt > Date.now()) return leaderboardCache.players;
   const safeLimit = Math.min(100, Math.max(10, Number(limit) || 50));
   const rows = await pool.query(
     `SELECT sessions.username, sessions.country_code,
@@ -230,7 +324,7 @@ async function getLeaderboard(limit = 100) {
       LIMIT ?`,
     [safeLimit]
   );
-  return rows.map((row, index) => ({
+  const players = rows.map((row, index) => ({
     rank: index + 1,
     username: row.username,
     countryCode: String(row.country_code || 'XX').trim().toUpperCase(),
@@ -238,28 +332,18 @@ async function getLeaderboard(limit = 100) {
     prestigeCount: Number(row.prestige_count),
     buildings: Number(row.total_buildings_purchased)
   }));
+  leaderboardCache = { players, expiresAt: Date.now() + LEADERBOARD_CACHE_MS };
+  return players;
 }
 
-async function closeDatabase() {
-  await pool.end();
-}
-
-async function countOnlinePlayers(activeSeconds = 30) {
-  await initializeDatabase();
-  const seconds = Math.min(300, Math.max(10, Number(activeSeconds) || 30));
-  const rows = await pool.query(
-    `SELECT COUNT(*) AS count
-       FROM game_sessions
-      WHERE last_seen_at >= DATE_SUB(CURRENT_TIMESTAMP(3), INTERVAL ? SECOND)`,
-    [seconds]
-  );
-  return Number(rows[0].count);
+function countOnlinePlayers(activeSeconds = 30) {
+  const threshold = Date.now() - Math.min(300, Math.max(10, Number(activeSeconds) || 30)) * 1000;
+  return [...sessionCache.values()].filter(entry => entry.lastSeen >= threshold).length;
 }
 
 async function importSessions(sessions) {
   await initializeDatabase();
   const connection = await pool.getConnection();
-
   try {
     await connection.beginTransaction();
     let imported = 0;
@@ -282,9 +366,16 @@ async function importSessions(sessions) {
   }
 }
 
+async function closeDatabase() {
+  if (maintenanceTimer) clearInterval(maintenanceTimer);
+  await flushAllSessions();
+  await pool.end();
+}
+
 module.exports = {
   closeDatabase,
   countOnlinePlayers,
+  flushAllSessions,
   getLeaderboard,
   getProfile,
   importSessions,
