@@ -443,6 +443,9 @@ class InfraClicker {
     this.state.requests -= purchase.cost;
     this.state.buildings[id] += purchase.amount;
     this.state.totalBuildingsPurchased += purchase.amount;
+    this.ui.updateBuildings();
+    this.ui.lastBuildingsUpdate = performance.now();
+    this.ui.update();
     this.audio.purchase();
     this.ui.toast('Infrastructure déployée', `${purchase.amount} × ${building.name}`, 'info');
     this.achievements.check();
