@@ -372,7 +372,7 @@ async function getLeaderboard(dlcId = 'infra', limit = 23) {
         AND progress.dlc_id = stats.dlc_id
       WHERE sessions.username IS NOT NULL
         AND stats.dlc_id = ?
-      ORDER BY stats.all_time_requests DESC, stats.prestige_count DESC, sessions.created_at ASC
+      ORDER BY stats.prestige_count DESC, stats.all_time_requests DESC, sessions.created_at ASC
       LIMIT ?`,
     [dlcId, safeLimit]
   );
