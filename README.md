@@ -133,6 +133,10 @@ Certaines commandes accordent un bonus temporaire de production.
 | `achievements.js` | Conditions et déblocage des succès |
 | `server/gameEngine.js` | Production hors ligne et import des synchronisations client |
 | `server/gameStore.js` | Sessions signées et persistance serveur |
+| `public/js/dlcs/` | Packs de contenu, registre et template navigateur |
+| `server/dlcs/` | Données économiques et template serveur des DLC |
+
+La création de packs supplémentaires est documentée dans [`DLC.md`](DLC.md).
 | `save.js` | Miroir local de la progression et préférences |
 | `audio.js` | Effets sonores |
 | `terminal.js` | Faux terminal Linux et commandes |
@@ -152,6 +156,10 @@ infra-clicker-theme
 ```
 
 La progression active est locale et MariaDB en conserve une copie périodique. Les paramètres permettent de synchroniser immédiatement ou de réinitialiser la progression.
+
+Une session utilisateur conserve un identifiant unique. Les progressions MariaDB sont isolées
+par la clé composite `(session_id, dlc_id)` : changer de DLC ne remplace donc jamais les données
+d’un autre pack. Au démarrage, l’ancien schéma mono-DLC est migré automatiquement vers ce format.
 
 ## Stack technique
 

@@ -47,6 +47,40 @@ test('ignore les identifiants inconnus pendant la synchronisation', () => {
   assert.deepEqual(state.certifications, []);
 });
 
+test('charge et synchronise les données économiques du DLC spatial', () => {
+  const state = createState('space');
+  assert.equal(state.dlcId, 'space');
+  assert.equal(Object.hasOwn(state.buildings, 'probe'), true);
+  assert.equal(Object.hasOwn(state.buildings, 'bash'), false);
+
+  synchronizeState(state, {
+    dlcId: 'space',
+    requests: 500,
+    buildings: { probe: 3, bash: 99 },
+    upgrades: ['ion-drive', 'ssd'],
+    certifications: ['pilot', 'lpic']
+  });
+
+  assert.equal(state.buildings.probe, 3);
+  assert.equal(Object.hasOwn(state.buildings, 'bash'), false);
+  assert.deepEqual(state.upgrades, ['ion-drive']);
+  assert.deepEqual(state.certifications, ['pilot']);
+});
+
+test('conserve des progressions indépendantes sous une même session logique', () => {
+  const infra = createState('infra');
+  const space = createState('space');
+  infra.requests = 1000;
+  infra.buildings.bash = 5;
+  space.requests = 200;
+  space.buildings.probe = 2;
+
+  assert.equal(space.buildings.bash, undefined);
+  assert.equal(infra.buildings.probe, undefined);
+  assert.equal(infra.requests, 1000);
+  assert.equal(space.requests, 200);
+});
+
 test('refuse un corps de synchronisation absent', () => {
   assert.throws(() => synchronizeState(createState()), /État de synchronisation invalide/);
 });

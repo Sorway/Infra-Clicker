@@ -1,6 +1,7 @@
-import { ACHIEVEMENTS, BUILDINGS } from './data.js';
+import { ACHIEVEMENTS, ACTIVE_DLC, BUILDINGS } from './data.js';
 
-const SAVE_KEY = 'infra-clicker-save-v1';
+const LEGACY_SAVE_KEY = 'infra-clicker-save-v1';
+const SAVE_KEY = `clicker-save-${ACTIVE_DLC.id}-v1`;
 const SAVE_VERSION = 2;
 const V2_RESET_NOTICE_KEY = 'infra-clicker-v2-reset-notice-seen';
 
@@ -19,7 +20,7 @@ export function consumeV2ResetNotice() {
   if (localStorage.getItem(V2_RESET_NOTICE_KEY)) return false;
 
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(SAVE_KEY) || (ACTIVE_DLC.id === 'infra' ? localStorage.getItem(LEGACY_SAVE_KEY) : null);
     if (!raw || JSON.parse(raw)?.version !== 1) return false;
     localStorage.setItem(V2_RESET_NOTICE_KEY, '1');
     return true;
@@ -31,6 +32,7 @@ export function consumeV2ResetNotice() {
 export function createDefaultState() {
   return {
     version: SAVE_VERSION,
+    dlcId: ACTIVE_DLC.id,
     requests: 0,
     lifetimeRequests: 0,
     allTimeRequests: 0,
@@ -78,7 +80,10 @@ export class SaveManager {
     const state = {
       ...defaults,
       ...raw,
-      buildings: { ...defaults.buildings, ...(raw?.buildings || {}) },
+      buildings: Object.fromEntries(BUILDINGS.map(building => [
+        building.id,
+        Math.max(0, Number(raw?.buildings?.[building.id]) || 0)
+      ])),
       upgrades: Array.isArray(raw?.upgrades) ? raw.upgrades : [],
       achievements: Array.isArray(raw?.achievements)
         ? raw.achievements.filter(id => typeof id === 'string' && ACHIEVEMENTS.some(achievement => achievement.id === id))
@@ -114,10 +119,11 @@ export class SaveManager {
 
   load() {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
+      const raw = localStorage.getItem(SAVE_KEY) || (ACTIVE_DLC.id === 'infra' ? localStorage.getItem(LEGACY_SAVE_KEY) : null);
       if (!raw) return createDefaultState();
       const parsed = JSON.parse(raw);
       const state = this.normalize(parsed);
+      state.dlcId = ACTIVE_DLC.id;
       const elapsed = Math.min(8 * 60 * 60, Math.max(0, (Date.now() - (state.lastTick || Date.now())) / 1000));
       state.offlineSeconds = elapsed;
       return state;

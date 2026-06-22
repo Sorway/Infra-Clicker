@@ -9,7 +9,7 @@ button?.addEventListener('click', async () => {
     body: '{}'
   });
   Object.keys(localStorage)
-    .filter(key => key.startsWith('infra-clicker-'))
+    .filter(key => key.startsWith('infra-clicker-') || key.startsWith('clicker-'))
     .forEach(key => localStorage.removeItem(key));
   window.location.href = '/';
 });

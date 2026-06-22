@@ -1,4 +1,4 @@
-const { BUILDINGS, CERTIFICATIONS, UPGRADES } = require('./gameData');
+const { getDlc, hasDlc, DEFAULT_DLC_ID } = require('./gameData');
 const { createState } = require('./gameEngine');
 
 const TABLES = [
@@ -16,7 +16,8 @@ const TABLES = [
     INDEX idx_game_sessions_last_seen (last_seen_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS game_progress (
-    session_id VARCHAR(64) NOT NULL PRIMARY KEY,
+    session_id VARCHAR(64) NOT NULL,
+    dlc_id VARCHAR(64) NOT NULL,
     version SMALLINT UNSIGNED NOT NULL DEFAULT 2,
     requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
     lifetime_requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
@@ -26,11 +27,13 @@ const TABLES = [
     overclock_ends_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     certification_points INT UNSIGNED NOT NULL DEFAULT 0,
     last_tick BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (session_id, dlc_id),
     CONSTRAINT fk_progress_session FOREIGN KEY (session_id)
       REFERENCES game_sessions(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS game_stats (
-    session_id VARCHAR(64) NOT NULL PRIMARY KEY,
+    session_id VARCHAR(64) NOT NULL,
+    dlc_id VARCHAR(64) NOT NULL,
     all_time_requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
     manual_clicks BIGINT UNSIGNED NOT NULL DEFAULT 0,
     critical_clicks BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -40,30 +43,34 @@ const TABLES = [
     completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     started_at BIGINT UNSIGNED NOT NULL,
     last_saved BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (session_id, dlc_id),
     CONSTRAINT fk_stats_session FOREIGN KEY (session_id)
       REFERENCES game_sessions(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS game_buildings (
     session_id VARCHAR(64) NOT NULL,
+    dlc_id VARCHAR(64) NOT NULL,
     building_id VARCHAR(64) NOT NULL,
     quantity INT UNSIGNED NOT NULL DEFAULT 0,
-    PRIMARY KEY (session_id, building_id),
+    PRIMARY KEY (session_id, dlc_id, building_id),
     CONSTRAINT fk_buildings_session FOREIGN KEY (session_id)
       REFERENCES game_sessions(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS game_upgrades (
     session_id VARCHAR(64) NOT NULL,
+    dlc_id VARCHAR(64) NOT NULL,
     upgrade_id VARCHAR(64) NOT NULL,
     acquired_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    PRIMARY KEY (session_id, upgrade_id),
+    PRIMARY KEY (session_id, dlc_id, upgrade_id),
     CONSTRAINT fk_upgrades_session FOREIGN KEY (session_id)
       REFERENCES game_sessions(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS game_certifications (
     session_id VARCHAR(64) NOT NULL,
+    dlc_id VARCHAR(64) NOT NULL,
     certification_id VARCHAR(64) NOT NULL,
     acquired_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    PRIMARY KEY (session_id, certification_id),
+    PRIMARY KEY (session_id, dlc_id, certification_id),
     CONSTRAINT fk_certifications_session FOREIGN KEY (session_id)
       REFERENCES game_sessions(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
@@ -71,13 +78,23 @@ const TABLES = [
 
 function hydrateLegacyState(value) {
   const raw = typeof value === 'string' ? JSON.parse(value) : value;
-  const defaults = createState();
+  const dlcId = hasDlc(raw?.dlcId) ? raw.dlcId : DEFAULT_DLC_ID;
+  const dlc = getDlc(dlcId);
+  const defaults = createState(dlcId);
   return {
     ...defaults,
     ...(raw && typeof raw === 'object' ? raw : {}),
-    buildings: { ...defaults.buildings, ...(raw?.buildings || {}) },
-    upgrades: Array.isArray(raw?.upgrades) ? raw.upgrades : [],
-    certifications: Array.isArray(raw?.certifications) ? raw.certifications : []
+    dlcId,
+    buildings: Object.fromEntries(dlc.BUILDINGS.map(building => [
+      building.id,
+      Math.max(0, Number(raw?.buildings?.[building.id]) || 0)
+    ])),
+    upgrades: Array.isArray(raw?.upgrades)
+      ? raw.upgrades.filter(id => dlc.UPGRADES.some(upgrade => upgrade.id === id))
+      : [],
+    certifications: Array.isArray(raw?.certifications)
+      ? raw.certifications.filter(id => dlc.CERTIFICATIONS.some(certification => certification.id === id))
+      : []
   };
 }
 
@@ -107,23 +124,27 @@ async function hasIndex(connection, table, index) {
   return rows.length > 0;
 }
 
-async function saveCollection(connection, table, idColumn, sessionId, values) {
-  await connection.query(`DELETE FROM ${table} WHERE session_id = ?`, [sessionId]);
+async function saveCollection(connection, table, idColumn, sessionId, dlcId, values) {
+  await connection.query(
+    `DELETE FROM ${table} WHERE session_id = ? AND dlc_id = ?`,
+    [sessionId, dlcId]
+  );
   if (!values.length) return;
   await connection.batch(
-    `INSERT INTO ${table} (session_id, ${idColumn}) VALUES (?, ?)`,
-    values.map(value => [sessionId, value])
+    `INSERT INTO ${table} (session_id, dlc_id, ${idColumn}) VALUES (?, ?, ?)`,
+    values.map(value => [sessionId, dlcId, value])
   );
 }
 
 async function saveState(connection, sessionId, state) {
   await connection.query(
     `INSERT INTO game_progress (
-       session_id, version, requests, lifetime_requests, combo, last_manual_click,
+       session_id, dlc_id, version, requests, lifetime_requests, combo, last_manual_click,
        overclock_charge, overclock_ends_at, certification_points, last_tick
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        version = VALUES(version),
+       dlc_id = VALUES(dlc_id),
        requests = VALUES(requests),
        lifetime_requests = VALUES(lifetime_requests),
        combo = VALUES(combo),
@@ -133,7 +154,7 @@ async function saveState(connection, sessionId, state) {
        certification_points = VALUES(certification_points),
        last_tick = VALUES(last_tick)`,
     [
-      sessionId, state.version, state.requests, state.lifetimeRequests, state.combo,
+      sessionId, state.dlcId || DEFAULT_DLC_ID, state.version, state.requests, state.lifetimeRequests, state.combo,
       state.lastManualClick, state.overclockCharge, state.overclockEndsAt,
       state.certificationPoints, state.lastTick
     ]
@@ -141,9 +162,9 @@ async function saveState(connection, sessionId, state) {
 
   await connection.query(
     `INSERT INTO game_stats (
-       session_id, all_time_requests, manual_clicks, critical_clicks, best_combo,
+       session_id, dlc_id, all_time_requests, manual_clicks, critical_clicks, best_combo,
        total_buildings_purchased, prestige_count, completed_at, started_at, last_saved
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        all_time_requests = VALUES(all_time_requests),
        manual_clicks = VALUES(manual_clicks),
@@ -158,23 +179,30 @@ async function saveState(connection, sessionId, state) {
        started_at = LEAST(game_stats.started_at, VALUES(started_at)),
        last_saved = VALUES(last_saved)`,
     [
-      sessionId, state.allTimeRequests, state.manualClicks, state.criticalClicks,
+      sessionId, state.dlcId || DEFAULT_DLC_ID, state.allTimeRequests, state.manualClicks, state.criticalClicks,
       state.bestCombo, state.totalBuildingsPurchased, state.prestigeCount,
       state.completedAt, state.startedAt, state.lastSaved
     ]
   );
 
-  await connection.query('DELETE FROM game_buildings WHERE session_id = ?', [sessionId]);
-  await connection.batch(
-    'INSERT INTO game_buildings (session_id, building_id, quantity) VALUES (?, ?, ?)',
-    BUILDINGS.map(building => [sessionId, building.id, state.buildings[building.id] || 0])
+  const dlcId = state.dlcId || DEFAULT_DLC_ID;
+  await connection.query(
+    'DELETE FROM game_buildings WHERE session_id = ? AND dlc_id = ?',
+    [sessionId, dlcId]
   );
-  await saveCollection(connection, 'game_upgrades', 'upgrade_id', sessionId, state.upgrades);
+  await connection.batch(
+    'INSERT INTO game_buildings (session_id, dlc_id, building_id, quantity) VALUES (?, ?, ?, ?)',
+    getDlc(dlcId).BUILDINGS.map(building => [
+      sessionId, dlcId, building.id, state.buildings[building.id] || 0
+    ])
+  );
+  await saveCollection(connection, 'game_upgrades', 'upgrade_id', sessionId, dlcId, state.upgrades);
   await saveCollection(
     connection,
     'game_certifications',
     'certification_id',
     sessionId,
+    dlcId,
     state.certifications
   );
   await connection.query(
@@ -183,36 +211,38 @@ async function saveState(connection, sessionId, state) {
   );
 }
 
-async function loadState(connection, sessionId) {
+async function loadState(connection, sessionId, requestedDlcId = DEFAULT_DLC_ID) {
+  const dlcId = hasDlc(requestedDlcId) ? requestedDlcId : DEFAULT_DLC_ID;
   const progressRows = await connection.query(
-    `SELECT version, requests, lifetime_requests, combo, last_manual_click,
+    `SELECT version, dlc_id, requests, lifetime_requests, combo, last_manual_click,
             overclock_charge, overclock_ends_at, certification_points, last_tick
-       FROM game_progress WHERE session_id = ?`,
-    [sessionId]
+       FROM game_progress WHERE session_id = ? AND dlc_id = ?`,
+    [sessionId, dlcId]
   );
   if (!progressRows.length) return null;
 
   const statsRows = await connection.query(
-    'SELECT * FROM game_stats WHERE session_id = ?',
-    [sessionId]
+    'SELECT * FROM game_stats WHERE session_id = ? AND dlc_id = ?',
+    [sessionId, dlcId]
   );
   const buildingRows = await connection.query(
-    'SELECT building_id, quantity FROM game_buildings WHERE session_id = ?',
-    [sessionId]
+    'SELECT building_id, quantity FROM game_buildings WHERE session_id = ? AND dlc_id = ?',
+    [sessionId, dlcId]
   );
   const upgradeRows = await connection.query(
-    'SELECT upgrade_id FROM game_upgrades WHERE session_id = ?',
-    [sessionId]
+    'SELECT upgrade_id FROM game_upgrades WHERE session_id = ? AND dlc_id = ?',
+    [sessionId, dlcId]
   );
   const certificationRows = await connection.query(
-    'SELECT certification_id FROM game_certifications WHERE session_id = ?',
-    [sessionId]
+    'SELECT certification_id FROM game_certifications WHERE session_id = ? AND dlc_id = ?',
+    [sessionId, dlcId]
   );
 
   const progress = progressRows[0];
   const stats = statsRows[0] || {};
-  const state = createState();
+  const state = createState(progress.dlc_id);
   state.version = Number(progress.version);
+  state.dlcId = getDlc(progress.dlc_id).id;
   state.requests = Number(progress.requests);
   state.lifetimeRequests = Number(progress.lifetime_requests);
   state.combo = Number(progress.combo);
@@ -238,8 +268,8 @@ async function loadState(connection, sessionId) {
   state.upgrades = upgradeRows.map(row => row.upgrade_id);
   state.certifications = certificationRows.map(row => row.certification_id);
   if (!state.completedAt
-    && state.upgrades.length >= UPGRADES.length
-    && state.certifications.length >= CERTIFICATIONS.length) {
+    && state.upgrades.length >= getDlc(state.dlcId).UPGRADES.length
+    && state.certifications.length >= getDlc(state.dlcId).CERTIFICATIONS.length) {
     state.completedAt = Date.now();
   }
   return state;
@@ -266,6 +296,155 @@ async function migrateLegacyStates(connection) {
   }
   await connection.query('ALTER TABLE game_sessions DROP COLUMN state');
   return rows.length;
+}
+
+async function migrateToMultiDlcSchema(connection) {
+  if (await hasColumn(connection, 'game_stats', 'dlc_id')
+    && await hasColumn(connection, 'game_buildings', 'dlc_id')
+    && await hasColumn(connection, 'game_upgrades', 'dlc_id')
+    && await hasColumn(connection, 'game_certifications', 'dlc_id')) {
+    await connection.query('DROP TABLE IF EXISTS game_certifications_legacy');
+    await connection.query('DROP TABLE IF EXISTS game_upgrades_legacy');
+    await connection.query('DROP TABLE IF EXISTS game_buildings_legacy');
+    await connection.query('DROP TABLE IF EXISTS game_stats_legacy');
+    await connection.query('DROP TABLE IF EXISTS game_progress_legacy');
+    return 0;
+  }
+
+  await connection.query('DROP TABLE IF EXISTS game_certifications_multi');
+  await connection.query('DROP TABLE IF EXISTS game_upgrades_multi');
+  await connection.query('DROP TABLE IF EXISTS game_buildings_multi');
+  await connection.query('DROP TABLE IF EXISTS game_stats_multi');
+  await connection.query('DROP TABLE IF EXISTS game_progress_multi');
+
+  await connection.query(`
+    CREATE TABLE game_progress_multi (
+      session_id VARCHAR(64) NOT NULL,
+      dlc_id VARCHAR(64) NOT NULL,
+      version SMALLINT UNSIGNED NOT NULL DEFAULT 2,
+      requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
+      lifetime_requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
+      combo INT UNSIGNED NOT NULL DEFAULT 0,
+      last_manual_click BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      overclock_charge DOUBLE UNSIGNED NOT NULL DEFAULT 0,
+      overclock_ends_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      certification_points BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      last_tick BIGINT UNSIGNED NOT NULL,
+      PRIMARY KEY (session_id, dlc_id),
+      CONSTRAINT fk_progress_multi_session FOREIGN KEY (session_id)
+        REFERENCES game_sessions(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await connection.query(`
+    CREATE TABLE game_stats_multi (
+      session_id VARCHAR(64) NOT NULL,
+      dlc_id VARCHAR(64) NOT NULL,
+      all_time_requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
+      manual_clicks BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      critical_clicks BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      best_combo INT UNSIGNED NOT NULL DEFAULT 0,
+      total_buildings_purchased BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      prestige_count INT UNSIGNED NOT NULL DEFAULT 0,
+      completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      started_at BIGINT UNSIGNED NOT NULL,
+      last_saved BIGINT UNSIGNED NOT NULL,
+      PRIMARY KEY (session_id, dlc_id),
+      CONSTRAINT fk_stats_multi_session FOREIGN KEY (session_id)
+        REFERENCES game_sessions(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await connection.query(`
+    CREATE TABLE game_buildings_multi (
+      session_id VARCHAR(64) NOT NULL,
+      dlc_id VARCHAR(64) NOT NULL,
+      building_id VARCHAR(64) NOT NULL,
+      quantity BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      PRIMARY KEY (session_id, dlc_id, building_id),
+      CONSTRAINT fk_buildings_multi_session FOREIGN KEY (session_id)
+        REFERENCES game_sessions(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await connection.query(`
+    CREATE TABLE game_upgrades_multi (
+      session_id VARCHAR(64) NOT NULL,
+      dlc_id VARCHAR(64) NOT NULL,
+      upgrade_id VARCHAR(64) NOT NULL,
+      acquired_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (session_id, dlc_id, upgrade_id),
+      CONSTRAINT fk_upgrades_multi_session FOREIGN KEY (session_id)
+        REFERENCES game_sessions(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await connection.query(`
+    CREATE TABLE game_certifications_multi (
+      session_id VARCHAR(64) NOT NULL,
+      dlc_id VARCHAR(64) NOT NULL,
+      certification_id VARCHAR(64) NOT NULL,
+      acquired_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (session_id, dlc_id, certification_id),
+      CONSTRAINT fk_certifications_multi_session FOREIGN KEY (session_id)
+        REFERENCES game_sessions(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  const progressCount = await connection.query('SELECT COUNT(*) AS count FROM game_progress');
+  await connection.query(`
+    INSERT INTO game_progress_multi
+    SELECT session_id, COALESCE(NULLIF(dlc_id, ''), 'infra'), version, requests,
+           lifetime_requests, combo, last_manual_click, overclock_charge,
+           overclock_ends_at, certification_points, last_tick
+      FROM game_progress
+  `);
+  await connection.query(`
+    INSERT INTO game_stats_multi
+    SELECT stats.session_id, COALESCE(NULLIF(progress.dlc_id, ''), 'infra'),
+           stats.all_time_requests, stats.manual_clicks, stats.critical_clicks,
+           stats.best_combo, stats.total_buildings_purchased, stats.prestige_count,
+           stats.completed_at, stats.started_at, stats.last_saved
+      FROM game_stats stats
+      JOIN game_progress progress ON progress.session_id = stats.session_id
+  `);
+  await connection.query(`
+    INSERT INTO game_buildings_multi
+    SELECT buildings.session_id, COALESCE(NULLIF(progress.dlc_id, ''), 'infra'),
+           buildings.building_id, buildings.quantity
+      FROM game_buildings buildings
+      JOIN game_progress progress ON progress.session_id = buildings.session_id
+  `);
+  await connection.query(`
+    INSERT INTO game_upgrades_multi
+    SELECT upgrades.session_id, COALESCE(NULLIF(progress.dlc_id, ''), 'infra'),
+           upgrades.upgrade_id, upgrades.acquired_at
+      FROM game_upgrades upgrades
+      JOIN game_progress progress ON progress.session_id = upgrades.session_id
+  `);
+  await connection.query(`
+    INSERT INTO game_certifications_multi
+    SELECT certifications.session_id, COALESCE(NULLIF(progress.dlc_id, ''), 'infra'),
+           certifications.certification_id, certifications.acquired_at
+      FROM game_certifications certifications
+      JOIN game_progress progress ON progress.session_id = certifications.session_id
+  `);
+
+  await connection.query(`
+    RENAME TABLE
+      game_progress TO game_progress_legacy,
+      game_stats TO game_stats_legacy,
+      game_buildings TO game_buildings_legacy,
+      game_upgrades TO game_upgrades_legacy,
+      game_certifications TO game_certifications_legacy,
+      game_progress_multi TO game_progress,
+      game_stats_multi TO game_stats,
+      game_buildings_multi TO game_buildings,
+      game_upgrades_multi TO game_upgrades,
+      game_certifications_multi TO game_certifications
+  `);
+  await connection.query('DROP TABLE game_certifications_legacy');
+  await connection.query('DROP TABLE game_upgrades_legacy');
+  await connection.query('DROP TABLE game_buildings_legacy');
+  await connection.query('DROP TABLE game_stats_legacy');
+  await connection.query('DROP TABLE game_progress_legacy');
+  return Number(progressCount[0].count || 0);
 }
 
 async function initializeSchema(connection) {
@@ -307,6 +486,12 @@ async function initializeSchema(connection) {
       'ALTER TABLE game_stats ADD COLUMN completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER prestige_count'
     );
   }
+  if (!await hasColumn(connection, 'game_progress', 'dlc_id')) {
+    await connection.query(
+      "ALTER TABLE game_progress ADD COLUMN dlc_id VARCHAR(64) NOT NULL DEFAULT 'infra' AFTER version"
+    );
+  }
+  const multiDlcMigrated = await migrateToMultiDlcSchema(connection);
   if (await hasColumn(connection, 'game_progress', 'click_window')) {
     await connection.query('ALTER TABLE game_progress DROP COLUMN click_window');
   }
@@ -318,10 +503,12 @@ async function initializeSchema(connection) {
         SET stats.completed_at = stats.last_saved
       WHERE stats.completed_at = 0
         AND (SELECT COUNT(*) FROM game_upgrades upgrades
-              WHERE upgrades.session_id = stats.session_id) >= ?
+              WHERE upgrades.session_id = stats.session_id
+                AND upgrades.dlc_id = stats.dlc_id) >= ?
         AND (SELECT COUNT(*) FROM game_certifications certifications
-              WHERE certifications.session_id = stats.session_id) >= ?`,
-    [UPGRADES.length, CERTIFICATIONS.length]
+              WHERE certifications.session_id = stats.session_id
+                AND certifications.dlc_id = stats.dlc_id) >= ?`,
+    [getDlc(DEFAULT_DLC_ID).UPGRADES.length, getDlc(DEFAULT_DLC_ID).CERTIFICATIONS.length]
   );
   await connection.query(
     'ALTER TABLE game_buildings MODIFY quantity BIGINT UNSIGNED NOT NULL DEFAULT 0'
@@ -330,15 +517,16 @@ async function initializeSchema(connection) {
     'ALTER TABLE game_progress MODIFY certification_points BIGINT UNSIGNED NOT NULL DEFAULT 0'
   );
   const migrated = await migrateLegacyStates(connection);
-  const sessions = await connection.query('SELECT id FROM game_sessions');
-  for (const session of sessions) {
+  const progressRows = await connection.query('SELECT session_id, dlc_id FROM game_progress');
+  for (const progress of progressRows) {
+    const dlc = getDlc(progress.dlc_id);
     await connection.batch(
-      `INSERT IGNORE INTO game_buildings (session_id, building_id, quantity)
-       VALUES (?, ?, 0)`,
-      BUILDINGS.map(building => [session.id, building.id])
+      `INSERT IGNORE INTO game_buildings (session_id, dlc_id, building_id, quantity)
+       VALUES (?, ?, ?, 0)`,
+      dlc.BUILDINGS.map(building => [progress.session_id, dlc.id, building.id])
     );
   }
-  return migrated;
+  return migrated + multiDlcMigrated;
 }
 
 module.exports = {

@@ -1,7 +1,7 @@
 <header class="topbar">
   <a class="brand" href="/" aria-label="Infra Clicker">
     <span class="brand-mark"><span></span><span></span><span></span></span>
-    <span><strong>INFRA</strong> CLICKER</span>
+    <span id="brand-name"><strong>INFRA</strong> CLICKER</span>
   </a>
   <div class="global-status">
     <span class="status-dot"></span>
@@ -60,7 +60,7 @@
       <div class="metrics">
         <article class="metric-card metric-wide">
           <div class="metric-icon cyan">↯</div>
-          <div><span>REQUÊTES TRAITÉES</span><strong id="requests-stat">0</strong></div>
+          <div><span data-currency-label>REQUÊTES</span><strong id="requests-stat">0</strong></div>
         </article>
         <article class="metric-card">
           <div class="metric-heading"><span>REQUÊTES / SEC</span><i class="metric-live-dot"></i></div>
@@ -104,7 +104,7 @@
     </div>
 
     <div class="request-counter">
-      <span>REQUÊTES TRAITÉES</span>
+      <span data-currency-label>REQUÊTES</span>
       <strong id="main-counter">0</strong>
       <small><span id="main-rps">0</span> par seconde</small>
     </div>
@@ -113,6 +113,7 @@
       <div class="pulse-ring ring-two"></div>
       <button id="server-button" class="server-button" aria-label="Traiter une requête">
         <img src="/img/infra-server-transparent.png" alt="Serveur interactif Infra Clicker" width="640" height="640" decoding="async" draggable="false">
+        <span id="dlc-clicker-icon" class="dlc-clicker-icon" aria-hidden="true"></span>
         <span class="server-glow"></span>
       </button>
       <div class="rack-floor"></div>

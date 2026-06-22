@@ -1,5 +1,6 @@
 const express = require('express');
 const { createState, publicState, synchronizeState } = require('../server/gameEngine');
+const { DEFAULT_DLC_ID, hasDlc } = require('../server/gameData');
 const {
   countOnlinePlayers,
   getLeaderboard,
@@ -45,7 +46,8 @@ router.post('/profile', async (req, res, next) => {
 
 router.get('/leaderboard', async (req, res, next) => {
   try {
-    res.json({ players: await getLeaderboard(100) });
+    const dlcId = hasDlc(req.query.dlc) ? req.query.dlc : DEFAULT_DLC_ID;
+    res.json({ dlcId, players: await getLeaderboard(dlcId, 23) });
   } catch (error) {
     next(error);
   }
@@ -75,7 +77,7 @@ router.post('/reset', async (req, res, next) => {
   try {
     const payload = await transactSession(req, res, state => {
       Object.keys(state).forEach(key => delete state[key]);
-      Object.assign(state, createState());
+      Object.assign(state, createState(req.body?.dlcId));
       return { state: publicState(state) };
     });
     res.json(payload);

@@ -14,14 +14,23 @@
 
 <main class="leaderboard-page">
   <section class="leaderboard-hero">
-    <span>TOP INFRASTRUCTURES</span>
-    <h1>Les opérateurs qui font tourner Internet</h1>
-    <p>Classement établi selon le nombre total de requêtes traitées.</p>
+    <span>CLASSEMENTS PAR DLC</span>
+    <h1>Les meilleures progressions</h1>
+    <p>Chaque univers possède son propre classement.</p>
+    <div id="leaderboard-dlc-tabs" class="leaderboard-dlc-tabs" aria-label="Choisir un DLC"></div>
+  </section>
+
+  <section id="leaderboard-podium" class="leaderboard-podium" aria-label="Podium">
+    <p class="leaderboard-loading">Chargement du podium…</p>
   </section>
 
   <section class="leaderboard-panel">
+    <div class="leaderboard-panel-title">
+      <strong>Places 4 à 23</strong>
+      <span>20 joueurs suivants</span>
+    </div>
     <div class="leaderboard-heading">
-      <span>RANG</span><span>JOUEUR</span><span>PRESTIGE</span><span>PROGRESSION</span><span>REQUÊTES</span>
+      <span>RANG</span><span>JOUEUR</span><span>PRESTIGE</span><span>PROGRESSION</span><span id="leaderboard-score-label">REQUÊTES</span>
     </div>
     <div id="leaderboard-list" class="leaderboard-list" aria-live="polite">
       <p class="leaderboard-loading">Chargement du classement…</p>

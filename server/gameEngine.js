@@ -1,4 +1,4 @@
-const { BUILDINGS, CERTIFICATIONS, UPGRADES } = require('./gameData');
+const { DEFAULT_DLC_ID, getDlc, hasDlc } = require('./gameData');
 
 const MAX_OFFLINE_SECONDS = 8 * 60 * 60;
 const SATURATION_START = 100e6;
@@ -10,10 +10,12 @@ function capacityEfficiency(requests) {
   return Math.max(MIN_CAPACITY_EFFICIENCY, 1 / (1 + 0.5 * decades));
 }
 
-function createState() {
+function createState(dlcId = DEFAULT_DLC_ID) {
+  const dlc = getDlc(dlcId);
   const now = Date.now();
   return {
     version: 2,
+    dlcId: dlc.id,
     requests: 0,
     lifetimeRequests: 0,
     allTimeRequests: 0,
@@ -25,7 +27,7 @@ function createState() {
     overclockCharge: 0,
     overclockEndsAt: 0,
     totalBuildingsPurchased: 0,
-    buildings: Object.fromEntries(BUILDINGS.map(building => [building.id, 0])),
+    buildings: Object.fromEntries(dlc.BUILDINGS.map(building => [building.id, 0])),
     upgrades: [],
     certifications: [],
     certificationPoints: 0,
@@ -42,6 +44,7 @@ function hasUpgrade(state, id) {
 }
 
 function globalMultiplier(state) {
+  const { UPGRADES, CERTIFICATIONS } = getDlc(state.dlcId);
   const upgrades = UPGRADES
     .filter(upgrade => hasUpgrade(state, upgrade.id))
     .reduce((value, upgrade) => value * (upgrade.effect.production || 1), 1);
@@ -52,12 +55,14 @@ function globalMultiplier(state) {
 }
 
 function buildingMultiplier(state, id) {
+  const { UPGRADES } = getDlc(state.dlcId);
   return UPGRADES
     .filter(upgrade => hasUpgrade(state, upgrade.id) && upgrade.effect.building === id)
     .reduce((value, upgrade) => value * upgrade.effect.multiplier, 1);
 }
 
 function production(state) {
+  const { BUILDINGS } = getDlc(state.dlcId);
   const base = BUILDINGS.reduce((total, building) => (
     total + state.buildings[building.id] * building.baseProduction * buildingMultiplier(state, building.id)
   ), 0) * globalMultiplier(state);
@@ -87,12 +92,15 @@ function synchronizeState(state, input) {
   if (!input || typeof input !== 'object') {
     throw Object.assign(new Error('État de synchronisation invalide'), { status: 400 });
   }
+  const dlcId = hasDlc(input.dlcId) ? input.dlcId : DEFAULT_DLC_ID;
+  const { BUILDINGS, UPGRADES, CERTIFICATIONS } = getDlc(dlcId);
   const buildingIds = new Set(BUILDINGS.map(building => building.id));
   const upgradeIds = new Set(UPGRADES.map(upgrade => upgrade.id));
   const certificationIds = new Set(CERTIFICATIONS.map(certification => certification.id));
   const now = Date.now();
 
   state.version = 2;
+  state.dlcId = dlcId;
   state.requests = finite(input.requests);
   state.lifetimeRequests = finite(input.lifetimeRequests);
   state.allTimeRequests = finite(input.allTimeRequests);

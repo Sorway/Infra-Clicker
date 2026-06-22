@@ -1,6 +1,7 @@
 import { AchievementManager } from './modules/achievements.js';
 import { AudioManager } from './modules/audio.js';
-import { BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
+import { ACTIVE_DLC, BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
+import { DLCS, selectDlc } from './dlcs/registry.js';
 import { Economy } from './modules/economy.js';
 import { EventManager } from './modules/events.js';
 import { MissionManager } from './modules/missions.js';
@@ -44,6 +45,7 @@ class InfraClicker {
 
   async init() {
     this.initTheme();
+    this.applyDlcTheme();
     const initialPayload = await this.server.load(this.state);
     this.ui.renderStatic();
     this.bindGameActions();
@@ -52,6 +54,7 @@ class InfraClicker {
     this.updateSoundButton();
     this.ui.update();
     this.applyProfile(initialPayload.profile);
+    if (initialPayload.serverBehind) await this.server.sync(this.state);
     if (!initialPayload.profile?.username) await this.requireProfile();
     if (this.showV2ResetNotice) this.openV2ResetNotice();
     this.initialized = true;
@@ -381,6 +384,15 @@ class InfraClicker {
   }
 
   bindSaveControls() {
+    const selector = document.querySelector('#dlc-select');
+    selector.innerHTML = DLCS.map(dlc => (
+      `<option value="${dlc.id}" ${dlc.id === ACTIVE_DLC.id ? 'selected' : ''}>${dlc.name}</option>`
+    )).join('');
+    selector.addEventListener('change', () => {
+      this.saveManager.save(this.state);
+      this.server.sync(this.state, true).catch(() => {});
+      if (selectDlc(selector.value)) window.location.reload();
+    });
     document.querySelector('#save-now').addEventListener('click', async () => {
       await this.synchronize(true);
     });
@@ -395,7 +407,7 @@ class InfraClicker {
     document.querySelector('#delete-local-data').addEventListener('click', () => {
       if (!window.confirm('Réinitialiser le thème, le son et les préférences de ce navigateur ? La progression serveur sera conservée.')) return;
       Object.keys(localStorage)
-        .filter(key => key.startsWith('infra-clicker-'))
+        .filter(key => key.startsWith('infra-clicker-') || key.startsWith('clicker-'))
         .forEach(key => localStorage.removeItem(key));
       window.location.reload();
     });
@@ -508,6 +520,23 @@ class InfraClicker {
     );
     this.achievements.check();
     this.saveManager.save(this.state);
+  }
+
+  applyDlcTheme() {
+    document.documentElement.dataset.dlc = ACTIVE_DLC.id;
+    document.title = `${ACTIVE_DLC.name} — Clicker`;
+    document.querySelector('#brand-name').textContent = ACTIVE_DLC.name.toUpperCase();
+    document.querySelector('#dlc-current-name').textContent = ACTIVE_DLC.name;
+    document.querySelector('#dlc-current-description').textContent = ACTIVE_DLC.description;
+    document.querySelector('#process-button span').textContent = ACTIVE_DLC.clickVerb;
+    const clickerImage = document.querySelector('#server-button img');
+    const clickerIcon = document.querySelector('#dlc-clicker-icon');
+    clickerImage.hidden = Boolean(ACTIVE_DLC.clickerIcon);
+    clickerIcon.textContent = ACTIVE_DLC.clickerIcon || '';
+    clickerIcon.hidden = !ACTIVE_DLC.clickerIcon;
+    document.querySelectorAll('[data-currency-label]').forEach(element => {
+      element.textContent = ACTIVE_DLC.currency.toUpperCase();
+    });
   }
 
   markCompletion() {

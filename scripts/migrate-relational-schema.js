@@ -34,11 +34,17 @@ async function migrate() {
 
     const orphanRows = await connection.query(`
       SELECT
-        SUM(progress.session_id IS NULL) AS missing_progress,
         SUM(stats.session_id IS NULL) AS missing_stats
-      FROM game_sessions sessions
-      LEFT JOIN game_progress progress ON progress.session_id = sessions.id
-      LEFT JOIN game_stats stats ON stats.session_id = sessions.id
+      FROM game_progress progress
+      LEFT JOIN game_stats stats
+        ON stats.session_id = progress.session_id
+       AND stats.dlc_id = progress.dlc_id
+    `);
+    const dlcs = await connection.query(`
+      SELECT dlc_id, COUNT(*) AS progressions
+      FROM game_progress
+      GROUP BY dlc_id
+      ORDER BY dlc_id
     `);
     const stateColumn = await connection.query(`
       SELECT COUNT(*) AS count
@@ -51,8 +57,11 @@ async function migrate() {
     console.log(JSON.stringify({
       migrated: true,
       counts,
-      missingProgress: Number(orphanRows[0].missing_progress || 0),
       missingStats: Number(orphanRows[0].missing_stats || 0),
+      dlcs: dlcs.map(row => ({
+        id: row.dlc_id,
+        progressions: Number(row.progressions)
+      })),
       legacyStateColumnPresent: Number(stateColumn[0].count) > 0
     }, null, 2));
   } finally {

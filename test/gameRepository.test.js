@@ -29,3 +29,18 @@ test('remplace les collections JSON invalides par des collections sûres', () =>
   assert.deepEqual(state.certifications, []);
   assert.equal(state.buildings.bash, 0);
 });
+
+test('normalise chaque DLC dans son propre espace de données', () => {
+  const space = hydrateLegacyState({
+    dlcId: 'space',
+    requests: 120,
+    buildings: { probe: 4, bash: 99 },
+    upgrades: ['ion-drive'],
+    certifications: ['pilot']
+  });
+
+  assert.equal(space.dlcId, 'space');
+  assert.equal(space.buildings.probe, 4);
+  assert.equal(Object.hasOwn(space.buildings, 'bash'), false);
+  assert.deepEqual(space.upgrades, ['ion-drive']);
+});

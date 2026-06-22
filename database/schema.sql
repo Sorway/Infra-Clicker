@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS game_sessions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS game_progress (
-  session_id VARCHAR(64) NOT NULL PRIMARY KEY,
+  session_id VARCHAR(64) NOT NULL,
+  dlc_id VARCHAR(64) NOT NULL,
   version SMALLINT UNSIGNED NOT NULL DEFAULT 2,
   requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
   lifetime_requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
@@ -23,12 +24,14 @@ CREATE TABLE IF NOT EXISTS game_progress (
   overclock_ends_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
   certification_points BIGINT UNSIGNED NOT NULL DEFAULT 0,
   last_tick BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (session_id, dlc_id),
   CONSTRAINT fk_progress_session FOREIGN KEY (session_id)
     REFERENCES game_sessions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS game_stats (
-  session_id VARCHAR(64) NOT NULL PRIMARY KEY,
+  session_id VARCHAR(64) NOT NULL,
+  dlc_id VARCHAR(64) NOT NULL,
   all_time_requests DOUBLE UNSIGNED NOT NULL DEFAULT 0,
   manual_clicks BIGINT UNSIGNED NOT NULL DEFAULT 0,
   critical_clicks BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -38,33 +41,37 @@ CREATE TABLE IF NOT EXISTS game_stats (
   completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
   started_at BIGINT UNSIGNED NOT NULL,
   last_saved BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (session_id, dlc_id),
   CONSTRAINT fk_stats_session FOREIGN KEY (session_id)
     REFERENCES game_sessions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS game_buildings (
   session_id VARCHAR(64) NOT NULL,
+  dlc_id VARCHAR(64) NOT NULL,
   building_id VARCHAR(64) NOT NULL,
   quantity BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (session_id, building_id),
+  PRIMARY KEY (session_id, dlc_id, building_id),
   CONSTRAINT fk_buildings_session FOREIGN KEY (session_id)
     REFERENCES game_sessions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS game_upgrades (
   session_id VARCHAR(64) NOT NULL,
+  dlc_id VARCHAR(64) NOT NULL,
   upgrade_id VARCHAR(64) NOT NULL,
   acquired_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (session_id, upgrade_id),
+  PRIMARY KEY (session_id, dlc_id, upgrade_id),
   CONSTRAINT fk_upgrades_session FOREIGN KEY (session_id)
     REFERENCES game_sessions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS game_certifications (
   session_id VARCHAR(64) NOT NULL,
+  dlc_id VARCHAR(64) NOT NULL,
   certification_id VARCHAR(64) NOT NULL,
   acquired_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (session_id, certification_id),
+  PRIMARY KEY (session_id, dlc_id, certification_id),
   CONSTRAINT fk_certifications_session FOREIGN KEY (session_id)
     REFERENCES game_sessions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

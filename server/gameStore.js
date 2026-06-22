@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const mariadb = require('mariadb');
 const { createState } = require('./gameEngine');
+const { DEFAULT_DLC_ID, hasDlc } = require('./gameData');
 const {
   createSession,
   hydrateLegacyState,
@@ -39,7 +40,7 @@ const pool = mariadb.createPool({
 const sessionCache = new Map();
 const sessionLocks = new Map();
 let initialization;
-let leaderboardCache = { expiresAt: 0, players: [] };
+const leaderboardCache = new Map();
 let maintenanceTimer;
 
 function missingDatabaseVariables() {
@@ -56,7 +57,7 @@ async function connectAndPrepareDatabase() {
   try {
     console.log('[MariaDB] Connexion établie');
     const migrated = await initializeSchema(connection);
-    console.log(`[MariaDB] Schéma relationnel prêt${migrated ? ` — ${migrated} session(s) migrée(s)` : ''}`);
+    console.log(`[MariaDB] Schéma relationnel prêt${migrated ? ` — ${migrated} progression(s) migrée(s)` : ''}`);
   } finally {
     connection.release();
   }
@@ -163,11 +164,10 @@ async function loadCachedSession(id) {
       [id]
     );
     if (!rows.length) return null;
-    const state = await loadState(connection, id);
-    if (!state) return null;
     const entry = {
       id,
-      state,
+      states: new Map(),
+      dirtyStates: new Set(),
       profile: profileFromRow(rows[0]),
       countryCode: profileFromRow(rows[0]).countryCode,
       dirty: false,
@@ -183,7 +183,7 @@ async function loadCachedSession(id) {
 
 async function createCachedSession(res) {
   const id = sessionId();
-  const state = createState();
+  const state = createState(DEFAULT_DLC_ID);
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -197,7 +197,8 @@ async function createCachedSession(res) {
   }
   const entry = {
     id,
-    state,
+    states: new Map([[state.dlcId, state]]),
+    dirtyStates: new Set(),
     profile: { username: null, countryCode: 'XX' },
     countryCode: 'XX',
     dirty: false,
@@ -216,7 +217,7 @@ async function resolveSession(req, res) {
 }
 
 async function persistEntry(entry) {
-  if (!entry.dirty) return;
+  if (!entry.dirty && !entry.dirtyStates.size) return;
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -227,9 +228,13 @@ async function persistEntry(entry) {
         WHERE id = ?`,
       [entry.lastSeen, entry.countryCode, entry.countryCode, entry.id]
     );
-    await saveState(connection, entry.id, entry.state);
+    for (const dlcId of entry.dirtyStates) {
+      const state = entry.states.get(dlcId);
+      if (state) await saveState(connection, entry.id, state);
+    }
     await connection.commit();
     entry.dirty = false;
+    entry.dirtyStates.clear();
   } catch (error) {
     await connection.rollback();
     console.error(`[Cache] Échec du flush ${entry.id.slice(0, 8)}… : ${error.message}`);
@@ -253,12 +258,52 @@ async function flushAllSessions() {
 async function runCacheMaintenance() {
   const now = Date.now();
   for (const [id, entry] of sessionCache) {
-    if (entry.dirty) await flushSession(id).catch(() => {});
-    if (!entry.dirty && now - entry.lastAccess > CACHE_TTL_MS) sessionCache.delete(id);
+    if (entry.dirty || entry.dirtyStates.size) await flushSession(id).catch(() => {});
+    if (!entry.dirty && !entry.dirtyStates.size && now - entry.lastAccess > CACHE_TTL_MS) {
+      sessionCache.delete(id);
+    }
   }
 }
 
 async function transactSession(req, res, handler) {
+  await initializeDatabase();
+  const entry = await resolveSession(req, res);
+  return withSessionLock(entry.id, async () => {
+    entry.lastAccess = Date.now();
+    entry.lastSeen = Date.now();
+    const dlcId = requestDlcId(req);
+    const state = await resolveDlcState(entry, dlcId);
+    const result = await handler(state, entry.id, entry);
+    entry.dirtyStates.add(dlcId);
+    entry.dirty = true;
+    if (process.env.NETWORK_DEBUG === 'true') {
+      console.log(`[Network] session=${entry.id.slice(0, 8)}… pays-cache=${entry.countryCode}`);
+    }
+    return result;
+  });
+}
+
+function requestDlcId(req) {
+  const candidate = req.body?.state?.dlcId || req.body?.dlcId || req.query?.dlc;
+  return hasDlc(candidate) ? candidate : DEFAULT_DLC_ID;
+}
+
+async function resolveDlcState(entry, dlcId) {
+  const cached = entry.states.get(dlcId);
+  if (cached) return cached;
+  const connection = await pool.getConnection();
+  try {
+    const storedState = await loadState(connection, entry.id, dlcId);
+    const state = storedState || createState(dlcId);
+    entry.states.set(dlcId, state);
+    if (!storedState) entry.dirtyStates.add(dlcId);
+    return state;
+  } finally {
+    connection.release();
+  }
+}
+
+async function recordPageAccess(req, res) {
   await initializeDatabase();
   const entry = await resolveSession(req, res);
   return withSessionLock(entry.id, async () => {
@@ -269,12 +314,14 @@ async function transactSession(req, res, handler) {
       entry.countryCode = detectedCountry;
       entry.profile.countryCode = detectedCountry;
     }
-    const result = await handler(entry.state, entry.id, entry);
     entry.dirty = true;
     if (process.env.NETWORK_DEBUG === 'true') {
-      console.log(`[Network] session=${entry.id.slice(0, 8)}… pays-cache=${entry.countryCode}`);
+      console.log(
+        `[Network] accès-page session=${entry.id.slice(0, 8)}…`
+        + ` ip=${req.clientNetwork?.ip || 'inconnue'}`
+        + ` pays=${entry.countryCode}`
+      );
     }
-    return result;
   });
 }
 
@@ -305,28 +352,34 @@ async function setProfile(entry, username) {
     connection.release();
   }
   entry.profile.username = normalized;
-  leaderboardCache.expiresAt = 0;
+  leaderboardCache.clear();
   return getProfile(entry);
 }
 
-async function getLeaderboard(limit = 100) {
+async function getLeaderboard(dlcId = 'infra', limit = 23) {
   await initializeDatabase();
-  if (leaderboardCache.expiresAt > Date.now()) return leaderboardCache.players;
-  const safeLimit = Math.min(100, Math.max(10, Number(limit) || 50));
+  const cached = leaderboardCache.get(dlcId);
+  if (cached?.expiresAt > Date.now()) return cached.players;
+  const safeLimit = Math.min(23, Math.max(1, Number(limit) || 23));
   const rows = await pool.query(
-    `SELECT sessions.username, sessions.country_code,
+    `SELECT sessions.username, sessions.country_code, progress.dlc_id,
             stats.all_time_requests, stats.prestige_count,
             stats.total_buildings_purchased, stats.started_at, stats.completed_at
        FROM game_sessions sessions
        JOIN game_stats stats ON stats.session_id = sessions.id
+       JOIN game_progress progress
+         ON progress.session_id = stats.session_id
+        AND progress.dlc_id = stats.dlc_id
       WHERE sessions.username IS NOT NULL
+        AND stats.dlc_id = ?
       ORDER BY stats.all_time_requests DESC, stats.prestige_count DESC, sessions.created_at ASC
       LIMIT ?`,
-    [safeLimit]
+    [dlcId, safeLimit]
   );
   const players = rows.map((row, index) => ({
     rank: index + 1,
     username: row.username,
+    dlcId: row.dlc_id || 'infra',
     countryCode: String(row.country_code || 'XX').trim().toUpperCase(),
     requests: Number(row.all_time_requests),
     prestigeCount: Number(row.prestige_count),
@@ -336,7 +389,7 @@ async function getLeaderboard(limit = 100) {
       ? Math.max(0, Number(row.completed_at) - Number(row.started_at))
       : null
   }));
-  leaderboardCache = { players, expiresAt: Date.now() + LEADERBOARD_CACHE_MS };
+  leaderboardCache.set(dlcId, { players, expiresAt: Date.now() + LEADERBOARD_CACHE_MS });
   return players;
 }
 
@@ -384,6 +437,7 @@ module.exports = {
   getProfile,
   importSessions,
   initializeDatabase,
+  recordPageAccess,
   setProfile,
   transactSession
 };

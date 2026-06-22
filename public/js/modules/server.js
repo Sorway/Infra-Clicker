@@ -1,5 +1,6 @@
 const PROTECTED_FIELDS = [
   'version',
+  'dlcId',
   'requests',
   'lifetimeRequests',
   'allTimeRequests',
@@ -63,8 +64,13 @@ export class ServerGame {
   }
 
   async load(state) {
-    const payload = await request('/api/game/state');
-    this.merge(state, payload.state);
+    const payload = await request(`/api/game/state?dlc=${encodeURIComponent(state.dlcId)}`);
+    const localProgress = Number(state.allTimeRequests) || Number(state.lifetimeRequests) || 0;
+    const serverProgress = Number(payload.state?.allTimeRequests)
+      || Number(payload.state?.lifetimeRequests)
+      || 0;
+    if (localProgress > serverProgress) payload.serverBehind = true;
+    else this.merge(state, payload.state);
     return payload;
   }
 
@@ -75,7 +81,7 @@ export class ServerGame {
   async saveProfile(state, username) {
     const payload = await request('/api/game/profile', {
       method: 'POST',
-      body: JSON.stringify({ username })
+      body: JSON.stringify({ username, dlcId: state.dlcId })
     });
     this.merge(state, payload.state);
     return payload.profile;
@@ -96,7 +102,7 @@ export class ServerGame {
   async reset(state) {
     const payload = await request('/api/game/reset', {
       method: 'POST',
-      body: '{}'
+      body: JSON.stringify({ dlcId: state.dlcId })
     });
     this.merge(state, payload.state);
   }

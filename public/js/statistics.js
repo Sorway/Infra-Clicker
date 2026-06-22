@@ -1,8 +1,8 @@
-import { ACHIEVEMENTS, BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
+import { ACHIEVEMENTS, ACTIVE_DLC, BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
 import { Economy } from './modules/economy.js';
 import { formatNumber } from './modules/utils.js';
 
-const SAVE_KEY = 'infra-clicker-save-v1';
+const SAVE_KEY = `clicker-save-${ACTIVE_DLC.id}-v1`;
 
 function formatDuration(milliseconds) {
   const minutes = Math.max(0, Math.floor(milliseconds / 60000));
@@ -32,7 +32,8 @@ function setProgress(id, current, total) {
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(SAVE_KEY)
+      || (ACTIVE_DLC.id === 'infra' ? localStorage.getItem('infra-clicker-save-v1') : null);
     if (!raw) return null;
     const state = JSON.parse(raw);
     if (!state || typeof state !== 'object' || !Number.isFinite(state.lifetimeRequests)) return null;
