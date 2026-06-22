@@ -1,0 +1,596 @@
+/* =============================================================
+   Thème surcouche — SALLE NOC (Console d'astreinte)
+   -------------------------------------------------------------
+   Refonte "monitoring console" façon Grafana/Prometheus/Datadog,
+   mais ARTISANALE : panels soudés à en-têtes, vraies séries
+   temporelles tracées, gauges sémantiques, deux barres de statut
+   pleine largeur. La couleur PORTE l'information (signal→warn→crit).
+
+   Issu d'un workflow de design adversarial (direction gagnante).
+   Anti-slop par construction : aucun glassmorphism, aucun glow
+   décoratif, aucun violet "IA", aucun dégradé multicolore, aucune
+   carte molle. Tout est scopé :root[data-theme="noc"].
+   ============================================================= */
+
+:root[data-theme="noc"] {
+  /* Surfaces — profondeur de mur d'écrans */
+  --bg-void: #070b0f;
+  --bg-app: #0b1014;
+  --panel: #11181f;
+  --panel-head: #0e141a;
+  --panel-raised: #161f28;
+  --inset: #0a0f14;
+
+  /* Lignes — nettes, jamais de glow */
+  --line: #1c2630;
+  --line-strong: #283643;
+  --grid-line: rgba(120, 140, 160, .07);
+
+  /* Texte */
+  --text: #d7e0e8;
+  --text-dim: #8a99a8;
+  --text-faint: #56636f;
+
+  /* Accent unique = "live data" (teal décalé, PAS le teal-400 Tailwind) */
+  --signal: #20c5b0;
+  --signal-bright: #4ee0cd;
+  --signal-rgb: 32, 197, 176;
+
+  /* Sémantique monitoring (codes, pas décor) */
+  --ok: #4ade80;
+  --warn: #f5b642;
+  --crit: #f2545b;
+  --crit-deep: #5a1a1e;
+  --info: #5ba3d0;
+
+  /* Remap des tokens du jeu → palette NOC */
+  --bg: var(--bg-void);
+  --panel-2: var(--panel-raised);
+  --panel-3: var(--panel-raised);
+  --line-soft: var(--line);
+  --muted: var(--text-dim);
+  --cyan: var(--signal);
+  --cyan-bright: var(--signal-bright);
+  --green: var(--ok);
+  --orange: var(--warn);
+  --red: var(--crit);
+  --purple: var(--info);
+  --accent-rgb: var(--signal-rgb);
+  --accent-deep: #15807a;
+  --accent-deep-2: #1aa394;
+
+  --mono: "JetBrains Mono", "Cascadia Code", "Consolas", ui-monospace, monospace;
+  --ui: "Inter", "Segoe UI", system-ui, sans-serif;
+
+  --radius-sm: 3px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+}
+
+/* ---- Hooks NOC : masqués hors du thème ---- */
+.noc-panelhead, .noc-graph, .noc-statusline, .noc-topstats { display: none; }
+
+/* =============================================================
+   BASE & TYPOGRAPHIE
+   ============================================================= */
+:root[data-theme="noc"] body {
+  font-family: var(--ui);
+  letter-spacing: 0;
+  background: var(--bg-void);
+}
+/* Grille technique discrète type papier d'oscilloscope (réutilise .ambient-grid) */
+:root[data-theme="noc"] .ambient-grid {
+  display: block;
+  opacity: 1;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: none;
+}
+
+/* Tous les nombres / données en mono tabulaire (pas de tremblement) */
+:root[data-theme="noc"] #main-counter,
+:root[data-theme="noc"] #header-rps,
+:root[data-theme="noc"] .metric-card strong,
+:root[data-theme="noc"] .building-owned,
+:root[data-theme="noc"] .building-price,
+:root[data-theme="noc"] .building-output,
+:root[data-theme="noc"] #cpu-label,
+:root[data-theme="noc"] #ram-label,
+:root[data-theme="noc"] #bandwidth-label,
+:root[data-theme="noc"] #shop-production,
+:root[data-theme="noc"] #shop-owned,
+:root[data-theme="noc"] #infra-level,
+:root[data-theme="noc"] #level-progress-label,
+:root[data-theme="noc"] .combo-meter strong,
+:root[data-theme="noc"] #main-rps,
+:root[data-theme="noc"] #header-saturation {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Tuer glow / blur / ombres flottantes partout dans le thème */
+:root[data-theme="noc"] * {
+  text-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+:root[data-theme="noc"] .topbar,
+:root[data-theme="noc"] .left-panel,
+:root[data-theme="noc"] .right-panel,
+:root[data-theme="noc"] .center-stage,
+:root[data-theme="noc"] .panel-section,
+:root[data-theme="noc"] .metric-card,
+:root[data-theme="noc"] .modal,
+:root[data-theme="noc"] .menu-launch-button,
+:root[data-theme="noc"] .building-card,
+:root[data-theme="noc"] .icon-button { box-shadow: none; }
+
+/* =============================================================
+   BARRE DE STATUT HAUTE (ex-topbar)
+   ============================================================= */
+:root[data-theme="noc"] .topbar {
+  height: 40px;
+  margin: 0;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--bg-app);
+  gap: 14px;
+}
+:root[data-theme="noc"] .brand { gap: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: 0; text-transform: none; }
+:root[data-theme="noc"] .brand strong { color: var(--signal); }
+:root[data-theme="noc"] .brand-mark { display: none; }
+:root[data-theme="noc"] .brand::before {
+  content: "●";
+  color: var(--ok);
+  font-size: 9px;
+}
+/* La lecture isolée "PRODUCTION 0,0 req/s" est remplacée par un vrai
+   cluster de statut inline (DÉBIT · SATURATION · UPTIME · INCIDENTS). */
+:root[data-theme="noc"] .global-status { display: none; }
+:root[data-theme="noc"] .status-dot { box-shadow: none; }
+
+:root[data-theme="noc"] .noc-topstats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+:root[data-theme="noc"] .noc-ts {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0 14px;
+  border-right: 1px solid var(--line);
+}
+:root[data-theme="noc"] .noc-ts:first-child { padding-left: 0; }
+:root[data-theme="noc"] .noc-ts:last-child { border-right: 0; padding-right: 0; }
+:root[data-theme="noc"] .noc-ts b {
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+}
+:root[data-theme="noc"] .noc-ts strong { color: var(--signal); font-variant-numeric: tabular-nums; }
+/* Sémantique : la saturation porte l'état (ok→warn→crit). */
+:root[data-theme="noc"] .noc-ts.warn strong { color: var(--warn); }
+:root[data-theme="noc"] .noc-ts.crit strong { color: var(--crit); }
+:root[data-theme="noc"] #noc-ts-incidents { color: var(--text); }
+
+:root[data-theme="noc"] .top-actions { gap: 8px; align-items: center; }
+:root[data-theme="noc"] .header-capacity {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--inset);
+  padding: 4px 8px;
+}
+:root[data-theme="noc"] .header-capacity-label { font-family: var(--mono); color: var(--text-faint); }
+:root[data-theme="noc"] .header-prestige-button {
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--text-dim);
+}
+:root[data-theme="noc"] .header-prestige-button:not([disabled]) { border-color: var(--signal); color: var(--signal-bright); }
+:root[data-theme="noc"] .header-prestige-button span { color: var(--text-faint); }
+:root[data-theme="noc"] #header-capacity-bar { background: var(--signal); }
+:root[data-theme="noc"] .online-status { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+:root[data-theme="noc"] .online-dot { box-shadow: none; background: var(--ok); }
+
+:root[data-theme="noc"] .icon-button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel-raised);
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+:root[data-theme="noc"] .icon-button:hover { border-color: var(--line-strong); background: var(--panel-head); color: var(--text); transform: none; }
+:root[data-theme="noc"] .action-icon, :root[data-theme="noc"] .stats-icon { stroke: currentColor; width: 16px; height: 16px; }
+
+/* =============================================================
+   GRILLE CONSOLE : panels soudés par un gap 1px
+   ============================================================= */
+:root[data-theme="noc"] .dashboard {
+  height: calc(100vh - 40px - 26px);
+  gap: 1px;
+  padding: 0;
+  background: var(--line);
+  grid-template-columns: minmax(248px, 19vw) minmax(460px, 1fr) minmax(320px, 25vw);
+}
+:root[data-theme="noc"] .left-panel,
+:root[data-theme="noc"] .right-panel,
+:root[data-theme="noc"] .center-stage {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--panel);
+}
+
+/* Brique universelle "en-tête de panel" (langage Grafana) */
+:root[data-theme="noc"] .section-title,
+:root[data-theme="noc"] .noc-panelhead,
+:root[data-theme="noc"] .shop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  margin: 0;
+  padding: 0 12px;
+  background: var(--panel-head);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+:root[data-theme="noc"] .section-title span,
+:root[data-theme="noc"] .shop-header h2 { color: var(--text-dim); font-size: 11px; font-weight: 600; margin: 0; }
+:root[data-theme="noc"] .noc-range { color: var(--text-faint); font-family: var(--mono); letter-spacing: 0; }
+:root[data-theme="noc"] .text-button { color: var(--signal); font-family: var(--mono); letter-spacing: 0; }
+
+/* Sections du panneau gauche : à plat, séparées par 1px */
+:root[data-theme="noc"] .panel-section {
+  margin: 0;
+  padding: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+:root[data-theme="noc"] .panel-section:hover { background: transparent; border-color: var(--line); }
+:root[data-theme="noc"] .profile-section { padding-top: 12px; }
+:root[data-theme="noc"] .server-avatar { border-radius: 3px; background: var(--inset); border: 1px solid var(--line); box-shadow: none; }
+:root[data-theme="noc"] .profile-row h1 { font-family: var(--mono); font-size: 15px; }
+:root[data-theme="noc"] .progress, :root[data-theme="noc"] .progress.thin { background: var(--inset); border-radius: 2px; box-shadow: none; }
+:root[data-theme="noc"] .progress span { background: var(--signal); box-shadow: none; border-radius: 2px; }
+:root[data-theme="noc"] .progress.cpu span { background: var(--signal); }
+:root[data-theme="noc"] .progress.ram span { background: var(--info); }
+:root[data-theme="noc"] .progress.network span { background: var(--ok); }
+:root[data-theme="noc"] .gauge-marker { box-shadow: none; }
+
+/* Cartes de stats → tuiles inset compactes */
+:root[data-theme="noc"] .metric-card {
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: none;
+}
+:root[data-theme="noc"] .metric-card span { color: var(--text-faint); }
+:root[data-theme="noc"] .metric-card strong { color: var(--text); }
+:root[data-theme="noc"] .metric-icon { background: var(--panel-raised); border: 1px solid var(--line); color: var(--signal); border-radius: 3px; }
+:root[data-theme="noc"] .metric-live-dot { background: var(--ok); box-shadow: none; }
+:root[data-theme="noc"] .spark-line { stroke: var(--signal); }
+:root[data-theme="noc"] .spark-point { fill: var(--signal-bright); }
+
+/* =============================================================
+   CENTRE = PANEL "DÉBIT EN DIRECT" : graphe + single-stat
+   ============================================================= */
+:root[data-theme="noc"] .center-stage {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+:root[data-theme="noc"] .center-stage > * { grid-column: 1 / -1; }
+
+/* En-tête du panel central */
+:root[data-theme="noc"] .noc-panelhead { grid-column: 1 / -1; }
+
+/* Bandeau d'incident (event) = ligne de tête du journal */
+:root[data-theme="noc"] .event-banner {
+  margin: 0;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--inset);
+  font-family: var(--mono);
+}
+:root[data-theme="noc"] .event-banner.danger { border-left: 3px solid var(--crit); }
+:root[data-theme="noc"] .event-banner.bonus { border-left: 3px solid var(--ok); }
+
+/* Graphe à gauche (cols 1-8), single-stat à droite (cols 8-12), même rangée */
+:root[data-theme="noc"] .noc-graph {
+  display: block;
+  position: relative;
+  grid-column: 1 / 8;
+  min-height: clamp(220px, 34vh, 360px);
+  padding: 10px 12px 6px 56px;
+  background: var(--inset);
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+:root[data-theme="noc"] .noc-graph-svg { display: block; width: 100%; height: 100%; min-height: inherit; }
+:root[data-theme="noc"] .noc-graph-axis {
+  position: absolute;
+  left: 0; top: 10px; bottom: 6px;
+  width: 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-faint);
+}
+:root[data-theme="noc"] .noc-graph-grid line { stroke: var(--grid-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+:root[data-theme="noc"] .noc-graph-area { stroke: none; }
+:root[data-theme="noc"] .noc-graph-line {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+:root[data-theme="noc"] .noc-graph-cap {
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+  vector-effect: non-scaling-stroke;
+  opacity: .8;
+}
+:root[data-theme="noc"] .noc-graph-cap-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-anchor: end;
+  letter-spacing: .04em;
+}
+:root[data-theme="noc"] .noc-graph-dot { fill: var(--signal-bright); }
+:root[data-theme="noc"] .request-counter {
+  grid-column: 8 / 13;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0;
+  padding: 16px;
+  background: var(--inset);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+:root[data-theme="noc"] .request-counter > span {
+  font-family: var(--ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+:root[data-theme="noc"] .request-counter > strong {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: clamp(40px, 5vw, 76px);
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  margin: 2px 0;
+}
+:root[data-theme="noc"] .request-counter small { color: var(--ok); font-family: var(--mono); }
+
+/* Le serveur PNG qui brille = retiré (c'était le cœur du slop) */
+:root[data-theme="noc"] .server-zone,
+:root[data-theme="noc"] .pulse-ring,
+:root[data-theme="noc"] .server-glow,
+:root[data-theme="noc"] .rack-floor,
+:root[data-theme="noc"] .play-hints { display: none; }
+
+/* Bouton de clic = "ligne de commande opérateur" pleine largeur, à plat */
+:root[data-theme="noc"] .process-button {
+  grid-column: 1 / -1;
+  margin: 0;
+  height: 52px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--signal);
+  box-shadow: none;
+  font-family: var(--mono);
+  color: #04201d;
+  transition: background .12s ease;
+}
+:root[data-theme="noc"] .process-button:hover { background: var(--signal-bright); box-shadow: none; }
+:root[data-theme="noc"] .process-button:active { transform: translateY(1px); }
+:root[data-theme="noc"] .process-button span,
+:root[data-theme="noc"] .process-button strong { color: #04201d; font-family: var(--mono); }
+
+/* Barre d'actions (combo/surcharge/menus) en pied de panel central */
+:root[data-theme="noc"] .action-bar { width: 100%; margin: 0; padding: 10px 12px; gap: 8px; border-bottom: 1px solid var(--line); }
+:root[data-theme="noc"] .combo-meter,
+:root[data-theme="noc"] .overclock-button,
+:root[data-theme="noc"] .menu-launch-button {
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: none;
+}
+:root[data-theme="noc"] .combo-meter strong { color: var(--signal); }
+:root[data-theme="noc"] .combo-track { background: var(--panel-raised); }
+:root[data-theme="noc"] .combo-track span { background: var(--signal); box-shadow: none; }
+:root[data-theme="noc"] .overclock-ring { background: conic-gradient(var(--signal) var(--charge), var(--panel-raised) 0); }
+:root[data-theme="noc"] .menu-launch-button strong { color: var(--text); font-family: var(--ui); }
+:root[data-theme="noc"] .menu-launch-icon { background: var(--panel-raised); border: 1px solid var(--line); color: var(--signal); border-radius: 3px; }
+:root[data-theme="noc"] .menu-launch-button em {
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--signal-bright);
+  font-family: var(--mono);
+}
+:root[data-theme="noc"] .menu-launch-button:hover { background: var(--panel-raised); border-color: var(--line-strong); transform: none; }
+:root[data-theme="noc"] .menu-launch-button::before { display: none; }
+
+/* =============================================================
+   PANNEAU DROIT = "PARC / PROVISIONING" (tableau d'inventaire)
+   ============================================================= */
+:root[data-theme="noc"] .right-panel { display: flex; flex-direction: column; }
+:root[data-theme="noc"] .shop-header { flex-direction: row; }
+:root[data-theme="noc"] .buy-modes { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+:root[data-theme="noc"] .buy-mode {
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--inset);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 9px;
+}
+:root[data-theme="noc"] .buy-mode:last-child { border-right: 0; }
+:root[data-theme="noc"] .buy-mode.active { background: var(--signal); color: #04201d; border-color: var(--signal); }
+:root[data-theme="noc"] .shop-summary {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--panel-head);
+  border-bottom: 1px solid var(--line);
+}
+:root[data-theme="noc"] .shop-summary span { color: var(--text-faint); font-size: 10px; letter-spacing: .08em; }
+:root[data-theme="noc"] .shop-summary strong { color: var(--ok); font-family: var(--mono); }
+:root[data-theme="noc"] .shop-guidance {
+  padding: 7px 12px;
+  background: var(--inset);
+  border-bottom: 1px solid var(--line);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+:root[data-theme="noc"] .shop-guidance span { color: var(--signal); }
+:root[data-theme="noc"] .building-list { padding: 0; gap: 0; display: block; }
+
+/* Lignes d'inventaire denses */
+:root[data-theme="noc"] .building-card {
+  min-height: 0;
+  height: auto;
+  padding: 9px 12px;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  grid-template-columns: 30px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+:root[data-theme="noc"] .building-card:hover { background: var(--panel-raised); box-shadow: inset 2px 0 var(--signal); }
+:root[data-theme="noc"] .building-card.recommended { background: rgba(32, 197, 176, .06); box-shadow: inset 2px 0 var(--signal); }
+:root[data-theme="noc"] .building-card.unaffordable { opacity: .5; }
+:root[data-theme="noc"] .building-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  color: var(--signal);
+  font-family: var(--mono);
+  box-shadow: none;
+}
+:root[data-theme="noc"] .building-name { font-family: var(--ui); font-size: 13px; color: var(--text); }
+:root[data-theme="noc"] .building-output { color: var(--text-faint); font-family: var(--mono); }
+:root[data-theme="noc"] .building-owned { color: var(--text); font-family: var(--mono); font-size: 18px; }
+:root[data-theme="noc"] .building-price { color: var(--warn); font-family: var(--mono); }
+:root[data-theme="noc"] .building-affordability { background: var(--inset); }
+:root[data-theme="noc"] .building-affordability i { background: var(--signal); }
+
+/* =============================================================
+   BARRE DE STATUT BASSE
+   ============================================================= */
+:root[data-theme="noc"] .noc-statusline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 26px;
+  padding: 0 12px;
+  background: var(--bg-app);
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+:root[data-theme="noc"] .noc-sl-dot { color: var(--ok); }
+:root[data-theme="noc"] .noc-sl-sep { width: 1px; height: 12px; background: var(--line-strong); }
+:root[data-theme="noc"] .noc-sl-mid { color: var(--text-faint); }
+:root[data-theme="noc"] .noc-sl-right, :root[data-theme="noc"] .noc-sl-keys { margin-left: auto; }
+:root[data-theme="noc"] .noc-sl-keys { display: flex; align-items: center; gap: 6px; }
+:root[data-theme="noc"] .noc-sl-keys i { width: 1px; height: 12px; background: var(--line-strong); }
+:root[data-theme="noc"] .noc-statusline kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--text-dim);
+}
+
+/* =============================================================
+   MODALES = panneaux de configuration
+   ============================================================= */
+:root[data-theme="noc"] .modal { background: var(--panel); border: 1px solid var(--line-strong); border-radius: 4px; box-shadow: 0 12px 40px rgba(0, 0, 0, .6); }
+:root[data-theme="noc"] .modal-backdrop { background: rgba(2, 5, 8, .7); }
+:root[data-theme="noc"] .upgrade-card,
+:root[data-theme="noc"] .cert-card,
+:root[data-theme="noc"] .achievement-item,
+:root[data-theme="noc"] .prestige-summary,
+:root[data-theme="noc"] .mission-card {
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: none;
+}
+:root[data-theme="noc"] .terminal-window { background: var(--inset); border: 1px solid var(--line-strong); border-radius: 4px; }
+
+/* Pastille du sélecteur de thème NOC */
+.theme-option[data-theme="noc"] i {
+  background: var(--inset, #0a0f14);
+  box-shadow: inset 0 0 0 1px #20c5b0, inset 0 0 0 4px #0a0f14;
+}
+
+/* reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="noc"] .process-button:active { transform: none; }
+}
+
+/* Responsive : sous 1100px, on empile la console */
+@media (max-width: 1100px) {
+  :root[data-theme="noc"] .center-stage { grid-template-columns: 1fr; }
+  :root[data-theme="noc"] .noc-graph { grid-column: 1 / -1; border-right: 0; }
+  :root[data-theme="noc"] .request-counter { grid-column: 1 / -1; }
+}

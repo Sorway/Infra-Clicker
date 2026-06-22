@@ -1,0 +1,926 @@
+/* =============================================================
+   Thème surcouche — YNOV · GRAND FORMAT (Magazine de campus)
+   -------------------------------------------------------------
+   Refonte graphique COMPLÈTE (direction gagnante d'un workflow de
+   design adversarial). Parti-pris : « la marque mange la donnée ».
+   Mise en page ÉDITORIALE — le compteur devient un titre géant
+   Montserrat ferré à gauche ; bande de chiffres-clés ; masthead ;
+   boutique en sommaire à folios. Distinct de la console NOC
+   (data-first/mono) : ici marque-first/Montserrat/composition.
+
+   Identité Ynov officielle : teal #1f9e91 + palette des formations,
+   typographie Montserrat, logo SVG. Aucun aurora, aucun glow
+   gratuit, aucun dégradé décoratif. Tout scopé [data-theme="ynov"].
+   ============================================================= */
+
+:root[data-theme="ynov"] {
+  /* Marque */
+  --ynov-primary: #1f9e91;
+  --ynov-primary-bright: #2bc7b6;
+  --ynov-primary-deep: #187b73;
+  --ynov-primary-rgb: 31, 158, 145;
+
+  /* Palette des formations (accents sémantiques, usage parcimonieux) */
+  --ynov-tech: #3d68d1;
+  --ynov-info: #5ec5ea;
+  --ynov-cyber: #5affb6;
+  --ynov-archi: #3ca55b;
+  --ynov-ia: #f5822b;
+  --ynov-3d: #c259ff;
+
+  /* Surfaces — aplat sombre uni (PAS de nappe aurora) */
+  --bg: #050a09;
+  --panel: #0a1311;
+  --panel-2: #0e1a17;
+  --panel-3: #14241f;
+  --line: #1d3b35;
+  --line-soft: rgba(31, 158, 145, .14);
+  --text: #f2fffb;
+  --muted: #a8cfc8;          /* relevé pour passer AA sur capitales */
+  --faint: #6f928b;
+
+  /* Remap tokens du jeu */
+  --cyan: var(--ynov-primary);
+  --cyan-bright: var(--ynov-primary-bright);
+  --green: var(--ynov-cyber);
+  --orange: var(--ynov-ia);
+  --red: #e6172d;
+  --purple: var(--ynov-3d);
+  --accent-rgb: var(--ynov-primary-rgb);
+  --accent-deep: var(--ynov-primary-deep);
+  --accent-deep-2: #1f9e91;
+
+  --ynov-font: "Montserrat", "Segoe UI", system-ui, sans-serif;
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+}
+
+/* Hooks Ynov-only masqués hors du thème */
+.ynov-masthead-rule, .ynov-figures, .ynov-gauges, .ynov-menu-slot { display: none; }
+
+/* =============================================================
+   BASE & TYPO
+   ============================================================= */
+:root[data-theme="ynov"] body {
+  font-family: var(--ynov-font);
+  background: var(--bg);          /* aplat — supprime l'aurora */
+  letter-spacing: 0;
+}
+:root[data-theme="ynov"] .ambient-grid { display: none; }
+:root[data-theme="ynov"] * { text-shadow: none !important; }
+:root[data-theme="ynov"] .topbar,
+:root[data-theme="ynov"] .left-panel,
+:root[data-theme="ynov"] .right-panel,
+:root[data-theme="ynov"] .center-stage,
+:root[data-theme="ynov"] .metric-card,
+:root[data-theme="ynov"] .menu-launch-button,
+:root[data-theme="ynov"] .building-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none;
+}
+/* Chiffres animés : tabular-nums obligatoire (Montserrat proportionnel) */
+:root[data-theme="ynov"] #main-counter,
+:root[data-theme="ynov"] #main-rps,
+:root[data-theme="ynov"] #header-rps,
+:root[data-theme="ynov"] .ynov-fig strong,
+:root[data-theme="ynov"] .metric-card strong,
+:root[data-theme="ynov"] .building-owned,
+:root[data-theme="ynov"] .building-price {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* =============================================================
+   TOPBAR → NAMEPLATE + MASTHEAD
+   ============================================================= */
+:root[data-theme="ynov"] .topbar {
+  height: 56px;
+  margin: 0;
+  padding: 0 24px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--bg);
+}
+/* Nameplate : logo ynov (mask) + CLICKER */
+:root[data-theme="ynov"] .brand { gap: 10px; }
+:root[data-theme="ynov"] .brand-mark {
+  width: 64px; height: 26px;
+  flex: 0 0 auto;
+  padding: 0; border: 0; border-radius: 0;
+  background: var(--ynov-primary);
+  -webkit-mask: url("/img/ynov-logo2.svg") left center / contain no-repeat;
+  mask: url("/img/ynov-logo2.svg") left center / contain no-repeat;
+}
+:root[data-theme="ynov"] .brand-mark span { display: none; }
+:root[data-theme="ynov"] .brand > span:last-child { font-size: 0; }
+:root[data-theme="ynov"] .brand > span:last-child::after {
+  content: "CLICKER";
+  font-size: 13px; font-weight: 700; letter-spacing: .2em; color: var(--text);
+}
+/* PRODUCTION 0,0 req/s du haut-centre : retiré (déjà au centre + bande) */
+:root[data-theme="ynov"] .global-status { display: none; }
+
+/* « joueurs en ligne » centré tout en haut ; le reste des boutons à droite */
+:root[data-theme="ynov"] .topbar { align-items: center; }
+:root[data-theme="ynov"] .brand { grid-column: 1; grid-row: 1; align-self: center; }
+:root[data-theme="ynov"] .online-status {
+  grid-column: 2; grid-row: 1; justify-self: center; align-self: center; margin: 0;
+  font-family: var(--ynov-font); font-weight: 600; letter-spacing: .04em; color: var(--muted);
+}
+:root[data-theme="ynov"] .top-actions { grid-column: 3; grid-row: 1; align-self: center; }
+:root[data-theme="ynov"] .status-dot { box-shadow: none; background: var(--ynov-cyber); }
+:root[data-theme="ynov"] .header-capacity,
+:root[data-theme="ynov"] .header-prestige-button { border-radius: 2px; }
+:root[data-theme="ynov"] #header-capacity-bar { background: var(--ynov-primary); }
+:root[data-theme="ynov"] .header-prestige-button:not([disabled]) { border-color: var(--ynov-primary); color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] .online-dot { background: var(--ynov-cyber); box-shadow: none; }
+:root[data-theme="ynov"] .icon-button {
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+:root[data-theme="ynov"] .icon-button:hover { border-color: var(--ynov-primary); color: var(--ynov-primary-bright); transform: none; }
+
+/* Filet de masthead pleine largeur sous la topbar */
+:root[data-theme="ynov"] .ynov-masthead-rule {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 30px;
+  padding: 0 24px;
+  background: var(--ynov-primary);
+  color: #04201d;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+:root[data-theme="ynov"] .ynov-edition-no {
+  font-weight: 800; letter-spacing: .2em;
+  padding-right: 14px; border-right: 1px solid rgba(4, 32, 29, .35);
+}
+:root[data-theme="ynov"] .ynov-ticker {
+  letter-spacing: .04em; text-transform: none; font-weight: 600; font-size: 12px;
+}
+:root[data-theme="ynov"] .ynov-ticker.ynov-ticker-in { animation: ynovTickerIn .4s ease; }
+@keyframes ynovTickerIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* =============================================================
+   GRILLE : panneaux à plat séparés par filets
+   ============================================================= */
+:root[data-theme="ynov"] .dashboard {
+  height: calc(100vh - 56px - 30px);
+  gap: 1px;
+  padding: 0;
+  background: var(--line);
+  grid-template-columns: minmax(290px, 23vw) minmax(440px, 1fr) minmax(320px, 26vw);
+}
+:root[data-theme="ynov"] .left-panel,
+:root[data-theme="ynov"] .right-panel,
+:root[data-theme="ynov"] .center-stage {
+  margin: 0; border: 0; border-radius: 0; background: var(--panel);
+}
+
+/* En-têtes de section éditoriaux */
+:root[data-theme="ynov"] .section-title,
+:root[data-theme="ynov"] .shop-header {
+  margin: 0; padding: 14px 18px 10px;
+  border-bottom: 2px solid var(--line);
+  font-family: var(--ynov-font);
+}
+:root[data-theme="ynov"] .section-title span,
+:root[data-theme="ynov"] .shop-header h2 {
+  font-weight: 800; letter-spacing: .14em; text-transform: uppercase; font-size: 12px; color: var(--text); margin: 0;
+}
+:root[data-theme="ynov"] .section-title { display: flex; align-items: center; justify-content: space-between; }
+:root[data-theme="ynov"] .text-button { color: var(--ynov-primary); font-weight: 700; letter-spacing: .08em; }
+:root[data-theme="ynov"] .panel-section { margin: 0; padding: 16px 18px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
+:root[data-theme="ynov"] .panel-section:hover { background: transparent; border-color: var(--line); }
+
+/* Profil — gros logo de niveau à droite, texte + barre à gauche */
+:root[data-theme="ynov"] .profile-section { position: relative; }
+:root[data-theme="ynov"] .profile-row h1 { font-family: var(--ynov-font); font-weight: 800; font-size: 19px; }
+:root[data-theme="ynov"] .server-avatar {
+  position: absolute; top: 14px; right: 16px;
+  width: 96px; height: 96px;
+  flex: none; border-radius: 14px; border: 1px solid var(--line-soft);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(255, 255, 255, .05);
+  overflow: hidden; z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(0, 0, 0, .22)),
+    var(--avatar-img, var(--panel-2)) center / cover no-repeat,
+    var(--panel-2);
+}
+:root[data-theme="ynov"] .server-avatar > span { display: none; }
+/* libère la place du logo à droite : texte plein-gauche + barre raccourcie */
+:root[data-theme="ynov"] .profile-section .profile-row,
+:root[data-theme="ynov"] .profile-section .level-row,
+:root[data-theme="ynov"] .profile-section > .progress { padding-right: 112px; }
+:root[data-theme="ynov"] .profile-section .profile-row > div { min-width: 0; }
+:root[data-theme="ynov"] .progress, :root[data-theme="ynov"] .progress.thin { background: var(--panel-3); border-radius: 1px; box-shadow: none; }
+:root[data-theme="ynov"] .progress span { background: var(--ynov-primary); box-shadow: none; border-radius: 1px; }
+:root[data-theme="ynov"] .progress.cpu span { background: var(--ynov-ia); }
+:root[data-theme="ynov"] .progress.ram span { background: var(--ynov-3d); }
+:root[data-theme="ynov"] .progress.network span { background: var(--ynov-cyber); }
+:root[data-theme="ynov"] .gauge-marker { box-shadow: none; }
+
+/* Les barres CPU/RAM/BANDE sont remplacées par des gauges radiales Grafana */
+:root[data-theme="ynov"] .resource-row { display: none; }
+:root[data-theme="ynov"] .ynov-gauges {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+:root[data-theme="ynov"] .yg {
+  position: relative;
+  aspect-ratio: 1 / 0.94;
+}
+:root[data-theme="ynov"] .yg-svg { display: block; width: 100%; height: 100%; }
+:root[data-theme="ynov"] .yg-track {
+  fill: none;
+  stroke: var(--panel-3);
+  stroke-width: 11;
+  stroke-linecap: round;
+}
+:root[data-theme="ynov"] .yg-value {
+  fill: none;
+  stroke-width: 11;
+  stroke-linecap: round;
+  transition: stroke-dasharray .3s ease, stroke .3s ease;
+}
+:root[data-theme="ynov"] .yg-center {
+  position: absolute;
+  left: 0; right: 0; top: 46%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  pointer-events: none;
+}
+:root[data-theme="ynov"] .yg-center strong {
+  font-family: var(--ynov-font);
+  font-weight: 800;
+  font-size: clamp(15px, 1.5vw, 22px);
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+:root[data-theme="ynov"] .yg-center span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* Jauges CPU/RAM/BANDE façon Grafana : demi-cercle + dégradé, et valeur /
+   label / sparkline RENDUS DANS L'ARC (tout en SVG, comme l'exemple). */
+:root[data-theme="ynov"] .yg2-svg { display: block; width: 100%; height: auto; }
+:root[data-theme="ynov"] .yg2-thin { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+:root[data-theme="ynov"] .yg2-track { fill: none; stroke: #2a2f37; stroke-width: 9; stroke-linecap: round; }
+:root[data-theme="ynov"] .yg2-val {
+  fill: none; stroke-width: 9; stroke-linecap: round;
+  transition: stroke-dasharray .35s ease;
+}
+:root[data-theme="ynov"] .yg2-num {
+  fill: #f4f6f8; font-family: var(--ynov-font); font-weight: 800;
+  text-anchor: middle; font-variant-numeric: tabular-nums;
+  /* font-size posée en inline (adaptée à la longueur de la valeur) */
+}
+:root[data-theme="ynov"] .yg2-lbl {
+  fill: var(--muted); font-weight: 700; font-size: 7px; letter-spacing: .3px; text-anchor: middle;
+}
+:root[data-theme="ynov"] .yg2-spark { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+/* Cartes stats du panneau gauche → cartouches nets */
+:root[data-theme="ynov"] .metric-card {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 2px;
+}
+:root[data-theme="ynov"] .metric-card span { color: var(--faint); letter-spacing: .06em; }
+:root[data-theme="ynov"] .metric-card strong { color: var(--text); font-family: var(--ynov-font); font-weight: 800; }
+:root[data-theme="ynov"] .metric-icon { background: var(--panel-3); border: 1px solid var(--line); color: var(--ynov-primary); border-radius: 2px; }
+:root[data-theme="ynov"] .metric-live-dot { background: var(--ynov-cyber); box-shadow: none; }
+:root[data-theme="ynov"] .spark-line { stroke: var(--ynov-primary); stroke-width: 2; }
+:root[data-theme="ynov"] .spark-point { fill: var(--ynov-primary-bright); }
+
+/* Retrait du doublon "REQUÊTES TRAITÉES" (déjà en compteur central + bande) */
+:root[data-theme="ynov"] .metric-card.metric-wide { display: none; }
+/* Grille : REQUÊTES/SEC pleine largeur, puis UTILISATEURS + BANDE PASSANTE côte à côte */
+:root[data-theme="ynov"] .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+:root[data-theme="ynov"] .metric-card { padding: 14px; }
+:root[data-theme="ynov"] .metric-card:has(.sparkline) { grid-column: 1 / -1; }
+:root[data-theme="ynov"] .metric-bp-ynov { display: flex; flex-direction: column; gap: 4px; }
+:root[data-theme="ynov"] .metric-card .metric-heading span,
+:root[data-theme="ynov"] .metric-card > span { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+/* Graphe req/s agrandi */
+:root[data-theme="ynov"] .metric-card .sparkline { height: 72px; margin-top: 10px; }
+:root[data-theme="ynov"] #rps-stat { font-size: 26px; color: var(--ynov-primary-bright); }
+/* UTILISATEURS + BANDE PASSANTE : compacts, côte à côte */
+:root[data-theme="ynov"] #users-stat {
+  font-size: 23px; font-weight: 800;
+  color: var(--ynov-info);
+  letter-spacing: -.01em;
+}
+:root[data-theme="ynov"] #ynov-bp-value {
+  font-size: 21px; font-weight: 800;
+  color: var(--ynov-cyber);
+  letter-spacing: -.01em;
+}
+
+/* =============================================================
+   CENTRE = LA UNE : compteur-titre géant + chiffres-clés
+   ============================================================= */
+:root[data-theme="ynov"] .center-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  gap: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+/* Bandeau événement = surtitre d'actualité */
+:root[data-theme="ynov"] .event-banner {
+  max-width: 560px; margin: 14px auto 6px;
+  border: 1px solid var(--line); border-radius: 2px;
+  background: var(--panel-2); font-family: var(--ynov-font);
+}
+:root[data-theme="ynov"] .event-banner.danger { border-left: 4px solid var(--red); }
+:root[data-theme="ynov"] .event-banner.bonus { border-left: 4px solid var(--ynov-cyber); }
+
+/* LE GESTE SIGNATURE : compteur = titre de Une */
+:root[data-theme="ynov"] .request-counter {
+  margin: 0;
+  padding: 22px 32px 16px;
+  text-align: center;
+  overflow: clip;
+  border-bottom: 1px solid var(--line);
+}
+:root[data-theme="ynov"] .request-counter > span {
+  display: block;
+  font-weight: 700; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 6px;
+}
+:root[data-theme="ynov"] .request-counter > strong {
+  display: inline-block;
+  font-family: var(--ynov-font);
+  font-weight: 800;
+  font-size: clamp(54px, 9vw, 132px);
+  line-height: .9;
+  letter-spacing: -.025em;
+  color: var(--text);
+  border-bottom: 4px solid var(--ynov-primary);
+  padding-bottom: 8px;
+}
+:root[data-theme="ynov"] .request-counter small {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted); font-weight: 600; letter-spacing: .04em; font-size: 13px;
+}
+:root[data-theme="ynov"] .request-counter small span { color: var(--ynov-primary-bright); }
+
+/* Logo Ynov central, cliquable (élément de jeu #server-button) */
+:root[data-theme="ynov"] .pulse-ring,
+:root[data-theme="ynov"] .server-glow,
+:root[data-theme="ynov"] .rack-floor { display: none; }
+:root[data-theme="ynov"] .server-zone {
+  display: grid; place-items: center;
+  width: auto; height: auto; min-height: 0; margin: 0; perspective: none;
+}
+:root[data-theme="ynov"] .server-button {
+  position: relative;
+  width: min(240px, 26vw);
+  aspect-ratio: 100 / 40;
+  filter: none;
+  transition: transform .12s ease;
+}
+:root[data-theme="ynov"] .server-button img { visibility: hidden; }
+/* le visuel central Ynov est toujours le logo campus, jamais l'icône d'un DLC */
+:root[data-theme="ynov"] .dlc-clicker-icon { display: none; }
+:root[data-theme="ynov"] .server-button::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--ynov-primary);
+  -webkit-mask: url("/img/ynov-logo.svg") center / contain no-repeat;
+  mask: url("/img/ynov-logo.svg") center / contain no-repeat;
+}
+:root[data-theme="ynov"] .server-button:hover { transform: translateY(-2px); }
+:root[data-theme="ynov"] .server-button:hover::after { background: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] .server-button:active { transform: scale(.97); }
+
+/* Rangée centrale : combo (gauche) · logo (centre) · surcharge (droite) */
+:root[data-theme="ynov"] .ynov-stage-mid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 32px;
+  border-bottom: 1px solid var(--line);
+}
+:root[data-theme="ynov"] .ynov-stage-mid #combo-meter { justify-self: center; }
+:root[data-theme="ynov"] .ynov-stage-mid #overclock-button { justify-self: center; }
+
+/* COMBO en gauge RADIALE (même style que les jauges CPU) : affiche le
+   multiplicateur atteint, ne réagit pas à chaque clic. */
+:root[data-theme="ynov"] #combo-meter {
+  width: 184px; min-height: 0;
+  display: grid; place-items: center;
+  padding: 4px;
+  background: transparent; border: 0;
+}
+/* On masque l'ancienne présentation verticale (réutilisée par les autres thèmes) */
+:root[data-theme="ynov"] #combo-meter .combo-head,
+:root[data-theme="ynov"] #combo-meter .combo-track,
+:root[data-theme="ynov"] #combo-meter #combo-hint { display: none; }
+/* La gauge radiale injectée */
+#ynov-combo-arc { display: none; }
+:root[data-theme="ynov"] #ynov-combo-arc { display: block; width: 100%; aspect-ratio: 1 / 0.94; position: relative; }
+:root[data-theme="ynov"] #ynov-combo-arc .yg-track,
+:root[data-theme="ynov"] #ynov-combo-arc .yg-value { stroke-width: 9; }
+:root[data-theme="ynov"] #ynov-combo-arc .yg-center strong {
+  color: var(--combo-color, var(--ynov-primary-bright));
+  font-size: clamp(22px, 2.4vw, 32px);
+  transition: color .3s ease;
+}
+:root[data-theme="ynov"] #ynov-combo-arc .yg-center span { font-size: 10px; }
+
+/* SURCHARGE : bouton "boost" soigné à droite, équilibré avec le combo */
+:root[data-theme="ynov"] #overclock-button {
+  width: 100%; max-width: 184px; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: 18px 16px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(31, 158, 145, .10), transparent 70%),
+    var(--panel-2);
+  border: 1px solid var(--line); border-radius: 4px;
+  text-align: center;
+  transition: border-color .2s ease, background .2s ease, transform .1s ease, box-shadow .2s ease;
+}
+:root[data-theme="ynov"] #overclock-button .overclock-ring { width: 92px; height: 92px; }
+:root[data-theme="ynov"] #overclock-button .overclock-glyph { width: 28px; height: 28px; color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] #overclock-button .action-status-text { display: flex; flex-direction: column; gap: 2px; }
+:root[data-theme="ynov"] #overclock-button strong {
+  color: var(--text); font-weight: 800; font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
+}
+:root[data-theme="ynov"] #overclock-button small { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+/* Désactivée (charge en cours) : sobre et atténuée */
+:root[data-theme="ynov"] #overclock-button[disabled] { opacity: .82; }
+:root[data-theme="ynov"] #overclock-button[disabled] .overclock-glyph { color: var(--faint); }
+/* Prête : liseré teal + halo discret + glyphe vif, invite au clic */
+:root[data-theme="ynov"] #overclock-button:not([disabled]) {
+  border-color: var(--ynov-primary); cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(31, 158, 145, .25), 0 0 22px -6px rgba(31, 158, 145, .5);
+}
+:root[data-theme="ynov"] #overclock-button:not([disabled]):hover { background: var(--panel-3); transform: translateY(-2px); }
+:root[data-theme="ynov"] #overclock-button:not([disabled]) strong { color: var(--ynov-primary-bright); }
+
+/* La barre d'actions d'origine est vidée (combo/surcharge/menus déplacés) */
+:root[data-theme="ynov"] .action-bar,
+:root[data-theme="ynov"] .action-status { display: none; }
+
+/* Bande CHIFFRES-CLÉS retirée (remplacée par capacité/prestige sous TRAITER) */
+:root[data-theme="ynov"] .ynov-figures { display: none; }
+
+/* Menus rangés dans Infrastructure, sous deux sous-catégories Tuning / Skills */
+:root[data-theme="ynov"] .ynov-menu-slot {
+  display: flex; flex-direction: column; gap: 10px; flex: 0 0 auto;
+  padding: 12px; border-top: 2px solid var(--line); background: var(--panel);
+}
+:root[data-theme="ynov"] .ynov-cat-label {
+  display: block; margin-bottom: 6px;
+  font-family: var(--ynov-font); font-weight: 800; font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--faint);
+}
+:root[data-theme="ynov"] .ynov-cat-items { display: grid; grid-template-columns: 1fr; gap: 6px; }
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button { min-height: 0; padding: 8px 11px; grid-template-columns: 40px 1fr auto; }
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-text small { display: none; }
+/* Icônes des menus = images fournies (tuning / certification / missions) */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-icon {
+  width: 40px; height: 40px; border: 0; background: transparent;
+  background-size: contain; background-position: center; background-repeat: no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .5));
+}
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-icon svg { display: none; }
+:root[data-theme="ynov"] .upgrades-launch .menu-launch-icon { background-image: url("/img/buildings/tuning.png"); }
+:root[data-theme="ynov"] .certifications-launch .menu-launch-icon { background-image: url("/img/buildings/certification.png"); }
+:root[data-theme="ynov"] .missions-launch .menu-launch-icon { background-image: url("/img/buildings/missions.png"); }
+:root[data-theme="ynov"] .ynov-fig {
+  flex: 1 1 0;
+  min-width: 120px;
+  padding: 16px 18px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+:root[data-theme="ynov"] .ynov-fig:last-child { border-right: 0; }
+:root[data-theme="ynov"] .ynov-fig strong {
+  font-family: var(--ynov-font); font-weight: 800; font-size: clamp(20px, 2vw, 30px); color: var(--text); line-height: 1;
+}
+:root[data-theme="ynov"] .ynov-fig:nth-child(2) strong { color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] .ynov-fig span { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+
+/* Bouton TRAITER = bouton central sous le logo */
+:root[data-theme="ynov"] .process-button {
+  margin: 20px auto 0;
+  width: min(360px, 80%);
+  height: 56px;
+  border: 0; border-radius: 2px;
+  background: var(--ynov-primary);
+  box-shadow: none;
+  font-family: var(--ynov-font); font-weight: 800; letter-spacing: .14em;
+  color: #04201d;
+  transition: background .14s ease, transform .1s ease;
+}
+:root[data-theme="ynov"] .process-button:hover { background: var(--ynov-primary-bright); box-shadow: none; }
+:root[data-theme="ynov"] .process-button:active { transform: translateY(1px); }
+:root[data-theme="ynov"] .process-button span,
+:root[data-theme="ynov"] .process-button strong { color: #04201d; font-family: var(--ynov-font); }
+:root[data-theme="ynov"] .play-hints { justify-content: center; padding: 10px 32px 0; color: var(--faint); }
+
+/* Barre d'actions (combo/surcharge/menus) */
+:root[data-theme="ynov"] .action-bar { width: 100%; margin: 16px 0 0; padding: 0 32px 24px; gap: 10px; }
+:root[data-theme="ynov"] .combo-meter,
+:root[data-theme="ynov"] .overclock-button,
+:root[data-theme="ynov"] .menu-launch-button {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 2px; box-shadow: none;
+}
+:root[data-theme="ynov"] .combo-meter strong { color: var(--ynov-primary); }
+:root[data-theme="ynov"] .combo-track { background: var(--panel-3); }
+:root[data-theme="ynov"] .combo-track span { background: var(--ynov-primary); box-shadow: none; }
+:root[data-theme="ynov"] .overclock-ring { background: conic-gradient(var(--ynov-primary) var(--charge), var(--panel-3) 0); }
+:root[data-theme="ynov"] .menu-launch-icon { background: var(--panel-3); border: 1px solid var(--line); color: var(--ynov-primary); border-radius: 2px; }
+:root[data-theme="ynov"] .menu-launch-button strong { color: var(--text); font-family: var(--ynov-font); }
+:root[data-theme="ynov"] .menu-launch-button em { background: var(--panel-3); border: 1px solid var(--line); border-radius: 2px; color: var(--ynov-primary-bright); font-family: var(--ynov-font); }
+:root[data-theme="ynov"] .menu-launch-button::before { display: none; }
+:root[data-theme="ynov"] .menu-launch-button:hover { background: var(--panel-3); border-color: var(--ynov-primary); transform: none; }
+/* Identité couleur par menu (formations) */
+:root[data-theme="ynov"] .upgrades-launch .menu-launch-icon { color: var(--ynov-tech); }
+:root[data-theme="ynov"] .certifications-launch .menu-launch-icon { color: var(--ynov-info); }
+:root[data-theme="ynov"] .missions-launch .menu-launch-icon { color: var(--ynov-cyber); }
+
+/* =============================================================
+   PANNEAU DROIT = SOMMAIRE / INDEX (folios + liseré filière)
+   ============================================================= */
+:root[data-theme="ynov"] .shop-header { display: flex; align-items: center; justify-content: space-between; }
+:root[data-theme="ynov"] .buy-modes { border: 1px solid var(--line); border-radius: 2px; overflow: hidden; gap: 0; }
+:root[data-theme="ynov"] .buy-mode { border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--panel-2); color: var(--muted); font-family: var(--ynov-font); font-weight: 700; }
+:root[data-theme="ynov"] .buy-mode:last-child { border-right: 0; }
+:root[data-theme="ynov"] .buy-mode.active { background: var(--ynov-primary); color: #04201d; }
+/* Résumé Infra (PRODUCTION + ÉQUIPEMENTS) entièrement retiré */
+:root[data-theme="ynov"] .shop-summary { display: none; }
+:root[data-theme="ynov"] .shop-guidance { padding: 8px 18px; background: var(--panel); border-bottom: 1px solid var(--line); color: var(--muted); }
+:root[data-theme="ynov"] .shop-guidance span { color: var(--ynov-primary); font-weight: 700; }
+
+:root[data-theme="ynov"] .right-panel { display: flex; flex-direction: column; }
+:root[data-theme="ynov"] .building-list {
+  padding: 1px 0 0; gap: 1px;
+  display: grid; grid-template-columns: 1fr 1fr; align-items: stretch;
+  grid-auto-rows: minmax(68px, 1fr);
+  counter-reset: bldg;
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  background: var(--line);
+}
+:root[data-theme="ynov"] .building-card {
+  min-height: 0; height: auto;
+  margin: 0; padding: 9px 10px 9px 12px;
+  border: 0; border-radius: 0;
+  background: var(--panel); position: relative;
+  grid-template-columns: 56px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  /* neutralise l'animation d'entrée (translateX + transition-delay décalée)
+     qui faisait dériver les 2 colonnes */
+  transform: none !important;
+  opacity: 1 !important;
+  transition: background .15s ease, border-color .15s ease;
+}
+:root[data-theme="ynov"] .building-info { min-width: 0; }
+/* Liseré filière (mapping en dur par data-building) */
+:root[data-theme="ynov"] .building-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--fam, var(--ynov-primary)); opacity: .9;
+}
+:root[data-theme="ynov"] .building-card[data-building="bash"],
+:root[data-theme="ynov"] .building-card[data-building="kubernetes"] { --fam: var(--ynov-ia); }
+:root[data-theme="ynov"] .building-card[data-building="pi"],
+:root[data-theme="ynov"] .building-card[data-building="mini"],
+:root[data-theme="ynov"] .building-card[data-building="switch"] { --fam: var(--ynov-tech); }
+:root[data-theme="ynov"] .building-card[data-building="nas"],
+:root[data-theme="ynov"] .building-card[data-building="serverroom"] { --fam: var(--ynov-info); }
+:root[data-theme="ynov"] .building-card[data-building="firewall"] { --fam: var(--ynov-cyber); }
+:root[data-theme="ynov"] .building-card[data-building="rack"],
+:root[data-theme="ynov"] .building-card[data-building="datacenter"] { --fam: var(--ynov-archi); }
+:root[data-theme="ynov"] .building-card[data-building="privatecloud"],
+:root[data-theme="ynov"] .building-card[data-building="worldcloud"] { --fam: var(--ynov-3d); }
+:root[data-theme="ynov"] .building-card:hover { background: var(--panel-2); }
+:root[data-theme="ynov"] .building-card.recommended { background: rgba(31, 158, 145, .07); }
+:root[data-theme="ynov"] .building-card.unaffordable { opacity: .5; }
+:root[data-theme="ynov"] .building-icon {
+  width: 56px; height: 56px; border-radius: 9px;
+  background: radial-gradient(120% 120% at 50% 20%, rgba(31, 158, 145, .14), var(--panel-3));
+  border: 1px solid var(--line-soft); color: var(--ynov-primary);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .04); font-size: 18px; overflow: hidden;
+}
+/* Image intégrée dans une zone : remplit le cadre (sans détourage flottant) */
+:root[data-theme="ynov"] .building-icon.has-img {
+  padding: 0;
+  border-color: color-mix(in srgb, var(--fam, var(--ynov-primary)) 50%, var(--line));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(0, 0, 0, .18)),
+    radial-gradient(120% 120% at 50% 12%, color-mix(in srgb, var(--fam, var(--ynov-primary)) 26%, var(--panel-3)), var(--panel-3));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
+}
+:root[data-theme="ynov"] .building-icon.has-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: none; mix-blend-mode: normal;
+}
+/* Assets non récupérables : zone + image grisées (priorité sur le filter:none ci-dessus) */
+:root[data-theme="ynov"] .building-card[aria-disabled="true"] .building-icon.has-img img {
+  filter: grayscale(1) brightness(.55) contrast(.9);
+}
+:root[data-theme="ynov"] .building-card[aria-disabled="true"] .building-icon.has-img {
+  filter: saturate(.2);
+  border-color: var(--line);
+  background: var(--panel-3);
+}
+:root[data-theme="ynov"] .building-name {
+  font-family: var(--ynov-font); font-weight: 700; font-size: 12.5px; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+:root[data-theme="ynov"] .building-output { color: var(--faint); font-size: 8px; }
+:root[data-theme="ynov"] .building-buy { text-align: right; }
+:root[data-theme="ynov"] .building-owned { color: var(--text); font-family: var(--ynov-font); font-weight: 800; font-size: 15px; line-height: 1; }
+:root[data-theme="ynov"] .building-price { color: var(--ynov-ia); font-family: var(--ynov-font); font-weight: 700; font-size: 9px; }
+:root[data-theme="ynov"] .building-affordability { background: var(--panel-3); }
+:root[data-theme="ynov"] .building-affordability i { background: var(--ynov-primary); }
+
+/* =============================================================
+   MODALES — cartouches éditoriaux
+   ============================================================= */
+:root[data-theme="ynov"] .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 2px; box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+:root[data-theme="ynov"] .modal-backdrop { background: rgba(2, 6, 5, .72); }
+:root[data-theme="ynov"] .upgrade-card,
+:root[data-theme="ynov"] .cert-card,
+:root[data-theme="ynov"] .achievement-item,
+:root[data-theme="ynov"] .prestige-summary,
+:root[data-theme="ynov"] .mission-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 2px; box-shadow: none; }
+:root[data-theme="ynov"] .primary-button,
+:root[data-theme="ynov"] .prestige-confirm-button { background: var(--ynov-primary); border-color: var(--ynov-primary); color: #04201d; }
+:root[data-theme="ynov"] .terminal-window { background: var(--bg); border: 1px solid var(--line); border-radius: 2px; }
+
+/* Pastille du sélecteur de thème (dégradé multicolore formations) */
+.theme-option[data-theme="ynov"] i {
+  background: conic-gradient(from 210deg, #1f9e91, #5ec5ea, #c259ff, #ff5aff, #f5822b, #ffdb2d, #3ca55b, #1f9e91);
+}
+
+/* ---------- EFFET DE FRAPPE SUR LA JAUGE COMBO ---------- */
+:root[data-theme="ynov"] #combo-meter { position: relative; }
+:root[data-theme="ynov"] #combo-meter.hit { animation: ynovComboPop .18s ease; }
+:root[data-theme="ynov"] #combo-meter.hit .combo-head strong { animation: ynovComboPop .2s ease; }
+:root[data-theme="ynov"] .combo-hit {
+  position: absolute; left: 50%; top: 40%;
+  transform: translate(-50%, 0);
+  font-family: var(--ynov-font); font-weight: 800; font-size: 17px;
+  color: var(--combo-color, var(--ynov-primary-bright));
+  text-shadow: 0 0 12px var(--combo-color, var(--ynov-primary));
+  pointer-events: none; white-space: nowrap; z-index: 2;
+  animation: ynovComboHit .64s ease-out forwards;
+}
+:root[data-theme="ynov"] .combo-hit.crit { color: #fff0bd; font-size: 19px; text-shadow: 0 0 12px #f5822b; }
+@keyframes ynovComboPop { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
+@keyframes ynovComboHit {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(.8); }
+  22% { opacity: 1; transform: translate(-50%, 0) scale(1.12); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
+}
+
+/* ---------- SURCHARGE : ÉCLAIR IMMERSIF QUAND ACTIVÉE ---------- */
+:root[data-theme="ynov"] #overclock-button.active {
+  border-color: var(--ynov-cyber);
+  background: rgba(90, 255, 182, .08);
+  animation: ynovCharbonne 1.1s ease-in-out infinite;
+}
+:root[data-theme="ynov"] #overclock-button.active .overclock-ring {
+  background: conic-gradient(var(--ynov-cyber) 360deg, var(--ynov-cyber) 0);
+}
+:root[data-theme="ynov"] #overclock-button.active .overclock-glyph {
+  color: #04140f;
+  animation: ynovBolt .55s ease-in-out infinite;
+}
+:root[data-theme="ynov"] #overclock-button.active strong { color: var(--ynov-cyber); }
+@keyframes ynovBolt {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 1px var(--ynov-cyber)); }
+  50% { transform: scale(1.22); filter: drop-shadow(0 0 9px var(--ynov-cyber)); }
+}
+@keyframes ynovCharbonne {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(90, 255, 182, 0); }
+  50% { box-shadow: 0 0 22px -3px rgba(90, 255, 182, .55); }
+}
+
+/* ---------- MENUS REMONTÉS EN HAUT À DROITE (icônes) ---------- */
+:root[data-theme="ynov"] .top-actions .action-menus { display: flex; gap: 7px; }
+:root[data-theme="ynov"] .top-actions .menu-launch-button {
+  position: relative;
+  width: 42px; height: 42px; min-height: 0; padding: 0;
+  display: grid; place-items: center;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 2px;
+  transition: border-color .15s ease, background .15s ease;
+}
+:root[data-theme="ynov"] .top-actions .menu-launch-button:hover { border-color: var(--ynov-primary); background: var(--panel-3); transform: none; }
+:root[data-theme="ynov"] .top-actions .menu-launch-button::before { display: none; }
+:root[data-theme="ynov"] .top-actions .menu-launch-text { display: none; }
+:root[data-theme="ynov"] .top-actions .menu-launch-icon { width: 22px; height: 22px; background: transparent; border: 0; }
+:root[data-theme="ynov"] .top-actions .menu-launch-button em {
+  position: absolute; top: -6px; right: -6px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  display: grid; place-items: center;
+  font-family: var(--ynov-font); font-weight: 800; font-size: 9px;
+  color: #04201d; background: var(--ynov-primary);
+  border: 0; border-radius: 9px;
+}
+:root[data-theme="ynov"] .top-actions .menu-launch-button em.complete { background: var(--ynov-cyber); }
+
+/* ---------- CAPACITÉ / SATURATION + PRESTIGE SOUS TRAITER ----------
+   Panneau-instrument : jauge honnête (canal encaissé + graduations au quart),
+   liseré teal qui vire à l'orange en saturation, et action prestige avec la
+   médaille prestige.png en emblème (grisée tant que verrouillée). */
+:root[data-theme="ynov"] .center-stage > .header-capacity {
+  display: flex; flex-direction: column; align-items: stretch; gap: 11px;
+  width: min(400px, 88%); margin: 18px auto 26px; padding: 14px 16px 15px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-left: 3px solid var(--ynov-primary); border-radius: 2px;
+  transition: border-color .25s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity.saturated { border-left-color: var(--ynov-ia); }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-capacity-label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--ynov-font); font-size: 11px; letter-spacing: .12em; color: var(--faint); text-transform: uppercase;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity #header-saturation {
+  color: var(--ynov-primary); font-weight: 800; font-size: 15px;
+  font-variant-numeric: tabular-nums; transition: color .25s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity.saturated #header-saturation { color: var(--ynov-ia); }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-capacity-track {
+  position: relative; width: 100%; height: 11px;
+  background: var(--panel-3); border-radius: 2px; overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--line-soft);
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-capacity-track::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--line-soft) calc(25% - 1px) 25%);
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity #header-capacity-bar {
+  height: 100%; background: var(--ynov-primary);
+  transition: width .45s cubic-bezier(.22, .61, .36, 1), background-color .3s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity.saturated #header-capacity-bar { background: var(--ynov-ia); }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button {
+  display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto;
+  align-items: center; column-gap: 12px; justify-items: start;
+  width: 100%; padding: 9px 12px; text-align: left;
+  background: var(--panel-3); border: 1px solid var(--line); border-radius: 2px;
+  font-family: var(--ynov-font);
+  transition: border-color .2s ease, background .2s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button > span {
+  grid-row: 1 / 3; width: 40px; height: 40px; font-size: 0;
+  background: url("/img/buildings/prestige.png") center / contain no-repeat;
+  filter: grayscale(1) brightness(.85) opacity(.45); transition: filter .25s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button #header-prestige-gain {
+  grid-column: 2; grid-row: 1; font-size: 18px; font-weight: 800; line-height: 1; color: var(--muted);
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button small {
+  grid-column: 2; grid-row: 2; margin-top: 2px;
+  font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--faint);
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button:not([disabled]) {
+  border-color: var(--ynov-primary); cursor: pointer;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button:not([disabled]) > span { filter: none; }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button:not([disabled]) #header-prestige-gain { color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button:not([disabled]):hover {
+  background: var(--panel); border-color: var(--ynov-primary-bright);
+}
+/* Le bloc est recentré (large) en Ynov : on conserve le libellé + la légende
+   même sous 1100px, là où la barre supérieure d'origine les masquait. */
+@media (max-width: 1100px) {
+  :root[data-theme="ynov"] .center-stage > .header-capacity .header-capacity-label span { display: inline; }
+  :root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button small { display: block; }
+}
+
+/* ---------- ÉCLAIR PLEIN ÉCRAN À L'ACTIVATION DE LA SURCHARGE ---------- */
+.ynov-strike {
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  display: grid; place-items: center;
+  animation: ynovStrikeFlash 2.1s ease-out forwards;
+}
+.ynov-strike-bolt {
+  width: min(240px, 42vw); height: auto;
+  fill: #eafff9;
+  filter: drop-shadow(0 0 28px #5affb6) drop-shadow(0 0 70px #1f9e91);
+  animation: ynovStrikeBolt 2.1s ease-out forwards;
+}
+@keyframes ynovStrikeFlash {
+  0% { background: rgba(90, 255, 182, 0); }
+  7% { background: rgba(255, 255, 255, .6); }
+  16% { background: rgba(90, 255, 182, .2); }
+  70% { background: rgba(31, 158, 145, .06); }
+  100% { background: rgba(0, 0, 0, 0); }
+}
+@keyframes ynovStrikeBolt {
+  0% { opacity: 0; transform: scale(.6) rotate(-5deg); }
+  7% { opacity: 1; transform: scale(1.06) rotate(0deg); }
+  13% { opacity: .25; }
+  19% { opacity: 1; }
+  26% { opacity: .5; }
+  33% { opacity: 1; }
+  78% { opacity: .85; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
+/* ---------- CÉLÉBRATION PLEIN ÉCRAN À CHAQUE MONTÉE DE NIVEAU ---------- */
+.ynov-levelup {
+  position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  display: grid; place-items: center;
+  animation: ynovLevelWash 2.4s ease-out forwards;
+}
+.ynov-levelup-stack {
+  position: relative; display: grid; justify-items: center; gap: 8px;
+}
+.ynov-levelup.leaving .ynov-levelup-stack { animation: ynovLevelOut .55s ease-in forwards; }
+.ynov-levelup-tag {
+  width: min(196px, 42vw); height: auto;
+  animation: ynovLevelTag .55s cubic-bezier(.34, 1.4, .5, 1) both;
+}
+.ynov-levelup-badge {
+  width: min(132px, 28vw); height: auto;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, .55));
+  animation: ynovLevelBadge .6s cubic-bezier(.34, 1.56, .5, 1) both;
+}
+.ynov-levelup-cap {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: var(--ynov-font); text-align: center;
+  animation: ynovLevelCap .5s ease-out .22s both;
+}
+.ynov-levelup-cap strong { font-size: 23px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--text); }
+.ynov-levelup-cap span { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ynov-primary-bright); }
+.ynov-levelup-stars { position: absolute; inset: 0; pointer-events: none; }
+.ynov-star {
+  position: absolute; left: 50%; top: 46%; margin: -8px 0 0 -8px;
+  width: 16px; height: 16px; background: #f5c542;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  opacity: 0;
+  animation: ynovStarBurst 1.2s ease-out var(--delay, 0ms) forwards;
+}
+.ynov-star.alt { background: var(--ynov-primary-bright); }
+@keyframes ynovLevelWash {
+  0% { background: radial-gradient(58% 50% at 50% 44%, rgba(31, 158, 145, 0), rgba(0, 0, 0, 0)); }
+  10% { background: radial-gradient(58% 50% at 50% 44%, rgba(31, 158, 145, .16), rgba(5, 10, 9, .36)); }
+  72% { background: radial-gradient(58% 50% at 50% 44%, rgba(31, 158, 145, .06), rgba(5, 10, 9, .12)); }
+  100% { background: radial-gradient(58% 50% at 50% 44%, rgba(31, 158, 145, 0), rgba(0, 0, 0, 0)); }
+}
+@keyframes ynovLevelBadge {
+  0% { opacity: 0; transform: scale(.55); }
+  55% { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes ynovLevelTag {
+  0% { opacity: 0; transform: translateY(-22px) scale(.9); }
+  60% { opacity: 1; transform: translateY(0) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ynovLevelCap { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ynovLevelOut { to { opacity: 0; transform: translateY(-10px) scale(1.04); } }
+@keyframes ynovStarBurst {
+  0% { opacity: 0; transform: translate(0, 0) scale(.2) rotate(0); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--tx, 0), var(--ty, 0)) scale(.45) rotate(var(--spin, 360deg)); }
+}
+
+/* reduced-motion : neutralise les animations ajoutées */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="ynov"] .process-button:active { transform: none; }
+  :root[data-theme="ynov"] #overclock-button.active,
+  :root[data-theme="ynov"] #overclock-button.active .overclock-glyph,
+  :root[data-theme="ynov"] .ynov-ticker.ynov-ticker-in,
+  .ynov-strike, .ynov-strike-bolt { animation: none; }
+  .ynov-strike { background: rgba(90, 255, 182, .12); }
+  .ynov-levelup { animation: ynovLevelFadeRM 1.4s ease both; background: rgba(5, 10, 9, .2); }
+  .ynov-levelup-tag, .ynov-levelup-badge, .ynov-levelup-cap, .ynov-levelup-stack { animation: none; }
+  .ynov-star { display: none; }
+}
+@keyframes ynovLevelFadeRM { 0% { opacity: 0; } 16%, 76% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Responsive : sous 900px, une colonne, titre réduit */
+@media (max-width: 900px) {
+  :root[data-theme="ynov"] .request-counter > strong { font-size: clamp(56px, 18vw, 110px); }
+}

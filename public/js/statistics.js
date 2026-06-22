@@ -106,11 +106,6 @@ function renderProductionChart(state) {
           <stop offset="0%" stop-color="var(--cyan)" stop-opacity=".32"/>
           <stop offset="100%" stop-color="var(--cyan)" stop-opacity="0"/>
         </linearGradient>
-        <linearGradient id="history-line" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="var(--pastel-lilac)"/>
-          <stop offset="55%" stop-color="var(--cyan)"/>
-          <stop offset="100%" stop-color="var(--green)"/>
-        </linearGradient>
       </defs>
       <g class="history-grid">
         <line x1="0" y1="45" x2="1000" y2="45"/><line x1="0" y1="95" x2="1000" y2="95"/>
@@ -149,7 +144,7 @@ function renderBuildings(state, economy) {
 }
 
 function render() {
-  const theme = localStorage.getItem('infra-clicker-theme') || 'ocean';
+  const theme = localStorage.getItem('infra-clicker-theme') || 'noc';
   document.documentElement.dataset.theme = theme;
   const state = loadState();
   const empty = document.getElementById('stats-empty');
