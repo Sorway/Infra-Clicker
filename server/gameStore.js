@@ -109,15 +109,7 @@ function setSessionCookie(res, id) {
 }
 
 function countryFromRequest(req) {
-  const proxyCountry = [
-    req.headers['cf-ipcountry'],
-    req.headers['x-vercel-ip-country'],
-    req.headers['x-country-code']
-  ].find(value => typeof value === 'string' && /^[a-z]{2}$/i.test(value));
-  if (proxyCountry) return proxyCountry.toUpperCase();
-
-  const locale = String(req.headers['accept-language'] || '').match(/[-_]([A-Z]{2})(?:,|;|$)/i);
-  return locale ? locale[1].toUpperCase() : 'XX';
+  return req.clientNetwork?.countryCode || 'XX';
 }
 
 function normalizeUsername(value) {
@@ -163,7 +155,10 @@ async function transactSession(req, res, handler) {
     await connection.query(
       `UPDATE game_sessions
           SET last_seen_at = CURRENT_TIMESTAMP(3),
-              country_code = COALESCE(country_code, ?)
+              country_code = CASE
+                WHEN country_code IS NULL OR country_code = 'XX' THEN ?
+                ELSE country_code
+              END
         WHERE id = ?`,
       [countryFromRequest(req), id]
     );
