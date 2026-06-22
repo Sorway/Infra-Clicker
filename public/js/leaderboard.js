@@ -20,7 +20,7 @@ function row(player) {
   const countryCode = normalizedCountryCode(player.countryCode);
   if (countryCode) {
     const image = document.createElement('img');
-    image.src = `/flags/4x3/${countryCode}.svg`;
+    image.src = `/flags/${countryCode}.svg`;
     image.alt = `Drapeau ${countryCode.toUpperCase()}`;
     image.loading = 'lazy';
     image.addEventListener('error', () => {
