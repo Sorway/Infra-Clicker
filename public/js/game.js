@@ -189,6 +189,7 @@ class InfraClicker {
     }));
 
     document.querySelector('#prestige-button').addEventListener('click', () => this.openPrestigeConfirmation());
+    document.querySelector('#header-prestige-button').addEventListener('click', () => this.openPrestigeConfirmation());
     document.querySelector('#prestige-confirm-button').addEventListener('click', () => this.prestige());
     document.querySelector('#overclock-button').addEventListener('click', async () => {
       if (this.state.overclockCharge < 100 || this.state.overclockEndsAt > Date.now()) return;

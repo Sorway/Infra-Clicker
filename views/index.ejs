@@ -9,6 +9,18 @@
     <strong id="header-rps">0 req/s</strong>
   </div>
   <nav class="top-actions" aria-label="Actions">
+    <div class="header-capacity" title="Saturation de la capacité de production">
+      <div class="header-capacity-label">
+        <span>SATURATION</span>
+        <strong id="header-saturation">0%</strong>
+      </div>
+      <div class="header-capacity-track"><span id="header-capacity-bar"></span></div>
+      <button id="header-prestige-button" class="header-prestige-button" disabled>
+        <span>◆</span>
+        <strong id="header-prestige-gain">+0</strong>
+        <small>Prestige</small>
+      </button>
+    </div>
     <div class="online-status" title="Joueurs actifs pendant les 30 dernières secondes">
       <span class="online-dot"></span>
       <strong id="online-count">1</strong>
@@ -144,14 +156,6 @@
         <span><strong>Missions</strong><small>Objectifs quotidiens</small></span>
         <em id="missions-badge">3</em>
       </button>
-    </div>
-    <div id="capacity-status" class="capacity-status hidden">
-      <div>
-        <span>CAPACITÉ SATURÉE</span>
-        <strong id="capacity-efficiency">100%</strong>
-      </div>
-      <div class="capacity-track"><span id="capacity-bar"></span></div>
-      <small>Prestigiez pour restaurer l’efficacité maximale.</small>
     </div>
   </section>
 

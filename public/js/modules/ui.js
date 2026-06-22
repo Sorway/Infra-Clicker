@@ -203,17 +203,24 @@ export class GameUI {
     const prestigeButton = document.querySelector('#prestige-button');
     prestigeButton.disabled = prestigeGain < 1 || allCertificationsOwned;
     prestigeButton.textContent = allCertificationsOwned ? 'TOUTES LES CERTIFICATIONS ACQUISES' : 'RECONSTRUIRE ET PRESTIGER';
+    const headerPrestigeButton = document.querySelector('#header-prestige-button');
+    headerPrestigeButton.disabled = prestigeGain < 1 || allCertificationsOwned;
+    document.querySelector('#header-prestige-gain').textContent = allCertificationsOwned
+      ? 'MAX'
+      : `+${prestigeGain}`;
     this.el['prestige-gain'].textContent = allCertificationsOwned
       ? 'Progression maximale atteinte : aucun prestige supplémentaire nécessaire.'
       : prestigeGain > 0
         ? `Gain actuel : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''}. Prochain palier à ${formatNumber(this.economy.nextPrestigeThreshold())}.`
         : 'Prestige disponible à partir de 1 million de requêtes sur ce cycle.';
     const capacityEfficiency = this.economy.getCapacityEfficiency();
-    const capacityStatus = document.querySelector('#capacity-status');
     const capacityPercent = Math.round(capacityEfficiency * 100);
-    capacityStatus.classList.toggle('hidden', capacityEfficiency >= 0.999);
-    document.querySelector('#capacity-efficiency').textContent = `${capacityPercent}%`;
-    document.querySelector('#capacity-bar').style.width = `${capacityPercent}%`;
+    const saturationPercent = 100 - capacityPercent;
+    document.querySelector('#header-saturation').textContent = `${saturationPercent}%`;
+    document.querySelector('#header-capacity-bar').style.width = `${saturationPercent}%`;
+    document.querySelector('.header-capacity').classList.toggle('saturated', saturationPercent > 0);
+    document.querySelector('.header-capacity').title =
+      `Saturation ${saturationPercent}% · efficacité ${capacityPercent}%`;
     document.querySelector('#prestige-capacity').textContent = capacityEfficiency >= 0.999
       ? 'Capacité disponible : 100 %. La saturation commence à 100 millions de requêtes.'
       : `Capacité saturée : efficacité ${capacityPercent} %. Un prestige restaure 100 %.`;
