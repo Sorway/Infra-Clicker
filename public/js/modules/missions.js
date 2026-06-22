@@ -134,7 +134,8 @@ export class MissionManager {
 
   update() {
     this.ensureToday();
-    if (Date.now() - this.lastRender >= 1000) {
+    const modalOpen = document.querySelector('#missions-modal')?.classList.contains('open');
+    if (modalOpen && Date.now() - this.lastRender >= 1000) {
       this.ui.renderMissions?.(this);
       this.lastRender = Date.now();
     }

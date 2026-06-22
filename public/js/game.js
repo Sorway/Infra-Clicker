@@ -33,6 +33,7 @@ class InfraClicker {
     this.lastAchievementCheck = 0;
     this.lastIntegrityCheck = 0;
     this.lastHistorySample = 0;
+    this.lastUiUpdate = 0;
     this.init().catch(error => {
       console.error(error);
       this.ui.toast('Serveur indisponible', 'La progression est suspendue pour éviter un état non vérifié.', 'danger');
@@ -59,7 +60,7 @@ class InfraClicker {
     this.autosaveTimer = setInterval(() => this.saveManager.save(this.state), 30000);
     this.serverSyncTimer = setInterval(() => {
       this.server.load(this.state).then(() => this.ui.update()).catch(() => {});
-    }, 10000);
+    }, 1000);
     this.updateOnlinePlayers();
     this.presenceTimer = setInterval(() => this.updateOnlinePlayers(), 20000);
     window.addEventListener('beforeunload', () => this.saveManager.save(this.state));
@@ -468,9 +469,13 @@ class InfraClicker {
       this.state.combo = 0;
     }
 
-    this.events.update();
-    this.missions.update();
-    this.ui.update();
+    const uiInterval = this.ui.performanceMode ? 250 : 100;
+    if (now - this.lastUiUpdate >= uiInterval) {
+      this.events.update();
+      this.missions.update();
+      this.ui.update();
+      this.lastUiUpdate = now;
+    }
     if (now - this.lastAchievementCheck > 1000) {
       const previousCount = this.state.achievements.length;
       this.achievements.check();

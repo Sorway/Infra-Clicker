@@ -90,6 +90,24 @@ export class Economy {
     return Math.max(MIN_CAPACITY_EFFICIENCY, 1 / (1 + 0.5 * decades));
   }
 
+  getCapacityStatus() {
+    const efficiency = this.getCapacityEfficiency();
+    if (this.state.lifetimeRequests < SATURATION_START) {
+      return {
+        label: 'CAPACITÉ',
+        percent: Math.min(100, this.state.lifetimeRequests / SATURATION_START * 100),
+        saturated: false,
+        efficiency
+      };
+    }
+    return {
+      label: 'SATURATION',
+      percent: (1 - efficiency) * 100,
+      saturated: true,
+      efficiency
+    };
+  }
+
   getClickPower() {
     const clickMultiplier = UPGRADES
       .filter(upgrade => this.hasUpgrade(upgrade.id))

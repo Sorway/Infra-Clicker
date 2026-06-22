@@ -9,7 +9,19 @@ export class GameUI {
     this.activeUpgradeCategory = 'Tous';
     this.rpsHistory = Array(20).fill(0);
     this.lastTelemetryUpdate = 0;
+    this.lastBuildingsUpdate = 0;
+    this.renderCache = new Map();
+    this.performanceMode = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+      || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+    document.documentElement.classList.toggle('performance-mode', this.performanceMode);
     this.cacheElements();
+  }
+
+  setText(element, value) {
+    if (!element || this.renderCache.get(element) === value) return;
+    element.textContent = value;
+    this.renderCache.set(element, value);
   }
 
   cacheElements() {
@@ -155,16 +167,16 @@ export class GameUI {
   update() {
     const production = this.economy.getProduction();
     const clickPower = this.economy.getClickPower();
-    this.el['header-rps'].textContent = `${formatNumber(production)} req/s`;
-    this.el['requests-stat'].textContent = formatNumber(this.state.requests);
-    this.el['rps-stat'].textContent = formatNumber(production);
-    this.el['users-stat'].textContent = formatNumber(Math.max(1, Math.sqrt(this.state.lifetimeRequests) * 0.7));
-    this.el['main-counter'].textContent = formatNumber(this.state.requests);
-    this.el['main-rps'].textContent = formatNumber(production);
-    this.el['click-power-label'].textContent = `+${formatNumber(clickPower)}`;
-    this.el['shop-production'].textContent = `${formatNumber(production)} req/s`;
-    this.el['cert-points'].textContent = this.state.certificationPoints;
-    this.el['achievement-count'].textContent = this.state.achievements.length;
+    this.setText(this.el['header-rps'], `${formatNumber(production)} req/s`);
+    this.setText(this.el['requests-stat'], formatNumber(this.state.requests));
+    this.setText(this.el['rps-stat'], formatNumber(production));
+    this.setText(this.el['users-stat'], formatNumber(Math.max(1, Math.sqrt(this.state.lifetimeRequests) * 0.7)));
+    this.setText(this.el['main-counter'], formatNumber(this.state.requests));
+    this.setText(this.el['main-rps'], formatNumber(production));
+    this.setText(this.el['click-power-label'], `+${formatNumber(clickPower)}`);
+    this.setText(this.el['shop-production'], `${formatNumber(production)} req/s`);
+    this.setText(this.el['cert-points'], String(this.state.certificationPoints));
+    this.setText(this.el['achievement-count'], String(this.state.achievements.length));
     this.updateActiveGameplay();
 
     const availableUpgrades = UPGRADES.filter(upgrade => this.economy.canBuyUpgrade(upgrade)).length;
@@ -213,20 +225,25 @@ export class GameUI {
       : prestigeGain > 0
         ? `Gain actuel : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''}. Prochain palier à ${formatNumber(this.economy.nextPrestigeThreshold())}.`
         : 'Prestige disponible à partir de 1 million de requêtes sur ce cycle.';
-    const capacityEfficiency = this.economy.getCapacityEfficiency();
-    const capacityPercent = Math.round(capacityEfficiency * 100);
-    const saturationPercent = 100 - capacityPercent;
-    document.querySelector('#header-saturation').textContent = `${saturationPercent}%`;
-    document.querySelector('#header-capacity-bar').style.width = `${saturationPercent}%`;
-    document.querySelector('.header-capacity').classList.toggle('saturated', saturationPercent > 0);
-    document.querySelector('.header-capacity').title =
-      `Saturation ${saturationPercent}% · efficacité ${capacityPercent}%`;
-    document.querySelector('#prestige-capacity').textContent = capacityEfficiency >= 0.999
+    const capacity = this.economy.getCapacityStatus();
+    const capacityPercent = Math.round(capacity.efficiency * 100);
+    const displayPercent = Math.round(capacity.percent);
+    document.querySelector('#header-capacity-label').textContent = capacity.label;
+    document.querySelector('#header-saturation').textContent = `${displayPercent}%`;
+    document.querySelector('#header-capacity-bar').style.width = `${displayPercent}%`;
+    document.querySelector('.header-capacity').classList.toggle('saturated', capacity.saturated);
+    document.querySelector('.header-capacity').title = capacity.saturated
+      ? `Saturation ${displayPercent}% · efficacité ${capacityPercent}%`
+      : `Charge de capacité ${displayPercent}% · saturation à ${formatNumber(100e6)} requêtes`;
+    document.querySelector('#prestige-capacity').textContent = capacity.efficiency >= 0.999
       ? 'Capacité disponible : 100 %. La saturation commence à 100 millions de requêtes.'
       : `Capacité saturée : efficacité ${capacityPercent} %. Un prestige restaure 100 %.`;
 
-    this.updateBuildings();
-    if (performance.now() - this.lastTelemetryUpdate > 700) {
+    if (performance.now() - this.lastBuildingsUpdate > (this.performanceMode ? 1000 : 500)) {
+      this.updateBuildings();
+      this.lastBuildingsUpdate = performance.now();
+    }
+    if (performance.now() - this.lastTelemetryUpdate > (this.performanceMode ? 2000 : 1000)) {
       this.updateTelemetry(production);
       this.lastTelemetryUpdate = performance.now();
     }
@@ -351,7 +368,7 @@ export class GameUI {
     const colors = options.critical
       ? ['#fff0bd', '#fb7185', '#fbbf24']
       : ['var(--cyan)', 'var(--green)', 'var(--purple)'];
-    const particleCount = options.critical ? 14 : 7;
+    const particleCount = this.performanceMode ? (options.critical ? 4 : 0) : (options.critical ? 14 : 7);
     for (let index = 0; index < particleCount; index += 1) {
       const particle = document.createElement('i');
       particle.className = 'particle';

@@ -4280,6 +4280,48 @@ label:focus-within {
     overflow: visible;
   }
 }
+
+/* Mode allégé automatique pour les petits CPU/GPU et reduced-motion. */
+.performance-mode *,
+.performance-mode *::before,
+.performance-mode *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+}
+
+.performance-mode .topbar,
+.performance-mode .left-panel,
+.performance-mode .right-panel,
+.performance-mode .modal,
+.performance-mode .toast,
+.performance-mode .privacy-notice {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.performance-mode .ambient-grid,
+.performance-mode .pulse-ring,
+.performance-mode .server-glow,
+.performance-mode .rack-floor {
+  display: none !important;
+}
+
+.performance-mode .server-button,
+.performance-mode .server-button:hover,
+.performance-mode .building-card,
+.performance-mode .menu-launch-button {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
 .privacy-page { width: min(980px, calc(100% - 24px)); margin: 12px auto 50px; }
 .privacy-hero,
 .privacy-document,
