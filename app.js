@@ -53,7 +53,7 @@ async function start() {
   console.log(`[App] Démarrage demandé sur le port ${port}`);
   await initializeDatabase();
   return app.listen(port, () => {
-    console.log(`[App] Serveur HTTP prêt sur le port ${port}`);
+    console.log(`[App] Server listing on port ${port}`);
   });
 }
 

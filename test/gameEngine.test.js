@@ -39,3 +39,17 @@ test('n’expose pas la fenêtre interne de détection', () => {
   applyAction(state, { type: 'click' });
   assert.equal(Object.hasOwn(publicState(state), 'clickWindow'), false);
 });
+
+test('conserve le temps de jeu cumulé après un prestige', () => {
+  const state = createState();
+  const startedAt = Date.now() - 4 * 60 * 60 * 1000;
+  state.startedAt = startedAt;
+  state.lifetimeRequests = 1e6;
+  state.requests = 1e6;
+
+  applyAction(state, { type: 'prestige' });
+
+  assert.equal(state.startedAt, startedAt);
+  assert.equal(state.prestigeCount, 1);
+  assert.equal(state.lifetimeRequests, 0);
+});

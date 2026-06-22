@@ -173,6 +173,7 @@ function applyAction(state, action = {}) {
   if (action.type === 'prestige') {
     if (state.lifetimeRequests < PRESTIGE_TARGET) violation(state, 'Prestige indisponible', 409);
     if (state.certifications.length >= CERTIFICATIONS.length) violation(state, 'Toutes les certifications sont acquises', 409);
+    const originalStartedAt = state.startedAt;
     const persistent = {
       allTimeRequests: state.allTimeRequests,
       manualClicks: state.manualClicks,
@@ -182,7 +183,7 @@ function applyAction(state, action = {}) {
       certificationPoints: state.certificationPoints + 1,
       prestigeCount: state.prestigeCount + 1,
       totalBuildingsPurchased: state.totalBuildingsPurchased,
-      startedAt: state.startedAt,
+      startedAt: originalStartedAt,
       antiCheatViolations: state.antiCheatViolations
     };
     Object.assign(state, createState(), persistent);

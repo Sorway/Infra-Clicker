@@ -59,11 +59,26 @@ class InfraClicker {
     this.serverSyncTimer = setInterval(() => {
       this.server.load(this.state).then(() => this.ui.update()).catch(() => {});
     }, 1000);
+    this.updateOnlinePlayers();
+    this.presenceTimer = setInterval(() => this.updateOnlinePlayers(), 10000);
     window.addEventListener('beforeunload', () => this.saveManager.save(this.state));
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.saveManager.save(this.state);
       this.lastFrame = performance.now();
     });
+  }
+
+  async updateOnlinePlayers() {
+    try {
+      const { online } = await this.server.presence();
+      const count = Math.max(0, Number(online) || 0);
+      document.querySelector('#online-count').textContent = count;
+      document.querySelector('#online-label').textContent = count > 1
+        ? 'joueurs en ligne'
+        : 'joueur en ligne';
+    } catch {
+      // La présence est informative et ne doit pas interrompre la partie.
+    }
   }
 
   openV2ResetNotice() {

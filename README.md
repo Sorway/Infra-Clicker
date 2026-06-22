@@ -181,9 +181,18 @@ PRIVACY_CONTACT=contact@example.com
 HOST_NAME=Nom et coordonnées de l’hébergeur
 ```
 
-La base MariaDB et son utilisateur doivent exister avant le lancement. La table
-`game_sessions` est créée automatiquement ; son schéma est également disponible
-dans `database/schema.sql`.
+La base MariaDB et son utilisateur doivent exister avant le lancement. Le schéma
+relationnel est créé automatiquement et reste disponible dans `database/schema.sql` :
+
+- `game_sessions` : identité et dates de la partie ;
+- `game_progress` : monnaie et état du cycle en cours ;
+- `game_stats` : compteurs historiques séparés ;
+- `game_buildings` : quantités de bâtiments ;
+- `game_upgrades` : améliorations acquises ;
+- `game_certifications` : certifications acquises.
+
+Les tables enfants sont reliées à `game_sessions` par des clés étrangères avec
+suppression en cascade.
 
 Pour transférer l’ancien fichier JSON vers MariaDB sans déconnecter les joueurs :
 

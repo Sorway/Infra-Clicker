@@ -1,6 +1,13 @@
 const crypto = require('crypto');
 const mariadb = require('mariadb');
 const { createState } = require('./gameEngine');
+const {
+  createSession,
+  hydrateLegacyState,
+  initializeSchema,
+  loadState,
+  saveState
+} = require('./gameRepository');
 
 if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET est obligatoire en production');
@@ -43,16 +50,8 @@ async function connectAndPrepareDatabase() {
   const connection = await pool.getConnection();
   try {
     console.log('[MariaDB] Connexion établie');
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS game_sessions (
-        id VARCHAR(64) NOT NULL PRIMARY KEY,
-        state LONGTEXT NOT NULL,
-        created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-        updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
-          ON UPDATE CURRENT_TIMESTAMP(3)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `);
-    console.log('[MariaDB] Table game_sessions prête');
+    const migrated = await initializeSchema(connection);
+    console.log(`[MariaDB] Schéma relationnel prêt${migrated ? ` — ${migrated} session(s) migrée(s)` : ''}`);
   } finally {
     connection.release();
   }
@@ -109,19 +108,6 @@ function setSessionCookie(res, id) {
   );
 }
 
-function hydrateState(value) {
-  const raw = typeof value === 'string' ? JSON.parse(value) : value;
-  const defaults = createState();
-  return {
-    ...defaults,
-    ...(raw && typeof raw === 'object' ? raw : {}),
-    buildings: { ...defaults.buildings, ...(raw?.buildings || {}) },
-    upgrades: Array.isArray(raw?.upgrades) ? raw.upgrades : [],
-    certifications: Array.isArray(raw?.certifications) ? raw.certifications : [],
-    clickWindow: Array.isArray(raw?.clickWindow) ? raw.clickWindow : []
-  };
-}
-
 async function transactSession(req, res, handler) {
   await initializeDatabase();
   const connection = await pool.getConnection();
@@ -134,27 +120,25 @@ async function transactSession(req, res, handler) {
 
     if (id) {
       const rows = await connection.query(
-        'SELECT state FROM game_sessions WHERE id = ? FOR UPDATE',
+        'SELECT id FROM game_sessions WHERE id = ? FOR UPDATE',
         [id]
       );
-      if (rows.length) state = hydrateState(rows[0].state);
+      if (rows.length) state = await loadState(connection, id);
     }
 
     if (!state) {
       id = sessionId();
       state = createState();
-      await connection.query(
-        'INSERT INTO game_sessions (id, state) VALUES (?, ?)',
-        [id, JSON.stringify(state)]
-      );
+      await createSession(connection, id, state);
       setSessionCookie(res, id);
     }
 
-    const result = await handler(state, id);
     await connection.query(
-      'UPDATE game_sessions SET state = ? WHERE id = ?',
-      [JSON.stringify(state), id]
+      'UPDATE game_sessions SET last_seen_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
+      [id]
     );
+    const result = await handler(state, id);
+    await saveState(connection, id, state);
     await connection.commit();
     return result;
   } catch (error) {
@@ -172,6 +156,18 @@ async function closeDatabase() {
   await pool.end();
 }
 
+async function countOnlinePlayers(activeSeconds = 30) {
+  await initializeDatabase();
+  const seconds = Math.min(300, Math.max(10, Number(activeSeconds) || 30));
+  const rows = await pool.query(
+    `SELECT COUNT(*) AS count
+       FROM game_sessions
+      WHERE last_seen_at >= DATE_SUB(CURRENT_TIMESTAMP(3), INTERVAL ? SECOND)`,
+    [seconds]
+  );
+  return Number(rows[0].count);
+}
+
 async function importSessions(sessions) {
   await initializeDatabase();
   const connection = await pool.getConnection();
@@ -182,11 +178,10 @@ async function importSessions(sessions) {
     for (const [id, state] of Object.entries(sessions)) {
       if (!/^[A-Za-z0-9_-]{32}$/.test(id) || !state || typeof state !== 'object') continue;
       await connection.query(
-        `INSERT INTO game_sessions (id, state)
-         VALUES (?, ?)
-         ON DUPLICATE KEY UPDATE state = VALUES(state)`,
-        [id, JSON.stringify(hydrateState(state))]
+        'INSERT INTO game_sessions (id) VALUES (?) ON DUPLICATE KEY UPDATE id = VALUES(id)',
+        [id]
       );
+      await saveState(connection, id, hydrateLegacyState(state));
       imported += 1;
     }
     await connection.commit();
@@ -201,6 +196,7 @@ async function importSessions(sessions) {
 
 module.exports = {
   closeDatabase,
+  countOnlinePlayers,
   importSessions,
   initializeDatabase,
   transactSession

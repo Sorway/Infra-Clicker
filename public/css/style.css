@@ -1429,6 +1429,40 @@ body {
   line-height: 1.6;
 }
 
+.online-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 5px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.online-status strong {
+  color: var(--green);
+  font-size: 12px;
+}
+
+.online-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--green) 70%, transparent);
+}
+
+@media (max-width: 900px) {
+  .online-status {
+    margin-right: 2px;
+  }
+
+  #online-label {
+    display: none;
+  }
+}
+
 .v2-reset-modal {
   width: min(520px, 100%);
   text-align: center;

@@ -52,6 +52,10 @@ export class ServerGame {
     return payload;
   }
 
+  async presence() {
+    return request('/api/game/presence');
+  }
+
   async action(state, type, data = {}) {
     try {
       const payload = await request('/api/game/action', {

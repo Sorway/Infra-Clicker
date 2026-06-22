@@ -1,6 +1,6 @@
 const express = require('express');
 const { applyAction, createState, publicState } = require('../server/gameEngine');
-const { transactSession } = require('../server/gameStore');
+const { countOnlinePlayers, transactSession } = require('../server/gameStore');
 
 const router = express.Router();
 
@@ -15,6 +15,14 @@ router.get('/state', async (req, res, next) => {
       state: publicState(state)
     }));
     res.json(payload);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/presence', async (req, res, next) => {
+  try {
+    res.json({ online: await countOnlinePlayers() });
   } catch (error) {
     next(error);
   }
