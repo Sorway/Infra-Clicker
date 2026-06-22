@@ -1,4 +1,3 @@
-require('dotenv').config();
 const fs = require('fs/promises');
 const path = require('path');
 const { closeDatabase, importSessions } = require('../server/gameStore');

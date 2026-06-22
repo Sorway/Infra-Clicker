@@ -1,5 +1,5 @@
 console.log(`[App] Chargement d’Infra Clicker — Node ${process.version}`);
-require('dotenv').config({ quiet: true });
+console.log('[App] Variables d’environnement disponibles');
 const path = require('path');
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
