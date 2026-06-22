@@ -9,12 +9,18 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
 const cookieSecret = process.env.SESSION_SECRET || 'infra-clicker-development-secret-change-me';
 const configuredHost = process.env.DB_HOST || '127.0.0.1';
 const hostWithPort = configuredHost.match(/^([^:]+):(\d+)$/);
-const pool = mariadb.createPool({
+const databaseConfig = {
   host: hostWithPort ? hostWithPort[1] : configuredHost,
   port: Number(hostWithPort?.[2] || process.env.DB_PORT) || 3306,
   user: process.env.DB_USER || 'infra_clicker',
+  database: process.env.DB_NAME || 'infra_clicker'
+};
+const pool = mariadb.createPool({
+  host: databaseConfig.host,
+  port: databaseConfig.port,
+  user: databaseConfig.user,
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'infra_clicker',
+  database: databaseConfig.database,
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
   acquireTimeout: 10000,
   bigIntAsNumber: true
@@ -24,6 +30,9 @@ let initialization;
 
 function initializeDatabase() {
   if (!initialization) {
+    console.log(
+      `[MariaDB] Connexion à ${databaseConfig.host}:${databaseConfig.port}`
+    );
     initialization = pool.query(`
       CREATE TABLE IF NOT EXISTS game_sessions (
         id VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -32,10 +41,18 @@ function initializeDatabase() {
         updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
           ON UPDATE CURRENT_TIMESTAMP(3)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `).catch(error => {
-      initialization = null;
-      throw error;
-    });
+    `)
+      .then(result => {
+        console.log('[MariaDB] Connexion établie — table game_sessions prête');
+        return result;
+      })
+      .catch(error => {
+        initialization = null;
+        console.error(
+          `[MariaDB] Échec de connexion (${error.code || error.errno || 'ERREUR'}) : ${error.message}`
+        );
+        throw error;
+      });
   }
   return initialization;
 }
@@ -127,6 +144,9 @@ async function transactSession(req, res, handler) {
     return result;
   } catch (error) {
     await connection.rollback();
+    console.error(
+      `[MariaDB] Transaction annulée (${error.code || error.errno || 'ERREUR'}) : ${error.message}`
+    );
     throw error;
   } finally {
     connection.release();
