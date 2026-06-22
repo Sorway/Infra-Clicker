@@ -4,6 +4,7 @@ const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const indexRouter = require('./routes/index');
 const gameApiRouter = require('./routes/gameApi');
+const { initializeDatabase } = require('./server/gameStore');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -46,8 +47,19 @@ app.use((error, req, res, next) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server listing on port http://localhost:${port}`);
-});
+async function start() {
+  await initializeDatabase();
+  return app.listen(port, () => {
+    console.log(`Server listening on http://localhost:${port}`);
+  });
+}
+
+if (require.main === module) {
+  start().catch(error => {
+    console.error('Impossible de démarrer Infra Clicker :', error);
+    process.exitCode = 1;
+  });
+}
 
 module.exports = app;
+module.exports.start = start;

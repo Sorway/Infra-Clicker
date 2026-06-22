@@ -171,8 +171,24 @@ Aucun framework frontend et aucune base de données.
 Copiez `.env.example` vers `.env`, puis renseignez les informations réelles :
 
 ```env
+SESSION_SECRET=une-cle-aleatoire-longue
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=infra_clicker
+DB_PASSWORD=mot-de-passe-fort
+DB_NAME=infra_clicker
 PRIVACY_CONTACT=contact@example.com
 HOST_NAME=Nom et coordonnées de l’hébergeur
+```
+
+La base MariaDB et son utilisateur doivent exister avant le lancement. La table
+`game_sessions` est créée automatiquement ; son schéma est également disponible
+dans `database/schema.sql`.
+
+Pour transférer l’ancien fichier JSON vers MariaDB sans déconnecter les joueurs :
+
+```bash
+npm run migrate:sessions
 ```
 
 Le jeu utilise un cookie de session strictement nécessaire, `HttpOnly` et `SameSite=Strict`. Aucun cookie publicitaire ou analytique n’est utilisé.

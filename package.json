@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "node --watch app.js",
-    "test": "node --test"
+    "test": "node --test",
+    "migrate:sessions": "node scripts/migrate-json-sessions.js"
   },
   "engines": {
     "node": ">=18"
@@ -16,6 +17,7 @@
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-ejs-layouts": "^2.5.1",
-    "express.js": "^1.0.0"
+    "express.js": "^1.0.0",
+    "mariadb": "^3.5.3"
   }
 }

@@ -1,6 +1,6 @@
 const express = require('express');
-const { applyAction, publicState } = require('../server/gameEngine');
-const { getSession, resetSession, saveSession } = require('../server/gameStore');
+const { applyAction, createState, publicState } = require('../server/gameEngine');
+const { transactSession } = require('../server/gameStore');
 
 const router = express.Router();
 
@@ -9,33 +9,52 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/state', (req, res) => {
-  const session = getSession(req, res);
-  const state = publicState(session.state);
-  saveSession(session.id);
-  res.json({ state });
-});
-
-router.post('/action', (req, res) => {
-  const session = getSession(req, res);
+router.get('/state', async (req, res, next) => {
   try {
-    const result = applyAction(session.state, req.body);
-    const state = publicState(session.state);
-    saveSession(session.id);
-    res.json({ state, result });
+    const payload = await transactSession(req, res, state => ({
+      state: publicState(state)
+    }));
+    res.json(payload);
   } catch (error) {
-    const state = publicState(session.state);
-    saveSession(session.id);
-    res.status(error.status || 400).json({
-      error: error.message,
-      state
-    });
+    next(error);
   }
 });
 
-router.post('/reset', (req, res) => {
-  const session = getSession(req, res);
-  res.json({ state: publicState(resetSession(session.id)) });
+router.post('/action', async (req, res, next) => {
+  try {
+    const payload = await transactSession(req, res, state => {
+      try {
+        const result = applyAction(state, req.body);
+        return { state: publicState(state), result };
+      } catch (error) {
+        return {
+          status: error.status || 400,
+          body: { error: error.message, state: publicState(state) }
+        };
+      }
+    });
+
+    if (payload.status) {
+      res.status(payload.status).json(payload.body);
+      return;
+    }
+    res.json(payload);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/reset', async (req, res, next) => {
+  try {
+    const payload = await transactSession(req, res, state => {
+      Object.keys(state).forEach(key => delete state[key]);
+      Object.assign(state, createState());
+      return { state: publicState(state) };
+    });
+    res.json(payload);
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;
