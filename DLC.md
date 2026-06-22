@@ -40,4 +40,4 @@ Types pris en charge : `requests`, `clicks`, `rps`, `building`, `buildingCount`,
 `upgrade`, `upgradeCount`, `certification`, `certCount`, `prestige`, `event`,
 `eventCount`, `command`, `terminal`, `night`, `muted`, `maxBuy` et `uptime`.
 
-Le DLC `space` sert d’exemple complet en plus du DLC `infra` par défaut.
+Le registre ne contient actuellement que le DLC `infra`.

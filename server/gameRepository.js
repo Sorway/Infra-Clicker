@@ -447,6 +447,23 @@ async function migrateToMultiDlcSchema(connection) {
   return Number(progressCount[0].count || 0);
 }
 
+async function purgeRemovedDlcData(connection) {
+  const removedDlcIds = ['space'];
+  const tables = [
+    'game_certifications',
+    'game_upgrades',
+    'game_buildings',
+    'game_stats',
+    'game_progress'
+  ];
+  for (const table of tables) {
+    await connection.query(
+      `DELETE FROM ${table} WHERE dlc_id = ?`,
+      [removedDlcIds[0]]
+    );
+  }
+}
+
 async function initializeSchema(connection) {
   for (const statement of TABLES) await connection.query(statement);
   if (!await hasColumn(connection, 'game_sessions', 'username')) {
@@ -492,6 +509,7 @@ async function initializeSchema(connection) {
     );
   }
   const multiDlcMigrated = await migrateToMultiDlcSchema(connection);
+  await purgeRemovedDlcData(connection);
   if (await hasColumn(connection, 'game_progress', 'click_window')) {
     await connection.query('ALTER TABLE game_progress DROP COLUMN click_window');
   }

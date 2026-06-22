@@ -30,7 +30,7 @@ test('remplace les collections JSON invalides par des collections sûres', () =>
   assert.equal(state.buildings.bash, 0);
 });
 
-test('normalise chaque DLC dans son propre espace de données', () => {
+test('normalise un ancien DLC supprimé vers infra', () => {
   const space = hydrateLegacyState({
     dlcId: 'space',
     requests: 120,
@@ -39,8 +39,9 @@ test('normalise chaque DLC dans son propre espace de données', () => {
     certifications: ['pilot']
   });
 
-  assert.equal(space.dlcId, 'space');
-  assert.equal(space.buildings.probe, 4);
-  assert.equal(Object.hasOwn(space.buildings, 'bash'), false);
-  assert.deepEqual(space.upgrades, ['ion-drive']);
+  assert.equal(space.dlcId, 'infra');
+  assert.equal(space.buildings.bash, 99);
+  assert.equal(Object.hasOwn(space.buildings, 'probe'), false);
+  assert.deepEqual(space.upgrades, []);
+  assert.deepEqual(space.certifications, []);
 });

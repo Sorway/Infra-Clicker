@@ -1,8 +1,13 @@
 import { DLC as infra } from './infra.js';
-import { DLC as space } from './space.js';
 
 export const DLC_STORAGE_KEY = 'clicker-active-dlc';
 export const DEFAULT_DLC_ID = 'infra';
+const REMOVED_DLC_STORAGE_KEYS = ['clicker-save-space-v1'];
+
+REMOVED_DLC_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+if (localStorage.getItem(DLC_STORAGE_KEY) !== DEFAULT_DLC_ID) {
+  localStorage.removeItem(DLC_STORAGE_KEY);
+}
 function validateDlc(dlc) {
   const collections = ['buildings', 'upgrades', 'events', 'certifications', 'achievements', 'levels'];
   if (!dlc?.id || !dlc.name) throw new Error('Un DLC doit définir id et name.');
@@ -21,8 +26,7 @@ function validateDlc(dlc) {
 }
 
 export const DLC_REGISTRY = Object.freeze({
-  infra: validateDlc(infra),
-  space: validateDlc(space)
+  infra: validateDlc(infra)
 });
 export const DLCS = Object.freeze(Object.values(DLC_REGISTRY));
 
