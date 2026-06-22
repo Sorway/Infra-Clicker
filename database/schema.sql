@@ -1,9 +1,14 @@
 CREATE TABLE IF NOT EXISTS game_sessions (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
+  username VARCHAR(24) NULL,
+  username_key VARCHAR(24) NULL,
+  country_code CHAR(2) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
     ON UPDATE CURRENT_TIMESTAMP(3),
   last_seen_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_game_sessions_username (username),
+  UNIQUE KEY uq_game_sessions_username_key (username_key),
   INDEX idx_game_sessions_last_seen (last_seen_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

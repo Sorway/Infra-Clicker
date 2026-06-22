@@ -24,6 +24,7 @@ export class GameUI {
   }
 
   renderStatic() {
+    document.querySelector('#achievement-total').textContent = ACHIEVEMENTS.length;
     this.renderUpgradeFilters();
     this.renderBuildings();
     this.renderUpgrades();

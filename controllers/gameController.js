@@ -25,4 +25,13 @@ const showPrivacy = (req, res) => {
   });
 };
 
-module.exports = { showGame, showStatistics, showPrivacy };
+const showLeaderboard = (req, res) => {
+  res.render('leaderboard', {
+    title: 'Classement — Infra Clicker',
+    description: 'Découvrez les infrastructures les plus performantes d’Infra Clicker.',
+    pageScript: '/js/leaderboard.js',
+    pageClass: 'leaderboard-body'
+  });
+};
+
+module.exports = { showGame, showLeaderboard, showStatistics, showPrivacy };

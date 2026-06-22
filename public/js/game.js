@@ -9,7 +9,6 @@ import { consumeV2ResetNotice, SaveManager } from './modules/save.js';
 import { ServerGame } from './modules/server.js';
 import { Terminal } from './modules/terminal.js';
 import { GameUI } from './modules/ui.js';
-import { downloadJson } from './modules/utils.js';
 
 class InfraClicker {
   constructor() {
@@ -42,13 +41,15 @@ class InfraClicker {
 
   async init() {
     this.initTheme();
-    await this.server.load(this.state);
+    const initialPayload = await this.server.load(this.state);
     this.ui.renderStatic();
     this.bindGameActions();
     this.bindNavigation();
     this.bindSaveControls();
     this.updateSoundButton();
     this.ui.update();
+    this.applyProfile(initialPayload.profile);
+    if (!initialPayload.profile?.username) await this.requireProfile();
     if (this.showV2ResetNotice) this.openV2ResetNotice();
     if (this.state.loadWarning) {
       setTimeout(() => this.ui.toast('Protection anti-triche', this.state.loadWarning, 'danger'), 400);
@@ -65,6 +66,44 @@ class InfraClicker {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.saveManager.save(this.state);
       this.lastFrame = performance.now();
+    });
+  }
+
+  applyProfile(profile) {
+    if (!profile?.username) return;
+    document.querySelector('#profile-name').textContent = profile.username;
+  }
+
+  requireProfile() {
+    const modal = document.querySelector('#profile-modal');
+    const form = document.querySelector('#profile-form');
+    const input = document.querySelector('#profile-input');
+    const errorElement = document.querySelector('#profile-error');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    setTimeout(() => input.focus(), 50);
+
+    return new Promise(resolve => {
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        errorElement.textContent = '';
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+          const profile = await this.server.saveProfile(this.state, input.value);
+          this.applyProfile(profile);
+          modal.classList.remove('open');
+          modal.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('modal-open');
+          resolve();
+        } catch (error) {
+          errorElement.textContent = error.message;
+          input.focus();
+        } finally {
+          button.disabled = false;
+        }
+      });
     });
   }
 
@@ -200,7 +239,7 @@ class InfraClicker {
     this.bindModal('#certifications-open', '#certifications-modal', () => this.ui.renderCertifications());
     this.bindModal('#missions-open', '#missions-modal', () => this.ui.renderMissions(this.missions));
     document.querySelector('#settings-modal').addEventListener('click', event => {
-      const action = event.target.closest('button, .file-button, .privacy-link');
+      const action = event.target.closest('button, .privacy-link');
       if (action && !action.classList.contains('modal-close')) {
         this.closeModal(document.querySelector('#settings-modal'));
       }
@@ -209,11 +248,11 @@ class InfraClicker {
       this.closeModal(document.querySelector(`#${button.dataset.close}`));
     }));
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.addEventListener('click', event => {
-      if (event.target === backdrop) this.closeModal(backdrop);
+      if (event.target === backdrop && backdrop.id !== 'profile-modal') this.closeModal(backdrop);
     }));
     window.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
-        document.querySelectorAll('.modal-backdrop.open').forEach(modal => this.closeModal(modal));
+        document.querySelectorAll('.modal-backdrop.open:not(#profile-modal)').forEach(modal => this.closeModal(modal));
         this.terminal.close();
       }
     });
@@ -256,32 +295,15 @@ class InfraClicker {
   }
 
   bindSaveControls() {
-    document.querySelector('#save-now').addEventListener('click', () => {
-      this.saveManager.save(this.state);
-      this.ui.toast('Sauvegarde effectuée', 'La progression est stockée dans ce navigateur.', 'info');
-    });
-    document.querySelector('#export-save').addEventListener('click', () => {
-      this.state.exported = true;
-      this.achievements.check();
-      this.saveManager.save(this.state);
-      downloadJson(`infra-clicker-${new Date().toISOString().slice(0, 10)}.json`, this.state);
-      this.ui.toast('Sauvegarde exportée', 'Le fichier JSON est prêt.', 'info');
-    });
-    document.querySelector('#import-save').addEventListener('change', async event => {
-      const file = event.target.files[0];
-      if (!file) return;
-      if (file.size > 1024 * 1024) {
-        this.ui.toast('Import impossible', 'Le fichier dépasse la limite de 1 Mo.', 'danger');
-        event.target.value = '';
-        return;
-      }
+    document.querySelector('#save-now').addEventListener('click', async () => {
       try {
-        this.saveManager.import(await file.text());
-        this.ui.toast('Import refusé', 'La progression est désormais gérée par le serveur et ne peut plus être remplacée côté client.', 'danger');
+        await this.server.load(this.state);
+        this.saveManager.save(this.state);
+        this.ui.update();
+        this.ui.toast('Progression synchronisée', 'Le serveur contient la dernière progression validée.', 'info');
       } catch (error) {
-        this.ui.toast('Import impossible', error.message, 'danger');
+        this.ui.toast('Synchronisation impossible', error.message, 'danger');
       }
-      event.target.value = '';
     });
     document.querySelector('#reset-game').addEventListener('click', async () => {
       if (!window.confirm('Réinitialiser définitivement toute la progression ?')) return;
@@ -292,7 +314,7 @@ class InfraClicker {
       this.ui.toast('Nouvelle infrastructure', 'La progression a été réinitialisée.', 'danger');
     });
     document.querySelector('#delete-local-data').addEventListener('click', () => {
-      if (!window.confirm('Effacer définitivement la progression, le thème et toutes les préférences locales ?')) return;
+      if (!window.confirm('Réinitialiser le thème, le son et les préférences de ce navigateur ? La progression serveur sera conservée.')) return;
       Object.keys(localStorage)
         .filter(key => key.startsWith('infra-clicker-'))
         .forEach(key => localStorage.removeItem(key));

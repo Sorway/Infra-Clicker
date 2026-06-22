@@ -30,6 +30,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0
 }));
+app.use('/flags', express.static(path.join(__dirname, 'node_modules', 'flag-icons', 'flags'), {
+  immutable: process.env.NODE_ENV === 'production',
+  maxAge: process.env.NODE_ENV === 'production' ? '30d' : 0
+}));
 
 app.use('/api/game', gameApiRouter);
 app.use('/', indexRouter);

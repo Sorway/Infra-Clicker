@@ -19,18 +19,18 @@ du **SysAdmin**, du **Réseau**, du **Cloud** et du **DevOps**.
 
 Dans **Infra Clicker**, chaque clic traite une requête réseau. Commencez avec un simple script Bash, déployez progressivement des serveurs, des datacenters et des clusters Kubernetes, puis construisez un cloud mondial.
 
-Le serveur Express est autoritaire sur l’économie du jeu. La progression est associée à un cookie de session HttpOnly et conservée dans un fichier runtime côté serveur.
+Le serveur Express est autoritaire sur l’économie du jeu. La progression est associée à un cookie de session HttpOnly et conservée côté serveur.
 
 ## Fonctionnalités
 
 - **12 bâtiments** : Script Bash, Raspberry Pi, NAS, Datacenter, Cloud mondial…
 - **29 améliorations** réparties entre Linux, Réseau, DevOps et Sécurité
-- **80 succès** à débloquer
+- de nombreux succès à débloquer
 - événements aléatoires : DDoS, panne disque, ransomware, buzz Hacker News…
 - système de prestige avec **8 certifications permanentes**
 - production automatique et progression hors ligne
 - sauvegarde serveur autoritaire avec miroir local
-- import et export des sauvegardes au format JSON
+- pseudo unique et classement mondial avec drapeau du pays
 - terminal Linux interactif avec commandes et bonus temporaires
 - effets sonores générés avec la Web Audio API
 - plusieurs thèmes pastel sur fond noir
@@ -133,7 +133,7 @@ Certaines commandes accordent un bonus temporaire de production.
 | `achievements.js` | Conditions et déblocage des succès |
 | `server/gameEngine.js` | Calculs économiques et validation autoritaire des actions |
 | `server/gameStore.js` | Sessions signées et persistance serveur |
-| `save.js` | Miroir local et export de la progression |
+| `save.js` | Miroir local de la progression et préférences |
 | `audio.js` | Effets sonores |
 | `terminal.js` | Faux terminal Linux et commandes |
 
@@ -151,7 +151,7 @@ Le thème sélectionné est conservé séparément sous la clé :
 infra-clicker-theme
 ```
 
-La source de vérité reste le serveur : un import JSON ne peut pas remplacer la progression autoritaire.
+La source de vérité reste le serveur MariaDB. Les paramètres permettent de synchroniser ou de réinitialiser la progression.
 
 ## Stack technique
 

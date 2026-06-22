@@ -108,6 +108,33 @@ function setSessionCookie(res, id) {
   );
 }
 
+function countryFromRequest(req) {
+  const proxyCountry = [
+    req.headers['cf-ipcountry'],
+    req.headers['x-vercel-ip-country'],
+    req.headers['x-country-code']
+  ].find(value => typeof value === 'string' && /^[a-z]{2}$/i.test(value));
+  if (proxyCountry) return proxyCountry.toUpperCase();
+
+  const locale = String(req.headers['accept-language'] || '').match(/[-_]([A-Z]{2})(?:,|;|$)/i);
+  return locale ? locale[1].toUpperCase() : 'XX';
+}
+
+function normalizeUsername(value) {
+  const username = String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ');
+  if (username.length < 3 || username.length > 20) {
+    throw Object.assign(new Error('Le pseudo doit contenir entre 3 et 20 caractères.'), { status: 400 });
+  }
+  if (!/^[\p{L}\p{N}_ -]+$/u.test(username)) {
+    throw Object.assign(new Error('Utilisez uniquement des lettres, chiffres, espaces, tirets ou underscores.'), { status: 400 });
+  }
+  return username;
+}
+
+function usernameKey(username) {
+  return username.normalize('NFKC').toLocaleLowerCase('fr-FR');
+}
+
 async function transactSession(req, res, handler) {
   await initializeDatabase();
   const connection = await pool.getConnection();
@@ -134,10 +161,13 @@ async function transactSession(req, res, handler) {
     }
 
     await connection.query(
-      'UPDATE game_sessions SET last_seen_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
-      [id]
+      `UPDATE game_sessions
+          SET last_seen_at = CURRENT_TIMESTAMP(3),
+              country_code = COALESCE(country_code, ?)
+        WHERE id = ?`,
+      [countryFromRequest(req), id]
     );
-    const result = await handler(state, id);
+    const result = await handler(state, id, connection);
     await saveState(connection, id, state);
     await connection.commit();
     return result;
@@ -150,6 +180,65 @@ async function transactSession(req, res, handler) {
   } finally {
     connection.release();
   }
+}
+
+async function getProfile(connection, sessionId) {
+  const rows = await connection.query(
+    'SELECT username, country_code FROM game_sessions WHERE id = ?',
+    [sessionId]
+  );
+  return rows.length ? {
+    username: rows[0].username || null,
+    countryCode: String(rows[0].country_code || 'XX').trim().toUpperCase()
+  } : null;
+}
+
+async function setProfile(connection, sessionId, username) {
+  const normalized = normalizeUsername(username);
+  const key = usernameKey(normalized);
+  const duplicates = await connection.query(
+    'SELECT 1 FROM game_sessions WHERE username_key = ? AND id <> ? LIMIT 1',
+    [key, sessionId]
+  );
+  if (duplicates.length) {
+    throw Object.assign(new Error('Ce pseudo est déjà utilisé.'), { status: 409 });
+  }
+  try {
+    await connection.query(
+      'UPDATE game_sessions SET username = ?, username_key = ? WHERE id = ?',
+      [normalized, key, sessionId]
+    );
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      throw Object.assign(new Error('Ce pseudo est déjà utilisé.'), { status: 409 });
+    }
+    throw error;
+  }
+  return getProfile(connection, sessionId);
+}
+
+async function getLeaderboard(limit = 100) {
+  await initializeDatabase();
+  const safeLimit = Math.min(100, Math.max(10, Number(limit) || 50));
+  const rows = await pool.query(
+    `SELECT sessions.username, sessions.country_code,
+            stats.all_time_requests, stats.prestige_count,
+            stats.total_buildings_purchased
+       FROM game_sessions sessions
+       JOIN game_stats stats ON stats.session_id = sessions.id
+      WHERE sessions.username IS NOT NULL
+      ORDER BY stats.all_time_requests DESC, stats.prestige_count DESC, sessions.created_at ASC
+      LIMIT ?`,
+    [safeLimit]
+  );
+  return rows.map((row, index) => ({
+    rank: index + 1,
+    username: row.username,
+    countryCode: String(row.country_code || 'XX').trim().toUpperCase(),
+    requests: Number(row.all_time_requests),
+    prestigeCount: Number(row.prestige_count),
+    buildings: Number(row.total_buildings_purchased)
+  }));
 }
 
 async function closeDatabase() {
@@ -197,7 +286,10 @@ async function importSessions(sessions) {
 module.exports = {
   closeDatabase,
   countOnlinePlayers,
+  getLeaderboard,
+  getProfile,
   importSessions,
   initializeDatabase,
+  setProfile,
   transactSession
 };

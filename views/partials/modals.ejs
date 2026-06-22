@@ -1,7 +1,7 @@
 <div class="modal-backdrop" id="settings-modal" aria-hidden="true">
   <section class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <button class="modal-close" data-close="settings-modal">×</button>
-    <h2 id="settings-title">Sauvegarde & paramètres</h2>
+    <h2 id="settings-title">Progression & paramètres</h2>
     <div class="theme-settings">
       <span class="settings-label">THÈME</span>
       <div class="theme-picker" id="theme-picker">
@@ -23,15 +23,13 @@
       </div>
     </div>
     <div class="settings-actions">
-      <button id="save-now" class="primary-button">Sauvegarder maintenant</button>
-      <button id="export-save" class="secondary-button">Exporter JSON</button>
-      <label class="secondary-button file-button">Importer JSON<input id="import-save" type="file" accept=".json,application/json"></label>
-      <button id="reset-game" class="danger-button">Réinitialiser la partie</button>
-      <button id="delete-local-data" class="danger-button">Effacer toutes les données locales</button>
+      <button id="save-now" class="primary-button">Synchroniser avec le serveur</button>
+      <button id="reset-game" class="danger-button">Réinitialiser la progression serveur</button>
+      <button id="delete-local-data" class="secondary-button">Réinitialiser les préférences locales</button>
       <a href="/privacy" class="secondary-button privacy-link">Confidentialité et stockage</a>
     </div>
-    <div class="save-status"><span class="status-dot"></span><span id="save-status">Prêt</span></div>
-    <div class="security-status"><span>⛨</span><div><strong>Protection active</strong><small>Sauvegardes signées et valeurs contrôlées</small></div></div>
+    <div class="save-status"><span class="status-dot"></span><span id="save-status">Synchronisé</span></div>
+    <div class="security-status"><span>⛨</span><div><strong>Sauvegarde serveur active</strong><small>Progression sécurisée et synchronisée automatiquement</small></div></div>
   </section>
 </div>
 
@@ -124,6 +122,22 @@
       <span>L’action détectée n’a pas été comptabilisée</span>
     </div>
     <button class="anti-cheat-acknowledge" data-close="anti-cheat-modal">J’ai compris</button>
+  </section>
+</div>
+
+<div class="modal-backdrop profile-backdrop" id="profile-modal" aria-hidden="true">
+  <section class="modal profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+    <div class="profile-modal-icon" aria-hidden="true">◎</div>
+    <span class="profile-modal-kicker">IDENTITÉ DE L’INFRASTRUCTURE</span>
+    <h2 id="profile-title">Choisissez votre pseudo</h2>
+    <p>Il sera visible dans le classement public avec le drapeau de votre pays.</p>
+    <form id="profile-form">
+      <label for="profile-input">Pseudo</label>
+      <input id="profile-input" name="username" minlength="3" maxlength="20" autocomplete="nickname" required placeholder="Ex. RootMaster">
+      <small>3 à 20 caractères : lettres, chiffres, espaces, tirets ou underscores.</small>
+      <p id="profile-error" class="profile-error" role="alert"></p>
+      <button type="submit" class="primary-button">Enregistrer mon pseudo</button>
+    </form>
   </section>
 </div>
 

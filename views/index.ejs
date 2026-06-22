@@ -14,6 +14,7 @@
       <strong id="online-count">1</strong>
       <span id="online-label">joueur en ligne</span>
     </div>
+    <a class="icon-button icon-link" href="/leaderboard" title="Classement" aria-label="Classement">🏆</a>
     <a class="icon-button icon-link" id="statistics-link" href="/statistics" title="Statistiques complètes" aria-label="Statistiques complètes">
       <svg class="stats-icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M5 19V11M12 19V5M19 19v-7"></path>
@@ -31,7 +32,7 @@
       <div class="profile-row">
         <div class="server-avatar"><span></span></div>
         <div>
-          <h1>localhost</h1>
+          <h1 id="profile-name">localhost</h1>
           <p id="infra-title">Homelab improvisé</p>
         </div>
       </div>
@@ -78,7 +79,7 @@
         <button class="text-button" id="achievements-open">TOUT VOIR</button>
       </div>
       <div id="achievement-preview" class="achievement-preview"></div>
-      <p class="collection-count"><strong id="achievement-count">0</strong> / 80 débloqués</p>
+      <p class="collection-count"><strong id="achievement-count">0</strong> / <span id="achievement-total">0</span> débloqués</p>
     </section>
   </aside>
 

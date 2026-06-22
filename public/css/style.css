@@ -942,7 +942,6 @@ button { color: inherit; }
 .secondary-button { border-color: var(--line); background: var(--panel-2); color: var(--text); }
 .danger-button { border-color: rgba(251, 113, 133, .4); background: rgba(251, 113, 133, .07); color: var(--red); }
 .danger-button:disabled { opacity: .35; cursor: not-allowed; }
-.file-button input { display: none; }
 .save-status { display: flex; align-items: center; gap: 9px; margin-top: 18px; color: var(--muted); font-family: var(--mono); font-size: 8px; }
 
 .security-status {
@@ -3129,6 +3128,227 @@ svg {
 /* UX polish */
 body.modal-open {
   overflow: hidden;
+}
+
+.profile-modal {
+  width: min(500px, 100%);
+  text-align: center;
+}
+
+.profile-modal-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border: 1px solid var(--cyan);
+  border-radius: 20px;
+  color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  font-size: 30px;
+}
+
+.profile-modal-kicker {
+  color: var(--cyan);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.profile-modal > p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.profile-modal form {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.profile-modal label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.profile-modal input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.profile-modal input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 14%, transparent);
+}
+
+.profile-modal form small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.profile-error {
+  min-height: 18px;
+  margin: 0;
+  color: var(--red);
+  font-size: 11px;
+}
+
+.leaderboard-body {
+  overflow: auto;
+}
+
+.leaderboard-page {
+  width: min(980px, calc(100% - 32px));
+  margin: 40px auto 80px;
+}
+
+.leaderboard-hero {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.leaderboard-hero > span {
+  color: var(--cyan);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.leaderboard-hero h1 {
+  margin: 10px 0 8px;
+}
+
+.leaderboard-hero p,
+.leaderboard-loading {
+  color: var(--muted);
+}
+
+.leaderboard-panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.leaderboard-heading,
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 80px minmax(180px, 1fr) 120px 180px;
+  align-items: center;
+  gap: 14px;
+}
+
+.leaderboard-heading {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.leaderboard-row {
+  min-height: 66px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.leaderboard-row:last-child {
+  border-bottom: 0;
+}
+
+.leaderboard-row.rank-1,
+.leaderboard-row.rank-2,
+.leaderboard-row.rank-3 {
+  background: color-mix(in srgb, var(--cyan) 5%, transparent);
+}
+
+.leaderboard-rank {
+  font-family: var(--mono);
+  font-size: 18px;
+}
+
+.leaderboard-player {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.leaderboard-player strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-flag {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 21px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  background: var(--panel-2);
+  font-size: 22px;
+}
+
+.leaderboard-flag img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.leaderboard-prestige {
+  color: var(--purple);
+}
+
+.leaderboard-score {
+  color: var(--green);
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.leaderboard-loading {
+  padding: 36px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .leaderboard-page {
+    width: min(100% - 12px, 980px);
+    margin-top: 24px;
+  }
+
+  .leaderboard-heading,
+  .leaderboard-row {
+    grid-template-columns: 44px minmax(120px, 1fr) 90px;
+    gap: 8px;
+    padding-inline: 12px;
+  }
+
+  .leaderboard-heading span:nth-child(3),
+  .leaderboard-prestige {
+    display: none;
+  }
+
+  .leaderboard-heading span:last-child,
+  .leaderboard-score {
+    text-align: right;
+  }
 }
 
 button:focus-visible,

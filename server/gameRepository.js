@@ -4,10 +4,15 @@ const { createState } = require('./gameEngine');
 const TABLES = [
   `CREATE TABLE IF NOT EXISTS game_sessions (
     id VARCHAR(64) NOT NULL PRIMARY KEY,
+    username VARCHAR(24) NULL,
+    username_key VARCHAR(24) NULL,
+    country_code CHAR(2) NULL,
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
       ON UPDATE CURRENT_TIMESTAMP(3),
     last_seen_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    UNIQUE KEY uq_game_sessions_username (username),
+    UNIQUE KEY uq_game_sessions_username_key (username_key),
     INDEX idx_game_sessions_last_seen (last_seen_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS game_progress (
@@ -87,6 +92,19 @@ async function hasColumn(connection, table, column) {
         AND COLUMN_NAME = ?
       LIMIT 1`,
     [table, column]
+  );
+  return rows.length > 0;
+}
+
+async function hasIndex(connection, table, index) {
+  const rows = await connection.query(
+    `SELECT 1
+       FROM information_schema.STATISTICS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+        AND INDEX_NAME = ?
+      LIMIT 1`,
+    [table, index]
   );
   return rows.length > 0;
 }
@@ -250,6 +268,31 @@ async function migrateLegacyStates(connection) {
 
 async function initializeSchema(connection) {
   for (const statement of TABLES) await connection.query(statement);
+  if (!await hasColumn(connection, 'game_sessions', 'username')) {
+    await connection.query(`
+      ALTER TABLE game_sessions
+      ADD COLUMN username VARCHAR(24) NULL,
+      ADD UNIQUE KEY uq_game_sessions_username (username)
+    `);
+  }
+  if (!await hasColumn(connection, 'game_sessions', 'username_key')) {
+    await connection.query(
+      'ALTER TABLE game_sessions ADD COLUMN username_key VARCHAR(24) NULL AFTER username'
+    );
+    await connection.query(
+      'UPDATE game_sessions SET username_key = LOWER(TRIM(username)) WHERE username IS NOT NULL'
+    );
+  }
+  if (!await hasIndex(connection, 'game_sessions', 'uq_game_sessions_username_key')) {
+    await connection.query(
+      'ALTER TABLE game_sessions ADD UNIQUE KEY uq_game_sessions_username_key (username_key)'
+    );
+  }
+  if (!await hasColumn(connection, 'game_sessions', 'country_code')) {
+    await connection.query(
+      'ALTER TABLE game_sessions ADD COLUMN country_code CHAR(2) NULL'
+    );
+  }
   if (!await hasColumn(connection, 'game_sessions', 'last_seen_at')) {
     await connection.query(`
       ALTER TABLE game_sessions

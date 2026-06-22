@@ -1,4 +1,4 @@
-import { BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
+import { ACHIEVEMENTS, BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
 import { Economy } from './modules/economy.js';
 import { formatNumber } from './modules/utils.js';
 
@@ -187,10 +187,10 @@ function render() {
   setText('stat-commands', new Set(state.commandsUsed).size);
   setText('stat-anticheat', state.antiCheatViolations || 0);
   setText('stat-upgrades', `${state.upgrades.length} / ${UPGRADES.length}`);
-  setText('stat-achievements', `${state.achievements.length} / 80`);
+  setText('stat-achievements', `${state.achievements.length} / ${ACHIEVEMENTS.length}`);
   setText('stat-certifications', `${state.certifications.length} / ${CERTIFICATIONS.length}`);
   setProgress('stat-upgrades-bar', state.upgrades.length, UPGRADES.length);
-  setProgress('stat-achievements-bar', state.achievements.length, 80);
+  setProgress('stat-achievements-bar', state.achievements.length, ACHIEVEMENTS.length);
   setProgress('stat-certifications-bar', state.certifications.length, CERTIFICATIONS.length);
   setText('stat-created', formatDate(state.startedAt));
   setText('stat-saved', formatDate(state.lastSaved));

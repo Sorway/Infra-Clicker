@@ -56,6 +56,15 @@ export class ServerGame {
     return request('/api/game/presence');
   }
 
+  async saveProfile(state, username) {
+    const payload = await request('/api/game/profile', {
+      method: 'POST',
+      body: JSON.stringify({ username })
+    });
+    this.merge(state, payload.state);
+    return payload.profile;
+  }
+
   async action(state, type, data = {}) {
     try {
       const payload = await request('/api/game/action', {

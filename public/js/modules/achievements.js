@@ -25,7 +25,6 @@ export class AchievementManager {
       case 'eventCount': return state.eventsCompleted >= achievement.value;
       case 'command': return state.commandsUsed.includes(achievement.value);
       case 'terminal': return state.commandsUsed.includes('terminal-open');
-      case 'export': return state.exported;
       case 'night': {
         const hour = new Date().getHours();
         return hour >= 22 || hour < 6;

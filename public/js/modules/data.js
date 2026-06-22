@@ -153,7 +153,6 @@ const specialAchievements = [
   ['terminal-ping', 'ICMP Enjoyer', 'Lancer ping dans le terminal.', 'command', 'ping'],
   ['terminal-kubectl', 'Pod Whisperer', 'Inspecter les pods.', 'command', 'kubectl get pods'],
   ['terminal-neofetch', 'BTW I Use InfraOS', 'Lancer neofetch.', 'command', 'neofetch'],
-  ['save-export', 'Disaster Recovery', 'Exporter une sauvegarde.', 'export', 1],
   ['hundred-buildings', 'CapEx', 'Posséder 100 bâtiments.', 'buildingCount', 100],
   ['five-hundred-buildings', 'Fleet Manager', 'Posséder 500 bâtiments.', 'buildingCount', 500],
   ['night-ops', 'NOC de nuit', 'Jouer pendant la nuit.', 'night', 1],

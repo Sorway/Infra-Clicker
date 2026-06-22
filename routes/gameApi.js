@@ -1,6 +1,12 @@
 const express = require('express');
 const { applyAction, createState, publicState } = require('../server/gameEngine');
-const { countOnlinePlayers, transactSession } = require('../server/gameStore');
+const {
+  countOnlinePlayers,
+  getLeaderboard,
+  getProfile,
+  setProfile,
+  transactSession
+} = require('../server/gameStore');
 
 const router = express.Router();
 
@@ -11,10 +17,35 @@ router.use((req, res, next) => {
 
 router.get('/state', async (req, res, next) => {
   try {
-    const payload = await transactSession(req, res, state => ({
-      state: publicState(state)
+    const payload = await transactSession(req, res, async (state, id, connection) => ({
+      state: publicState(state),
+      profile: await getProfile(connection, id)
     }));
     res.json(payload);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/profile', async (req, res, next) => {
+  try {
+    const payload = await transactSession(req, res, async (state, id, connection) => ({
+      state: publicState(state),
+      profile: await setProfile(connection, id, req.body?.username)
+    }));
+    res.json(payload);
+  } catch (error) {
+    if (error.status) {
+      res.status(error.status).json({ error: error.message });
+      return;
+    }
+    next(error);
+  }
+});
+
+router.get('/leaderboard', async (req, res, next) => {
+  try {
+    res.json({ players: await getLeaderboard(100) });
   } catch (error) {
     next(error);
   }

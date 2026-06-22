@@ -64,16 +64,6 @@ function hasValidIntegrity(state) {
   return Object.hasOwn(state, 'permanentSkills') && state.integrity === checksum(state, true);
 }
 
-function hasValidStructure(state) {
-  const finiteNonNegative = value => Number.isFinite(value) && value >= 0;
-  if (!finiteNonNegative(state.requests) || !finiteNonNegative(state.lifetimeRequests)) return false;
-  if (state.allTimeRequests !== undefined && !finiteNonNegative(state.allTimeRequests)) return false;
-  if (!state.buildings || typeof state.buildings !== 'object' || Array.isArray(state.buildings)) return false;
-  if (!Array.isArray(state.upgrades) || !Array.isArray(state.achievements) || !Array.isArray(state.certifications)) return false;
-  if (state.upgrades.length > 100 || state.achievements.length > 200 || state.certifications.length > 50) return false;
-  return Object.values(state.buildings).every(value => Number.isInteger(value) && value >= 0 && value <= 1000000);
-}
-
 export function consumeV2ResetNotice() {
   if (localStorage.getItem(V2_RESET_NOTICE_KEY)) return false;
 
@@ -195,26 +185,12 @@ export class SaveManager {
       state.lastTick = Date.now();
       state.integrity = checksum(state);
       localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-      this.onStatus?.(`Sauvegardé à ${new Date().toLocaleTimeString('fr-FR')}`);
+      this.onStatus?.(`Miroir local actualisé à ${new Date().toLocaleTimeString('fr-FR')}`);
       return true;
     } catch (error) {
       this.onStatus?.('Échec de la sauvegarde');
       return false;
     }
-  }
-
-  import(json) {
-    const parsed = JSON.parse(json);
-    if (!parsed || typeof parsed !== 'object' || typeof parsed.requests !== 'number') {
-      throw new Error('Format de sauvegarde invalide');
-    }
-    if (!hasValidStructure(parsed)) {
-      throw new Error('Valeurs de sauvegarde invalides');
-    }
-    if (!parsed.integrity || !hasValidIntegrity(parsed)) {
-      throw new Error('Sauvegarde non signée ou modifiée');
-    }
-    return this.normalize(parsed);
   }
 
   reset() {
