@@ -395,7 +395,11 @@ async function getLeaderboard(dlcId = 'infra', limit = 23) {
 
 function countOnlinePlayers(activeSeconds = 30) {
   const threshold = Date.now() - Math.min(300, Math.max(10, Number(activeSeconds) || 30)) * 1000;
-  return [...sessionCache.values()].filter(entry => entry.lastSeen >= threshold).length;
+  return [...sessionCache.values()].filter(entry => (
+    entry.lastSeen >= threshold
+    && typeof entry.profile?.username === 'string'
+    && entry.profile.username.trim().length > 0
+  )).length;
 }
 
 async function importSessions(sessions) {

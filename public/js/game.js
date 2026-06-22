@@ -1,6 +1,7 @@
 import { AchievementManager } from './modules/achievements.js';
 import { AudioManager } from './modules/audio.js';
 import { ACTIVE_DLC, BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
+import { DLCS, selectDlc } from './dlcs/registry.js';
 import { Economy } from './modules/economy.js';
 import { EventManager } from './modules/events.js';
 import { MissionManager } from './modules/missions.js';
@@ -383,6 +384,15 @@ class InfraClicker {
   }
 
   bindSaveControls() {
+    const selector = document.querySelector('#dlc-select');
+    selector.innerHTML = DLCS.map(dlc => (
+      `<option value="${dlc.id}" ${dlc.id === ACTIVE_DLC.id ? 'selected' : ''}>${dlc.name}</option>`
+    )).join('');
+    selector.addEventListener('change', () => {
+      this.saveManager.save(this.state);
+      this.server.sync(this.state, true).catch(() => {});
+      if (selectDlc(selector.value)) window.location.reload();
+    });
     document.querySelector('#save-now').addEventListener('click', async () => {
       await this.synchronize(true);
     });
@@ -516,6 +526,8 @@ class InfraClicker {
     document.documentElement.dataset.dlc = ACTIVE_DLC.id;
     document.title = `${ACTIVE_DLC.name} — Clicker`;
     document.querySelector('#brand-name').textContent = ACTIVE_DLC.name.toUpperCase();
+    document.querySelector('#dlc-current-name').textContent = ACTIVE_DLC.name;
+    document.querySelector('#dlc-current-description').textContent = ACTIVE_DLC.description;
     document.querySelector('#process-button span').textContent = ACTIVE_DLC.clickVerb;
     const clickerImage = document.querySelector('#server-button img');
     const clickerIcon = document.querySelector('#dlc-clicker-icon');
