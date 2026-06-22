@@ -1,6 +1,6 @@
 import { BUILDINGS, CERTIFICATIONS, UPGRADES } from './data.js';
 
-const MAX_CLICKS_PER_SECOND = 32;
+const MAX_CLICKS_PER_SECOND = 50;
 
 export class AntiCheat {
   constructor(state, onViolation) {
