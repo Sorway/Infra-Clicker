@@ -56,12 +56,5 @@ async function start() {
   });
 }
 
-if (require.main === module) {
-  start().catch(error => {
-    console.error('Impossible de démarrer Infra Clicker :', error);
-    process.exitCode = 1;
-  });
-}
-
 module.exports = app;
 module.exports.start = start;
