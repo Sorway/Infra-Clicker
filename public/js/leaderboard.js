@@ -64,3 +64,4 @@ async function render() {
 }
 
 render();
+setInterval(render, 10000);
