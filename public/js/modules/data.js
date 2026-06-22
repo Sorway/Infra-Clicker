@@ -14,12 +14,12 @@ export const BUILDINGS = [
 ];
 
 export const UPGRADES = [
-  { id: 'ssd', category: 'Linux', name: 'SSD', icon: '▰', cost: 250, description: 'I/O plus réactives.', effect: { production: 1.12 } },
-  { id: 'raid', category: 'Linux', name: 'RAID', icon: '▥', cost: 3000, description: 'Parallélise les disques.', requires: 'ssd', effect: { production: 1.18 } },
-  { id: 'nvme', category: 'Linux', name: 'NVMe', icon: 'ϟ', cost: 25000, description: 'Réduit drastiquement la latence.', requires: 'raid', effect: { production: 1.25 } },
-  { id: 'ceph', category: 'Linux', name: 'Ceph', icon: '◈', cost: 450000, description: 'Stockage objet résilient.', requires: 'nvme', effect: { building: 'nas', multiplier: 3 } },
-  { id: 'zfs', category: 'Linux', name: 'ZFS', icon: 'Z', cost: 2.5e6, description: 'Snapshots, intégrité, sérénité.', requires: 'ceph', effect: { production: 1.35 } },
-  { id: 'distributed-storage', category: 'Linux', name: 'Stockage distribué', icon: '⌘', cost: 75e6, description: 'Les données sont partout.', requires: 'zfs', effect: { production: 1.6 } },
+  { id: 'ssd', category: 'Stockage', name: 'SSD', icon: '▰', cost: 250, description: 'I/O plus réactives.', effect: { production: 1.12 } },
+  { id: 'raid', category: 'Stockage', name: 'RAID', icon: '▥', cost: 3000, description: 'Parallélise les disques.', requires: 'ssd', effect: { production: 1.18 } },
+  { id: 'nvme', category: 'Stockage', name: 'NVMe', icon: 'ϟ', cost: 25000, description: 'Réduit drastiquement la latence.', requires: 'raid', effect: { production: 1.25 } },
+  { id: 'ceph', category: 'Stockage', name: 'Ceph', icon: '◈', cost: 450000, description: 'Stockage objet résilient.', requires: 'nvme', effect: { building: 'nas', multiplier: 3 } },
+  { id: 'zfs', category: 'Stockage', name: 'ZFS', icon: 'Z', cost: 2.5e6, description: 'Snapshots, intégrité, sérénité.', requires: 'ceph', effect: { production: 1.35 } },
+  { id: 'distributed-storage', category: 'Stockage', name: 'Stockage distribué', icon: '⌘', cost: 75e6, description: 'Les données sont partout.', requires: 'zfs', effect: { production: 1.6 } },
 
   { id: 'cat5', category: 'Réseau', name: 'CAT5', icon: '∿', cost: 100, description: 'Un câble, un début.', effect: { click: 2 } },
   { id: 'cat6', category: 'Réseau', name: 'CAT6', icon: '≈', cost: 1400, description: 'Moins de diaphonie.', requires: 'cat5', effect: { click: 2 } },
