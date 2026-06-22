@@ -1,4 +1,5 @@
-require('dotenv').config();
+console.log(`[App] Chargement d’Infra Clicker — Node ${process.version}`);
+require('dotenv').config({ quiet: true });
 const path = require('path');
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
@@ -8,7 +9,7 @@ const { initializeDatabase } = require('./server/gameStore');
 
 const app = express();
 const port = process.env.PORT || 3000;
-const siteUrl = (process.env.SITE_URL || 'https://clicker.jonathan-gp.fr').replace(/\/$/, '');
+const siteUrl = (process.env.SITE_URL || 'https://clicker.contoso.com').replace(/\/$/, '');
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -48,9 +49,10 @@ app.use((error, req, res, next) => {
 });
 
 async function start() {
+  console.log(`[App] Démarrage demandé sur le port ${port}`);
   await initializeDatabase();
   return app.listen(port, () => {
-    console.log(`Server listening on http://localhost:${port}`);
+    console.log(`[App] Serveur HTTP prêt sur le port ${port}`);
   });
 }
 

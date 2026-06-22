@@ -28,12 +28,22 @@ const pool = mariadb.createPool({
 
 let initialization;
 
-function initializeDatabase() {
-  if (!initialization) {
-    console.log(
-      `[MariaDB] Connexion à ${databaseConfig.host}:${databaseConfig.port}`
-    );
-    initialization = pool.query(`
+function missingDatabaseVariables() {
+  return ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME']
+    .filter(name => !process.env[name]?.trim());
+}
+
+async function connectAndPrepareDatabase() {
+  const missing = missingDatabaseVariables();
+  if (missing.length) {
+    throw new Error(`Configuration MariaDB incomplète : ${missing.join(', ')}`);
+  }
+
+  console.log(`[MariaDB] Tentative de connexion à ${databaseConfig.host}:${databaseConfig.port}`);
+  const connection = await pool.getConnection();
+  try {
+    console.log('[MariaDB] Connexion établie');
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS game_sessions (
         id VARCHAR(64) NOT NULL PRIMARY KEY,
         state LONGTEXT NOT NULL,
@@ -41,11 +51,16 @@ function initializeDatabase() {
         updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
           ON UPDATE CURRENT_TIMESTAMP(3)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `)
-      .then(result => {
-        console.log('[MariaDB] Connexion établie — table game_sessions prête');
-        return result;
-      })
+    `);
+    console.log('[MariaDB] Table game_sessions prête');
+  } finally {
+    connection.release();
+  }
+}
+
+function initializeDatabase() {
+  if (!initialization) {
+    initialization = connectAndPrepareDatabase()
       .catch(error => {
         initialization = null;
         console.error(
