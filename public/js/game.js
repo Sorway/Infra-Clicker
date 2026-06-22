@@ -34,9 +34,14 @@ class InfraClicker {
     this.lastIntegrityCheck = 0;
     this.lastHistorySample = 0;
     this.lastUiUpdate = 0;
+    this.isDesynced = false;
+    this.syncInProgress = false;
+    this.initialized = false;
+    this.bindDesyncScreen();
     this.init().catch(error => {
       console.error(error);
-      this.ui.toast('Serveur indisponible', 'La progression est suspendue pour éviter un état non vérifié.', 'danger');
+      this.showDesyncScreen(error.message);
+      this.startInitialReconnect();
     });
   }
 
@@ -56,11 +61,11 @@ class InfraClicker {
       setTimeout(() => this.ui.toast('Protection anti-triche', this.state.loadWarning, 'danger'), 400);
       delete this.state.loadWarning;
     }
+    this.initialized = true;
+    this.hideDesyncScreen();
     this.loop(performance.now());
     this.autosaveTimer = setInterval(() => this.saveManager.save(this.state), 30000);
-    this.serverSyncTimer = setInterval(() => {
-      this.server.load(this.state).then(() => this.ui.update()).catch(() => {});
-    }, 1000);
+    this.serverSyncTimer = setInterval(() => this.synchronize(), 1000);
     this.updateOnlinePlayers();
     this.presenceTimer = setInterval(() => this.updateOnlinePlayers(), 20000);
     window.addEventListener('beforeunload', () => this.saveManager.save(this.state));
@@ -68,6 +73,81 @@ class InfraClicker {
       if (document.hidden) this.saveManager.save(this.state);
       this.lastFrame = performance.now();
     });
+  }
+
+  bindDesyncScreen() {
+    window.addEventListener('infra:server-disconnected', event => {
+      this.showDesyncScreen(event.detail?.message);
+    });
+    document.querySelector('#desync-retry')?.addEventListener('click', () => {
+      if (this.initialized) this.synchronize(true);
+      else this.retryInitialConnection();
+    });
+    document.querySelector('#desync-reload')?.addEventListener('click', () => window.location.reload());
+  }
+
+  showDesyncScreen(message = '') {
+    this.isDesynced = true;
+    const screen = document.querySelector('#desync-screen');
+    if (!screen) return;
+    if (message) document.querySelector('#desync-message').textContent =
+      `${message} Le jeu est suspendu pour protéger votre progression.`;
+    document.querySelector('#desync-status-text').textContent = 'Tentative de reconnexion en cours…';
+    screen.classList.add('visible');
+    screen.setAttribute('aria-hidden', 'false');
+    document.querySelectorAll('body > header, body > main, body > .modal-backdrop')
+      .forEach(element => { element.inert = true; });
+    document.body.classList.add('server-desynced');
+  }
+
+  hideDesyncScreen() {
+    this.isDesynced = false;
+    const screen = document.querySelector('#desync-screen');
+    if (!screen) return;
+    screen.classList.remove('visible');
+    screen.setAttribute('aria-hidden', 'true');
+    document.querySelectorAll('body > header, body > main, body > .modal-backdrop')
+      .forEach(element => { element.inert = false; });
+    document.body.classList.remove('server-desynced');
+  }
+
+  async synchronize(manual = false) {
+    if (this.syncInProgress) return;
+    this.syncInProgress = true;
+    const status = document.querySelector('#desync-status-text');
+    if (manual && status) status.textContent = 'Connexion au serveur…';
+    try {
+      await this.server.load(this.state);
+      const wasDesynced = this.isDesynced;
+      this.hideDesyncScreen();
+      this.ui.update();
+      if (wasDesynced) this.ui.toast('Synchronisation restaurée', 'La progression serveur est de nouveau active.', 'info');
+    } catch (error) {
+      this.showDesyncScreen(error.message);
+    } finally {
+      this.syncInProgress = false;
+    }
+  }
+
+  startInitialReconnect() {
+    if (this.initialReconnectTimer) return;
+    this.initialReconnectTimer = setInterval(() => this.retryInitialConnection(), 3000);
+  }
+
+  async retryInitialConnection() {
+    if (this.syncInProgress || this.initialized) return;
+    this.syncInProgress = true;
+    const status = document.querySelector('#desync-status-text');
+    if (status) status.textContent = 'Vérification du serveur…';
+    try {
+      await this.server.load(this.state);
+      if (this.initialReconnectTimer) clearInterval(this.initialReconnectTimer);
+      window.location.reload();
+    } catch (error) {
+      if (status) status.textContent = 'Serveur toujours inaccessible · nouvelle tentative automatique';
+    } finally {
+      this.syncInProgress = false;
+    }
   }
 
   applyProfile(profile) {
@@ -131,6 +211,7 @@ class InfraClicker {
 
   bindGameActions() {
     const clickHandler = async event => {
+      if (this.isDesynced) return;
       if (!this.antiCheat.canProcessClick()) return;
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX || rect.left + rect.width / 2;
@@ -393,10 +474,7 @@ class InfraClicker {
     this.audio.purchase();
     this.ui.renderUpgrades();
     this.ui.toast(`${upgrade.name} installé`, upgrade.description, 'bonus');
-    if (this.state.upgrades.length >= UPGRADES.length
-      && this.state.certifications.length >= CERTIFICATIONS.length) {
-      this.ui.celebrateMaxProgress();
-    }
+    this.ui.update();
     this.achievements.check();
   }
 
@@ -412,10 +490,7 @@ class InfraClicker {
     this.audio.achievement();
     this.ui.renderCertifications();
     this.ui.toast(`Certification ${certification.name}`, certification.description, 'achievement');
-    if (this.state.upgrades.length >= UPGRADES.length
-      && this.state.certifications.length >= CERTIFICATIONS.length) {
-      this.ui.celebrateMaxProgress();
-    }
+    this.ui.update();
     this.achievements.check();
   }
 
@@ -453,6 +528,11 @@ class InfraClicker {
   }
 
   loop(now) {
+    if (this.isDesynced) {
+      this.lastFrame = now;
+      requestAnimationFrame(timestamp => this.loop(timestamp));
+      return;
+    }
     this.lastFrame = now;
     const production = this.economy.getProduction();
 

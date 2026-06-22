@@ -180,3 +180,23 @@
 </main>
 
 <%- include('partials/modals') %>
+
+<section id="desync-screen" class="desync-screen" role="alertdialog" aria-modal="true" aria-labelledby="desync-title" aria-hidden="true">
+  <div class="desync-card">
+    <div class="desync-signal" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+    <span class="desync-kicker">CONNEXION AU SERVEUR PERDUE</span>
+    <h2 id="desync-title">Progression désynchronisée</h2>
+    <p id="desync-message">Le jeu est suspendu pour protéger votre progression pendant la reconnexion.</p>
+    <div class="desync-status">
+      <i></i>
+      <span id="desync-status-text">Tentative de reconnexion en cours…</span>
+    </div>
+    <div class="desync-actions">
+      <button id="desync-retry" class="primary-button">Réessayer maintenant</button>
+      <button id="desync-reload" class="secondary-button">Recharger la page</button>
+    </div>
+    <small>Aucune action locale ne sera comptabilisée tant que le serveur n’aura pas confirmé votre sauvegarde.</small>
+  </div>
+</section>

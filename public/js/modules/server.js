@@ -24,16 +24,29 @@ const PROTECTED_FIELDS = [
 ];
 
 async function request(path, options = {}) {
-  const response = await fetch(path, {
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options
-  });
+  let response;
+  try {
+    response = await fetch(path, {
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      ...options
+    });
+  } catch (error) {
+    window.dispatchEvent(new CustomEvent('infra:server-disconnected', {
+      detail: { message: 'Le serveur ne répond plus.' }
+    }));
+    throw error;
+  }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(payload.error || 'Action refusée par le serveur');
     error.state = payload.state;
     error.status = response.status;
+    if (response.status >= 500) {
+      window.dispatchEvent(new CustomEvent('infra:server-disconnected', {
+        detail: { message: error.message }
+      }));
+    }
     throw error;
   }
   return payload;

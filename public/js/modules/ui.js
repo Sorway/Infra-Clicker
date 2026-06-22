@@ -10,6 +10,7 @@ export class GameUI {
     this.rpsHistory = Array(20).fill(0);
     this.lastTelemetryUpdate = 0;
     this.lastBuildingsUpdate = 0;
+    this.lastCompletedAt = Number(state.completedAt) || 0;
     this.renderCache = new Map();
     this.performanceMode = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
@@ -165,6 +166,16 @@ export class GameUI {
   }
 
   update() {
+    const completedAt = Number(this.state.completedAt) || 0;
+    if (completedAt && completedAt !== this.lastCompletedAt) {
+      const celebrationKey = `infra-clicker-completion-${completedAt}`;
+      if (!sessionStorage.getItem(celebrationKey)) {
+        sessionStorage.setItem(celebrationKey, '1');
+        this.celebrateMaxProgress();
+      }
+    }
+    this.lastCompletedAt = completedAt;
+
     const production = this.economy.getProduction();
     const clickPower = this.economy.getClickPower();
     this.setText(this.el['header-rps'], `${formatNumber(production)} req/s`);
@@ -387,16 +398,32 @@ export class GameUI {
 
   celebrateMaxProgress() {
     document.querySelector('.max-progress-celebration')?.remove();
+    const elapsed = Math.max(0, (Number(this.state.completedAt) || Date.now()) - this.state.startedAt);
+    const totalSeconds = Math.floor(elapsed / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor(totalSeconds % 86400 / 3600);
+    const minutes = Math.floor(totalSeconds % 3600 / 60);
+    const seconds = totalSeconds % 60;
+    const duration = days > 0
+      ? `${days}j ${hours}h ${minutes}min`
+      : hours > 0
+        ? `${hours}h ${minutes}min`
+        : minutes > 0
+          ? `${minutes}min ${seconds}s`
+          : `${seconds}s`;
 
     const celebration = document.createElement('div');
     celebration.className = 'max-progress-celebration';
     celebration.setAttribute('aria-hidden', 'true');
     celebration.innerHTML = `
       <div class="max-progress-halo"></div>
+      <div class="max-progress-rays"></div>
       <div class="max-progress-message">
+        <div class="max-progress-trophy">✓</div>
         <span>◆ INFRASTRUCTURE ULTIME ◆</span>
-        <strong>Prestige maximal</strong>
+        <strong>Jeu terminé !</strong>
         <small>Toutes les certifications et améliorations sont actives</small>
+        <em>Terminé en ${duration}</em>
       </div>
     `;
 
