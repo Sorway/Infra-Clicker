@@ -152,13 +152,20 @@ async function transactSession(req, res, handler) {
       setSessionCookie(res, id);
     }
 
+    const detectedCountry = countryFromRequest(req);
     await connection.query(
       `UPDATE game_sessions
           SET last_seen_at = CURRENT_TIMESTAMP(3),
-              country_code = ?
+              country_code = CASE
+                WHEN ? <> 'XX' THEN ?
+                ELSE country_code
+              END
         WHERE id = ?`,
-      [countryFromRequest(req), id]
+      [detectedCountry, detectedCountry, id]
     );
+    if (process.env.NETWORK_DEBUG === 'true') {
+      console.log(`[Network] session=${id.slice(0, 8)}… pays-enregistré=${detectedCountry}`);
+    }
     const result = await handler(state, id, connection);
     await saveState(connection, id, state);
     await connection.commit();

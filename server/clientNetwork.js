@@ -16,8 +16,10 @@ function validCountry(value) {
 
 function clientNetwork(req) {
   const cloudflareEnabled = process.env.CLOUDFLARE_PROXY === 'true';
+  const rawCloudflareIp = firstHeaderValue(req.headers['cf-connecting-ip']);
+  const rawCloudflareCountry = firstHeaderValue(req.headers['cf-ipcountry']);
   const cloudflareIp = cloudflareEnabled
-    ? validIp(req.headers['cf-connecting-ip'])
+    ? validIp(rawCloudflareIp)
     : null;
   const forwardedIp = cloudflareEnabled ? null : validIp(req.headers['x-forwarded-for']);
   const socketIp = validIp(req.socket?.remoteAddress);
@@ -25,14 +27,25 @@ function clientNetwork(req) {
   return {
     ip: cloudflareIp || forwardedIp || socketIp || null,
     countryCode: cloudflareEnabled
-      ? validCountry(req.headers['cf-ipcountry']) || 'XX'
+      ? validCountry(rawCloudflareCountry) || 'XX'
       : 'XX',
-    source: cloudflareIp ? 'cloudflare' : forwardedIp ? 'forwarded' : 'socket'
+    source: cloudflareIp ? 'cloudflare' : forwardedIp ? 'forwarded' : 'socket',
+    rawCloudflareIp: rawCloudflareIp || null,
+    rawCloudflareCountry: rawCloudflareCountry || null
   };
 }
 
 function attachClientNetwork(req, res, next) {
   req.clientNetwork = clientNetwork(req);
+  if (process.env.NETWORK_DEBUG === 'true') {
+    console.log(
+      `[Network] source=${req.clientNetwork.source}`
+      + ` ip=${req.clientNetwork.ip || 'inconnue'}`
+      + ` cf-ip=${req.clientNetwork.rawCloudflareIp || 'absente'}`
+      + ` cf-country=${req.clientNetwork.rawCloudflareCountry || 'absent'}`
+      + ` country=${req.clientNetwork.countryCode}`
+    );
+  }
   next();
 }
 
