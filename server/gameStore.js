@@ -155,10 +155,7 @@ async function transactSession(req, res, handler) {
     await connection.query(
       `UPDATE game_sessions
           SET last_seen_at = CURRENT_TIMESTAMP(3),
-              country_code = CASE
-                WHEN country_code IS NULL OR country_code = 'XX' THEN ?
-                ELSE country_code
-              END
+              country_code = ?
         WHERE id = ?`,
       [countryFromRequest(req), id]
     );
