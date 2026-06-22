@@ -276,17 +276,22 @@ class InfraClicker {
   }
 
   openPrestigeConfirmation() {
-    if (this.state.certifications.length >= CERTIFICATIONS.length) {
-      this.ui.toast('Prestige terminé', 'Toutes les certifications permanentes sont déjà acquises.', 'info');
-      return;
-    }
     if (this.economy.prestigeGain() < 1) {
       this.ui.toast('Prestige indisponible', 'Atteignez 1 million de requêtes sur ce cycle.', 'info');
       return;
     }
+    const maintenance = this.state.certifications.length >= CERTIFICATIONS.length;
     const gain = this.economy.prestigeGain();
     document.querySelector('#prestige-confirm-gain').textContent =
-      `+${gain} point${gain > 1 ? 's' : ''} de certification`;
+      maintenance
+        ? 'Capacité restaurée à 100 %'
+        : `+${gain} point${gain > 1 ? 's' : ''} de certification`;
+    document.querySelector('#prestige-confirm-title').textContent = maintenance
+      ? 'Reconstruire cette infrastructure ?'
+      : 'Convertir cette progression ?';
+    document.querySelector('#prestige-confirm-button').textContent = maintenance
+      ? 'Restaurer la capacité'
+      : 'Reconstruire maintenant';
     const modal = document.querySelector('#prestige-confirm-modal');
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
@@ -388,6 +393,10 @@ class InfraClicker {
     this.audio.purchase();
     this.ui.renderUpgrades();
     this.ui.toast(`${upgrade.name} installé`, upgrade.description, 'bonus');
+    if (this.state.upgrades.length >= UPGRADES.length
+      && this.state.certifications.length >= CERTIFICATIONS.length) {
+      this.ui.celebrateMaxProgress();
+    }
     this.achievements.check();
   }
 
@@ -403,14 +412,15 @@ class InfraClicker {
     this.audio.achievement();
     this.ui.renderCertifications();
     this.ui.toast(`Certification ${certification.name}`, certification.description, 'achievement');
+    if (this.state.upgrades.length >= UPGRADES.length
+      && this.state.certifications.length >= CERTIFICATIONS.length) {
+      this.ui.celebrateMaxProgress();
+    }
     this.achievements.check();
   }
 
   async prestige() {
-    if (this.state.certifications.length >= CERTIFICATIONS.length) {
-      this.ui.toast('Prestige terminé', 'Toutes les certifications permanentes sont déjà acquises.', 'info');
-      return;
-    }
+    const maintenance = this.state.certifications.length >= CERTIFICATIONS.length;
     const gain = this.economy.prestigeGain();
     if (gain < 1) return;
     this.closeModal(document.querySelector('#prestige-confirm-modal'));
@@ -424,7 +434,13 @@ class InfraClicker {
     this.ui.refreshCollections();
     this.ui.update();
     this.audio.prestige();
-    this.ui.toast('Infrastructure reconstruite', `${this.lastPrestigeGain || gain} point(s) de certification obtenus.`, 'achievement');
+    this.ui.toast(
+      maintenance ? 'Capacité restaurée' : 'Infrastructure reconstruite',
+      maintenance
+        ? 'La saturation est revenue à 0 %. Vos certifications restent actives.'
+        : `${this.lastPrestigeGain || gain} point(s) de certification obtenus.`,
+      'achievement'
+    );
     this.achievements.check();
     this.saveManager.save(this.state);
   }

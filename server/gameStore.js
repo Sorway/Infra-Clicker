@@ -316,7 +316,7 @@ async function getLeaderboard(limit = 100) {
   const rows = await pool.query(
     `SELECT sessions.username, sessions.country_code,
             stats.all_time_requests, stats.prestige_count,
-            stats.total_buildings_purchased
+            stats.total_buildings_purchased, stats.started_at, stats.completed_at
        FROM game_sessions sessions
        JOIN game_stats stats ON stats.session_id = sessions.id
       WHERE sessions.username IS NOT NULL
@@ -330,7 +330,11 @@ async function getLeaderboard(limit = 100) {
     countryCode: String(row.country_code || 'XX').trim().toUpperCase(),
     requests: Number(row.all_time_requests),
     prestigeCount: Number(row.prestige_count),
-    buildings: Number(row.total_buildings_purchased)
+    buildings: Number(row.total_buildings_purchased),
+    completed: Number(row.completed_at) > 0,
+    completionTimeMs: Number(row.completed_at) > 0
+      ? Math.max(0, Number(row.completed_at) - Number(row.started_at))
+      : null
   }));
   leaderboardCache = { players, expiresAt: Date.now() + LEADERBOARD_CACHE_MS };
   return players;

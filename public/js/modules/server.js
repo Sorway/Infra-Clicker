@@ -16,6 +16,7 @@ const PROTECTED_FIELDS = [
   'certifications',
   'certificationPoints',
   'prestigeCount',
+  'completedAt',
   'startedAt',
   'lastTick',
   'lastSaved',

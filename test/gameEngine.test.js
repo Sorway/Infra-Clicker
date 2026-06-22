@@ -7,6 +7,7 @@ const {
   prestigeGain,
   publicState
 } = require('../server/gameEngine');
+const { CERTIFICATIONS, UPGRADES } = require('../server/gameData');
 
 test('ignore les valeurs économiques envoyées avec une action', () => {
   const state = createState();
@@ -109,4 +110,36 @@ test('le prestige remet la capacité à son efficacité maximale', () => {
   applyAction(state, { type: 'prestige' });
 
   assert.equal(capacityEfficiency(state.lifetimeRequests), 1);
+});
+
+test('autorise une reconstruction au prestige maximal sans créer de points inutiles', () => {
+  const state = createState();
+  state.certifications = CERTIFICATIONS.map(certification => certification.id);
+  state.certificationPoints = 4;
+  state.lifetimeRequests = 10e9;
+  state.requests = 10e9;
+
+  const result = applyAction(state, { type: 'prestige' });
+
+  assert.deepEqual(result, { gain: 0, maintenance: true });
+  assert.equal(state.certificationPoints, 4);
+  assert.equal(state.prestigeCount, 1);
+  assert.equal(state.lifetimeRequests, 0);
+  assert.equal(capacityEfficiency(state.lifetimeRequests), 1);
+});
+
+test('enregistre une seule fois le moment où le jeu est terminé', () => {
+  const state = createState();
+  state.upgrades = UPGRADES.slice(0, -1).map(upgrade => upgrade.id);
+  state.certifications = CERTIFICATIONS.map(certification => certification.id);
+  const finalUpgrade = UPGRADES.at(-1);
+  state.requests = finalUpgrade.cost;
+
+  applyAction(state, { type: 'buyUpgrade', id: finalUpgrade.id });
+
+  assert.ok(state.completedAt >= state.startedAt);
+  const completedAt = state.completedAt;
+  state.lifetimeRequests = 1e6;
+  applyAction(state, { type: 'prestige' });
+  assert.equal(state.completedAt, completedAt);
 });

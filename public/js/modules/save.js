@@ -99,6 +99,7 @@ export function createDefaultState() {
     certifications: [],
     certificationPoints: 0,
     prestigeCount: 0,
+    completedAt: 0,
     eventsCompleted: 0,
     commandsUsed: [],
     exported: false,

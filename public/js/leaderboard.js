@@ -5,6 +5,18 @@ function normalizedCountryCode(countryCode) {
   return /^[a-z]{2}$/.test(code) && code !== 'xx' ? code : null;
 }
 
+function formatDuration(milliseconds) {
+  const totalSeconds = Math.max(0, Math.floor(Number(milliseconds) / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor(totalSeconds % 86400 / 3600);
+  const minutes = Math.floor(totalSeconds % 3600 / 60);
+  const seconds = totalSeconds % 60;
+  if (days > 0) return `${days}j ${hours}h ${minutes}min`;
+  if (hours > 0) return `${hours}h ${minutes}min`;
+  if (minutes > 0) return `${minutes}min ${seconds}s`;
+  return `${seconds}s`;
+}
+
 function row(player) {
   const article = document.createElement('article');
   article.className = `leaderboard-row rank-${player.rank}`;
@@ -38,11 +50,20 @@ function row(player) {
   prestige.className = 'leaderboard-prestige';
   prestige.textContent = `${player.prestigeCount} ◆`;
 
+  const completion = document.createElement('span');
+  completion.className = `leaderboard-completion ${player.completed ? 'complete' : ''}`;
+  completion.textContent = player.completed
+    ? `✓ ${formatDuration(player.completionTimeMs)}`
+    : 'En cours';
+  completion.title = player.completed
+    ? `Jeu terminé en ${formatDuration(player.completionTimeMs)}`
+    : 'Jeu non terminé';
+
   const requests = document.createElement('strong');
   requests.className = 'leaderboard-score';
   requests.textContent = formatNumber(player.requests);
 
-  article.append(rank, identity, prestige, requests);
+  article.append(rank, identity, prestige, completion, requests);
   return article;
 }
 

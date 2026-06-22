@@ -3323,7 +3323,7 @@ body.modal-open {
 }
 
 .leaderboard-page {
-  width: min(980px, calc(100% - 32px));
+  width: min(1120px, calc(100% - 32px));
   margin: 40px auto 80px;
 }
 
@@ -3359,7 +3359,7 @@ body.modal-open {
 .leaderboard-heading,
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 80px minmax(180px, 1fr) 120px 180px;
+  grid-template-columns: 70px minmax(180px, 1fr) 100px 170px 170px;
   align-items: center;
   gap: 14px;
 }
@@ -3430,6 +3430,17 @@ body.modal-open {
   color: var(--purple);
 }
 
+.leaderboard-completion {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.leaderboard-completion.complete {
+  color: var(--cyan-bright);
+  font-weight: 800;
+}
+
 .leaderboard-score {
   color: var(--green);
   font-family: var(--mono);
@@ -3443,13 +3454,13 @@ body.modal-open {
 
 @media (max-width: 640px) {
   .leaderboard-page {
-    width: min(100% - 12px, 980px);
+    width: min(100% - 12px, 1120px);
     margin-top: 24px;
   }
 
   .leaderboard-heading,
   .leaderboard-row {
-    grid-template-columns: 44px minmax(120px, 1fr) 90px;
+    grid-template-columns: 44px minmax(105px, 1fr) 108px 82px;
     gap: 8px;
     padding-inline: 12px;
   }
@@ -4394,3 +4405,104 @@ label:focus-within {
   .chart-y-axis span { font-size: 7px; }
   .chart-axis span:nth-child(2) { display: none; }
 }
+
+/* Célébration non bloquante du cycle ultime. */
+.max-progress-celebration {
+  position: fixed;
+  z-index: 500;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.max-progress-halo {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(var(--accent-rgb), .24), transparent 34%),
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, .04), transparent);
+  animation: max-progress-flash 1.1s ease-out both;
+}
+
+.max-progress-message {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  width: min(560px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid rgba(var(--accent-rgb), .58);
+  border-radius: 20px;
+  background: rgba(8, 8, 10, .9);
+  box-shadow: 0 0 70px rgba(var(--accent-rgb), .2), inset 0 1px rgba(255, 255, 255, .1);
+  text-align: center;
+  transform: translate(-50%, -50%);
+  animation: max-progress-message 4.8s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.max-progress-message span,
+.max-progress-message small {
+  display: block;
+}
+
+.max-progress-message span {
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .18em;
+}
+
+.max-progress-message strong {
+  display: block;
+  margin: 8px 0;
+  font-size: clamp(28px, 5vw, 52px);
+  line-height: 1;
+  text-shadow: 0 0 28px rgba(var(--accent-rgb), .42);
+}
+
+.max-progress-message small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.max-progress-celebration > i {
+  position: absolute;
+  top: -18px;
+  left: var(--x);
+  width: 7px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 10px currentColor;
+  animation: max-progress-particle var(--duration) var(--delay) ease-in both;
+}
+
+.max-progress-celebration > i:nth-of-type(3n + 1) { background: var(--green); }
+.max-progress-celebration > i:nth-of-type(3n + 2) { background: var(--purple); }
+.max-progress-celebration.leaving { opacity: 0; transition: opacity .8s ease; }
+
+@keyframes max-progress-flash {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes max-progress-message {
+  0% { opacity: 0; transform: translate(-50%, -35%) scale(.82); }
+  12%, 78% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -58%) scale(.96); }
+}
+
+@keyframes max-progress-particle {
+  0% { opacity: 0; transform: translate3d(0, -20px, 0) rotate(0); }
+  12% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--drift), 105vh, 0) rotate(var(--spin)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .max-progress-halo { display: none; }
+  .max-progress-message { animation: none; }
+}
+
+.performance-mode .max-progress-halo { display: none; }
+.performance-mode .max-progress-message { animation: none !important; }

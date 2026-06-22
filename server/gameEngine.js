@@ -37,6 +37,7 @@ function createState() {
     certifications: [],
     certificationPoints: 0,
     prestigeCount: 0,
+    completedAt: 0,
     startedAt: now,
     lastTick: now,
     lastSaved: now,
@@ -47,6 +48,14 @@ function createState() {
 
 function hasUpgrade(state, id) {
   return state.upgrades.includes(id);
+}
+
+function markCompletion(state, now = Date.now()) {
+  if (state.completedAt) return;
+  if (state.upgrades.length >= UPGRADES.length
+    && state.certifications.length >= CERTIFICATIONS.length) {
+    state.completedAt = now;
+  }
 }
 
 function globalMultiplier(state) {
@@ -166,6 +175,7 @@ function applyAction(state, action = {}) {
     if (state.requests < upgrade.cost) violation(state, 'Budget insuffisant', 409);
     state.requests -= upgrade.cost;
     state.upgrades.push(upgrade.id);
+    markCompletion(state, now);
     return {};
   }
 
@@ -176,13 +186,14 @@ function applyAction(state, action = {}) {
     if (state.certificationPoints < certification.cost) violation(state, 'Points insuffisants', 409);
     state.certificationPoints -= certification.cost;
     state.certifications.push(certification.id);
+    markCompletion(state, now);
     return {};
   }
 
   if (action.type === 'prestige') {
     const gain = prestigeGain(state.lifetimeRequests);
     if (gain < 1) violation(state, 'Prestige indisponible', 409);
-    if (state.certifications.length >= CERTIFICATIONS.length) violation(state, 'Toutes les certifications sont acquises', 409);
+    const maintenance = state.certifications.length >= CERTIFICATIONS.length;
     const originalStartedAt = state.startedAt;
     const persistent = {
       allTimeRequests: state.allTimeRequests,
@@ -190,14 +201,15 @@ function applyAction(state, action = {}) {
       criticalClicks: state.criticalClicks,
       bestCombo: state.bestCombo,
       certifications: [...state.certifications],
-      certificationPoints: state.certificationPoints + gain,
+      certificationPoints: state.certificationPoints + (maintenance ? 0 : gain),
       prestigeCount: state.prestigeCount + 1,
+      completedAt: state.completedAt,
       totalBuildingsPurchased: state.totalBuildingsPurchased,
       startedAt: originalStartedAt,
       antiCheatViolations: state.antiCheatViolations
     };
     Object.assign(state, createState(), persistent);
-    return { gain };
+    return { gain: maintenance ? 0 : gain, maintenance };
   }
 
   if (action.type === 'overclock') {

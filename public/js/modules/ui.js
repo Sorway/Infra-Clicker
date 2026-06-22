@@ -200,6 +200,7 @@ export class GameUI {
 
     const prestigeGain = this.economy.prestigeGain();
     const allCertificationsOwned = this.state.certifications.length >= CERTIFICATIONS.length;
+    const canPrestige = prestigeGain >= 1;
     const prestigePreview = document.querySelector('#prestige-points-preview');
     const prestigePreviewLabel = document.querySelector('#prestige-preview-label');
     if (prestigePreview) {
@@ -213,15 +214,17 @@ export class GameUI {
         : 'GAIN DU PROCHAIN PRESTIGE';
     }
     const prestigeButton = document.querySelector('#prestige-button');
-    prestigeButton.disabled = prestigeGain < 1 || allCertificationsOwned;
-    prestigeButton.textContent = allCertificationsOwned ? 'TOUTES LES CERTIFICATIONS ACQUISES' : 'RECONSTRUIRE ET PRESTIGER';
+    prestigeButton.disabled = !canPrestige;
+    prestigeButton.textContent = allCertificationsOwned ? 'RECONSTRUIRE LA CAPACITÉ' : 'RECONSTRUIRE ET PRESTIGER';
     const headerPrestigeButton = document.querySelector('#header-prestige-button');
-    headerPrestigeButton.disabled = prestigeGain < 1 || allCertificationsOwned;
+    headerPrestigeButton.disabled = !canPrestige;
     document.querySelector('#header-prestige-gain').textContent = allCertificationsOwned
       ? 'MAX'
       : `+${prestigeGain}`;
     this.el['prestige-gain'].textContent = allCertificationsOwned
-      ? 'Progression maximale atteinte : aucun prestige supplémentaire nécessaire.'
+      ? canPrestige
+        ? 'Progression maximale atteinte. Une reconstruction restaure la capacité sans ajouter de points.'
+        : 'Progression maximale atteinte. La reconstruction sera disponible à 1 million de requêtes.'
       : prestigeGain > 0
         ? `Gain actuel : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''}. Prochain palier à ${formatNumber(this.economy.nextPrestigeThreshold())}.`
         : 'Prestige disponible à partir de 1 million de requêtes sur ce cycle.';
@@ -380,6 +383,38 @@ export class GameUI {
       document.body.appendChild(particle);
       setTimeout(() => particle.remove(), 700);
     }
+  }
+
+  celebrateMaxProgress() {
+    document.querySelector('.max-progress-celebration')?.remove();
+
+    const celebration = document.createElement('div');
+    celebration.className = 'max-progress-celebration';
+    celebration.setAttribute('aria-hidden', 'true');
+    celebration.innerHTML = `
+      <div class="max-progress-halo"></div>
+      <div class="max-progress-message">
+        <span>◆ INFRASTRUCTURE ULTIME ◆</span>
+        <strong>Prestige maximal</strong>
+        <small>Toutes les certifications et améliorations sont actives</small>
+      </div>
+    `;
+
+    if (!this.performanceMode) {
+      for (let index = 0; index < 30; index += 1) {
+        const particle = document.createElement('i');
+        particle.style.setProperty('--x', `${randomBetween(4, 96)}vw`);
+        particle.style.setProperty('--delay', `${randomBetween(0, 0.8)}s`);
+        particle.style.setProperty('--duration', `${randomBetween(2.2, 4)}s`);
+        particle.style.setProperty('--drift', `${randomBetween(-110, 110)}px`);
+        particle.style.setProperty('--spin', `${randomBetween(180, 720)}deg`);
+        celebration.appendChild(particle);
+      }
+    }
+
+    document.body.appendChild(celebration);
+    setTimeout(() => celebration.classList.add('leaving'), 4300);
+    setTimeout(() => celebration.remove(), 5200);
   }
 
   toast(title, message, type = 'info') {

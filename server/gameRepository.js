@@ -1,4 +1,4 @@
-const { BUILDINGS } = require('./gameData');
+const { BUILDINGS, CERTIFICATIONS, UPGRADES } = require('./gameData');
 const { createState } = require('./gameEngine');
 
 const TABLES = [
@@ -38,6 +38,7 @@ const TABLES = [
     best_combo INT UNSIGNED NOT NULL DEFAULT 0,
     total_buildings_purchased BIGINT UNSIGNED NOT NULL DEFAULT 0,
     prestige_count INT UNSIGNED NOT NULL DEFAULT 0,
+    completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     started_at BIGINT UNSIGNED NOT NULL,
     last_saved BIGINT UNSIGNED NOT NULL,
     anti_cheat_violations INT UNSIGNED NOT NULL DEFAULT 0,
@@ -145,9 +146,9 @@ async function saveState(connection, sessionId, state) {
   await connection.query(
     `INSERT INTO game_stats (
        session_id, all_time_requests, manual_clicks, critical_clicks, best_combo,
-       total_buildings_purchased, prestige_count, started_at, last_saved,
-       anti_cheat_violations
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       total_buildings_purchased, prestige_count, completed_at, started_at,
+       last_saved, anti_cheat_violations
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        all_time_requests = VALUES(all_time_requests),
        manual_clicks = VALUES(manual_clicks),
@@ -155,13 +156,17 @@ async function saveState(connection, sessionId, state) {
        best_combo = VALUES(best_combo),
        total_buildings_purchased = VALUES(total_buildings_purchased),
        prestige_count = VALUES(prestige_count),
+       completed_at = CASE
+         WHEN game_stats.completed_at = 0 THEN VALUES(completed_at)
+         ELSE game_stats.completed_at
+       END,
        started_at = LEAST(game_stats.started_at, VALUES(started_at)),
        last_saved = VALUES(last_saved),
        anti_cheat_violations = VALUES(anti_cheat_violations)`,
     [
       sessionId, state.allTimeRequests, state.manualClicks, state.criticalClicks,
       state.bestCombo, state.totalBuildingsPurchased, state.prestigeCount,
-      state.startedAt, state.lastSaved, state.antiCheatViolations
+      state.completedAt, state.startedAt, state.lastSaved, state.antiCheatViolations
     ]
   );
 
@@ -230,6 +235,7 @@ async function loadState(connection, sessionId) {
   state.bestCombo = Number(stats.best_combo || 0);
   state.totalBuildingsPurchased = Number(stats.total_buildings_purchased || 0);
   state.prestigeCount = Number(stats.prestige_count || 0);
+  state.completedAt = Number(stats.completed_at || 0);
   state.startedAt = Number(stats.started_at || state.startedAt);
   state.lastSaved = Number(stats.last_saved || state.lastSaved);
   state.antiCheatViolations = Number(stats.anti_cheat_violations || 0);
@@ -240,6 +246,11 @@ async function loadState(connection, sessionId) {
   });
   state.upgrades = upgradeRows.map(row => row.upgrade_id);
   state.certifications = certificationRows.map(row => row.certification_id);
+  if (!state.completedAt
+    && state.upgrades.length >= UPGRADES.length
+    && state.certifications.length >= CERTIFICATIONS.length) {
+    state.completedAt = Date.now();
+  }
   return state;
 }
 
@@ -300,6 +311,21 @@ async function initializeSchema(connection) {
       ADD INDEX idx_game_sessions_last_seen (last_seen_at)
     `);
   }
+  if (!await hasColumn(connection, 'game_stats', 'completed_at')) {
+    await connection.query(
+      'ALTER TABLE game_stats ADD COLUMN completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER prestige_count'
+    );
+  }
+  await connection.query(
+    `UPDATE game_stats stats
+        SET stats.completed_at = stats.last_saved
+      WHERE stats.completed_at = 0
+        AND (SELECT COUNT(*) FROM game_upgrades upgrades
+              WHERE upgrades.session_id = stats.session_id) >= ?
+        AND (SELECT COUNT(*) FROM game_certifications certifications
+              WHERE certifications.session_id = stats.session_id) >= ?`,
+    [UPGRADES.length, CERTIFICATIONS.length]
+  );
   await connection.query(
     'ALTER TABLE game_buildings MODIFY quantity BIGINT UNSIGNED NOT NULL DEFAULT 0'
   );
