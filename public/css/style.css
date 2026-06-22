@@ -1372,62 +1372,6 @@ body {
   font-style: normal;
 }
 
-/* Alerte anti-triche */
-.anti-cheat-backdrop {
-  z-index: 260;
-  background:
-    radial-gradient(circle at 50% 45%, rgba(239, 68, 68, .16), transparent 38%),
-    rgba(0, 0, 0, .9);
-}
-
-.anti-cheat-modal {
-  width: min(620px, 100%);
-  padding: 42px;
-  border-color: rgba(255, 100, 110, .38);
-  text-align: center;
-  background:
-    linear-gradient(145deg, rgba(255, 100, 110, .08), transparent 42%),
-    rgba(10, 10, 10, .98);
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, .07),
-    0 30px 100px rgba(0, 0, 0, .75),
-    0 0 70px rgba(239, 68, 68, .13);
-}
-
-.anti-cheat-symbol {
-  width: 82px;
-  height: 82px;
-  display: grid;
-  place-items: center;
-  margin: 0 auto 19px;
-  border: 1px solid rgba(255, 115, 125, .45);
-  border-radius: 25px;
-  background: rgba(239, 68, 68, .11);
-  color: #ff8f99;
-  font-size: 40px;
-  box-shadow: 0 0 35px rgba(239, 68, 68, .14);
-}
-
-.anti-cheat-kicker {
-  color: #ff8f99;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .18em;
-}
-
-.anti-cheat-modal h2 {
-  margin: 10px 0 10px;
-  font-size: clamp(25px, 4vw, 36px);
-}
-
-.anti-cheat-modal > p {
-  max-width: 470px;
-  margin: 0 auto;
-  color: #c9b7ba;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
 .online-status {
   display: flex;
   align-items: center;
@@ -1497,65 +1441,9 @@ body {
   line-height: 1.65;
 }
 
-.anti-cheat-details {
-  display: grid;
-  gap: 8px;
-  margin: 26px 0;
-  text-align: left;
-}
-
-.anti-cheat-details span {
-  padding: 11px 13px 11px 38px;
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, .07);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, .025);
-  color: #c9c9c9;
-  font-size: 11px;
-}
-
-.anti-cheat-details span::before {
-  content: "✓";
-  position: absolute;
-  left: 14px;
-  color: #9ed8bd;
-  font-weight: 800;
-}
-
-.anti-cheat-acknowledge {
-  width: 100%;
-  min-height: 50px;
-  border: 1px solid rgba(255, 120, 130, .5);
-  border-radius: 14px;
-  background: linear-gradient(135deg, #9f3340, #c44853);
-  color: white;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: .06em;
-  cursor: pointer;
-  box-shadow: inset 0 1px rgba(255, 255, 255, .16);
-  transition: transform .2s ease, filter .2s ease;
-}
-
-.anti-cheat-acknowledge:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-}
-
 @media (max-width: 640px) {
   .game-menu-actions {
     grid-template-columns: 1fr;
-  }
-
-  .anti-cheat-modal {
-    padding: 32px 18px 20px;
-  }
-
-  .anti-cheat-symbol {
-    width: 68px;
-    height: 68px;
-    border-radius: 21px;
-    font-size: 33px;
   }
 }
 
@@ -2076,8 +1964,7 @@ body {
 .eyebrow,
 .stats-kicker,
 .stats-panel-heading span,
-.stats-page-title span,
-.anti-cheat-kicker {
+.stats-page-title span {
   font-size: 10px;
 }
 

@@ -19,22 +19,24 @@ const PROTECTED_FIELDS = [
   'completedAt',
   'startedAt',
   'lastTick',
-  'lastSaved',
-  'antiCheatViolations'
+  'lastSaved'
 ];
 
 async function request(path, options = {}) {
+  const { silent = false, ...fetchOptions } = options;
   let response;
   try {
     response = await fetch(path, {
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-      ...options
+      headers: { 'Content-Type': 'application/json', ...(fetchOptions.headers || {}) },
+      ...fetchOptions
     });
   } catch (error) {
-    window.dispatchEvent(new CustomEvent('infra:server-disconnected', {
-      detail: { message: 'Le serveur ne répond plus.' }
-    }));
+    if (!silent) {
+      window.dispatchEvent(new CustomEvent('infra:server-disconnected', {
+        detail: { message: 'Le serveur ne répond plus.' }
+      }));
+    }
     throw error;
   }
   const payload = await response.json().catch(() => ({}));
@@ -42,7 +44,7 @@ async function request(path, options = {}) {
     const error = new Error(payload.error || 'Action refusée par le serveur');
     error.state = payload.state;
     error.status = response.status;
-    if (response.status >= 500) {
+    if (!silent && response.status >= 500) {
       window.dispatchEvent(new CustomEvent('infra:server-disconnected', {
         detail: { message: error.message }
       }));
@@ -79,18 +81,16 @@ export class ServerGame {
     return payload.profile;
   }
 
-  async action(state, type, data = {}) {
-    try {
-      const payload = await request('/api/game/action', {
-        method: 'POST',
-        body: JSON.stringify({ type, ...data })
-      });
-      this.merge(state, payload.state);
-      return payload.result || {};
-    } catch (error) {
-      this.merge(state, error.state);
-      throw error;
-    }
+  async sync(state, keepalive = false) {
+    const snapshot = Object.fromEntries(PROTECTED_FIELDS
+      .filter(field => Object.hasOwn(state, field))
+      .map(field => [field, state[field]]));
+    return request('/api/game/sync', {
+      method: 'POST',
+      body: JSON.stringify({ state: snapshot }),
+      keepalive,
+      silent: true
+    });
   }
 
   async reset(state) {

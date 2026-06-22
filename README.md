@@ -19,7 +19,7 @@ du **SysAdmin**, du **Réseau**, du **Cloud** et du **DevOps**.
 
 Dans **Infra Clicker**, chaque clic traite une requête réseau. Commencez avec un simple script Bash, déployez progressivement des serveurs, des datacenters et des clusters Kubernetes, puis construisez un cloud mondial.
 
-Le serveur Express est autoritaire sur l’économie du jeu. La progression est associée à un cookie de session HttpOnly et conservée côté serveur.
+Le gameplay est calculé instantanément dans le navigateur, puis la progression est synchronisée périodiquement avec le serveur via un cookie de session HttpOnly.
 
 ## Fonctionnalités
 
@@ -29,7 +29,7 @@ Le serveur Express est autoritaire sur l’économie du jeu. La progression est 
 - événements aléatoires : DDoS, panne disque, ransomware, buzz Hacker News…
 - système de prestige avec **8 certifications permanentes**
 - production automatique et progression hors ligne
-- sauvegarde serveur autoritaire avec miroir local
+- sauvegarde locale immédiate avec synchronisation serveur périodique
 - pseudo unique et classement mondial avec drapeau du pays
 - terminal Linux interactif avec commandes et bonus temporaires
 - effets sonores générés avec la Web Audio API
@@ -131,7 +131,7 @@ Certaines commandes accordent un bonus temporaire de production.
 | `ui.js` | Rendu dynamique, graphiques et notifications |
 | `events.js` | Gestion des événements aléatoires |
 | `achievements.js` | Conditions et déblocage des succès |
-| `server/gameEngine.js` | Calculs économiques et validation autoritaire des actions |
+| `server/gameEngine.js` | Production hors ligne et import des synchronisations client |
 | `server/gameStore.js` | Sessions signées et persistance serveur |
 | `save.js` | Miroir local de la progression et préférences |
 | `audio.js` | Effets sonores |
@@ -151,7 +151,7 @@ Le thème sélectionné est conservé séparément sous la clé :
 infra-clicker-theme
 ```
 
-La source de vérité reste le serveur MariaDB. Les paramètres permettent de synchroniser ou de réinitialiser la progression.
+La progression active est locale et MariaDB en conserve une copie périodique. Les paramètres permettent de synchroniser immédiatement ou de réinitialiser la progression.
 
 ## Stack technique
 

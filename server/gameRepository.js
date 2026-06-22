@@ -26,7 +26,6 @@ const TABLES = [
     overclock_ends_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     certification_points INT UNSIGNED NOT NULL DEFAULT 0,
     last_tick BIGINT UNSIGNED NOT NULL,
-    click_window LONGTEXT NOT NULL,
     CONSTRAINT fk_progress_session FOREIGN KEY (session_id)
       REFERENCES game_sessions(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
@@ -41,7 +40,6 @@ const TABLES = [
     completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     started_at BIGINT UNSIGNED NOT NULL,
     last_saved BIGINT UNSIGNED NOT NULL,
-    anti_cheat_violations INT UNSIGNED NOT NULL DEFAULT 0,
     CONSTRAINT fk_stats_session FOREIGN KEY (session_id)
       REFERENCES game_sessions(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
@@ -79,8 +77,7 @@ function hydrateLegacyState(value) {
     ...(raw && typeof raw === 'object' ? raw : {}),
     buildings: { ...defaults.buildings, ...(raw?.buildings || {}) },
     upgrades: Array.isArray(raw?.upgrades) ? raw.upgrades : [],
-    certifications: Array.isArray(raw?.certifications) ? raw.certifications : [],
-    clickWindow: Array.isArray(raw?.clickWindow) ? raw.clickWindow : []
+    certifications: Array.isArray(raw?.certifications) ? raw.certifications : []
   };
 }
 
@@ -123,8 +120,8 @@ async function saveState(connection, sessionId, state) {
   await connection.query(
     `INSERT INTO game_progress (
        session_id, version, requests, lifetime_requests, combo, last_manual_click,
-       overclock_charge, overclock_ends_at, certification_points, last_tick, click_window
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       overclock_charge, overclock_ends_at, certification_points, last_tick
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        version = VALUES(version),
        requests = VALUES(requests),
@@ -134,21 +131,19 @@ async function saveState(connection, sessionId, state) {
        overclock_charge = VALUES(overclock_charge),
        overclock_ends_at = VALUES(overclock_ends_at),
        certification_points = VALUES(certification_points),
-       last_tick = VALUES(last_tick),
-       click_window = VALUES(click_window)`,
+       last_tick = VALUES(last_tick)`,
     [
       sessionId, state.version, state.requests, state.lifetimeRequests, state.combo,
       state.lastManualClick, state.overclockCharge, state.overclockEndsAt,
-      state.certificationPoints, state.lastTick, JSON.stringify(state.clickWindow)
+      state.certificationPoints, state.lastTick
     ]
   );
 
   await connection.query(
     `INSERT INTO game_stats (
        session_id, all_time_requests, manual_clicks, critical_clicks, best_combo,
-       total_buildings_purchased, prestige_count, completed_at, started_at,
-       last_saved, anti_cheat_violations
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       total_buildings_purchased, prestige_count, completed_at, started_at, last_saved
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        all_time_requests = VALUES(all_time_requests),
        manual_clicks = VALUES(manual_clicks),
@@ -161,12 +156,11 @@ async function saveState(connection, sessionId, state) {
          ELSE game_stats.completed_at
        END,
        started_at = LEAST(game_stats.started_at, VALUES(started_at)),
-       last_saved = VALUES(last_saved),
-       anti_cheat_violations = VALUES(anti_cheat_violations)`,
+       last_saved = VALUES(last_saved)`,
     [
       sessionId, state.allTimeRequests, state.manualClicks, state.criticalClicks,
       state.bestCombo, state.totalBuildingsPurchased, state.prestigeCount,
-      state.completedAt, state.startedAt, state.lastSaved, state.antiCheatViolations
+      state.completedAt, state.startedAt, state.lastSaved
     ]
   );
 
@@ -192,8 +186,7 @@ async function saveState(connection, sessionId, state) {
 async function loadState(connection, sessionId) {
   const progressRows = await connection.query(
     `SELECT version, requests, lifetime_requests, combo, last_manual_click,
-            overclock_charge, overclock_ends_at, certification_points, last_tick,
-            click_window
+            overclock_charge, overclock_ends_at, certification_points, last_tick
        FROM game_progress WHERE session_id = ?`,
     [sessionId]
   );
@@ -228,7 +221,6 @@ async function loadState(connection, sessionId) {
   state.overclockEndsAt = Number(progress.overclock_ends_at);
   state.certificationPoints = Number(progress.certification_points);
   state.lastTick = Number(progress.last_tick);
-  state.clickWindow = JSON.parse(progress.click_window || '[]');
   state.allTimeRequests = Number(stats.all_time_requests || 0);
   state.manualClicks = Number(stats.manual_clicks || 0);
   state.criticalClicks = Number(stats.critical_clicks || 0);
@@ -238,7 +230,6 @@ async function loadState(connection, sessionId) {
   state.completedAt = Number(stats.completed_at || 0);
   state.startedAt = Number(stats.started_at || state.startedAt);
   state.lastSaved = Number(stats.last_saved || state.lastSaved);
-  state.antiCheatViolations = Number(stats.anti_cheat_violations || 0);
   buildingRows.forEach(row => {
     if (Object.hasOwn(state.buildings, row.building_id)) {
       state.buildings[row.building_id] = Number(row.quantity);
@@ -315,6 +306,12 @@ async function initializeSchema(connection) {
     await connection.query(
       'ALTER TABLE game_stats ADD COLUMN completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER prestige_count'
     );
+  }
+  if (await hasColumn(connection, 'game_progress', 'click_window')) {
+    await connection.query('ALTER TABLE game_progress DROP COLUMN click_window');
+  }
+  if (await hasColumn(connection, 'game_stats', 'anti_cheat_violations')) {
+    await connection.query('ALTER TABLE game_stats DROP COLUMN anti_cheat_violations');
   }
   await connection.query(
     `UPDATE game_stats stats

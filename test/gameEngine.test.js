@@ -1,97 +1,65 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
-  applyAction,
   capacityEfficiency,
   createState,
-  prestigeGain,
-  publicState
+  publicState,
+  synchronizeState
 } = require('../server/gameEngine');
-const { CERTIFICATIONS, UPGRADES } = require('../server/gameData');
 
-test('ignore les valeurs économiques envoyées avec une action', () => {
+test('synchronise un instantané de progression calculé par le client', () => {
   const state = createState();
-  applyAction(state, { type: 'click', requests: 1e99, buildings: { worldcloud: 999999 } });
-  assert.ok(state.requests < 100);
-  assert.equal(state.buildings.worldcloud, 0);
+  synchronizeState(state, {
+    requests: 1234,
+    lifetimeRequests: 5678,
+    allTimeRequests: 9012,
+    manualClicks: 42,
+    criticalClicks: 3,
+    bestCombo: 20,
+    combo: 4,
+    lastManualClick: Date.now(),
+    overclockCharge: 75,
+    buildings: { bash: 5 },
+    upgrades: ['cat5'],
+    certifications: [],
+    certificationPoints: 2,
+    prestigeCount: 1,
+    totalBuildingsPurchased: 5,
+    startedAt: Date.now() - 1000
+  });
+
+  assert.equal(state.requests, 1234);
+  assert.equal(state.manualClicks, 42);
+  assert.equal(state.buildings.bash, 5);
+  assert.deepEqual(state.upgrades, ['cat5']);
 });
 
-test('calcule et débite un achat côté serveur', () => {
+test('ignore les identifiants inconnus pendant la synchronisation', () => {
   const state = createState();
-  state.requests = 100;
-  const result = applyAction(state, { type: 'buyBuilding', id: 'bash', amount: 2 });
-  assert.equal(result.amount, 2);
-  assert.equal(state.buildings.bash, 2);
-  assert.ok(state.requests < 70);
-});
+  synchronizeState(state, {
+    buildings: { inconnu: 999 },
+    upgrades: ['inconnu'],
+    certifications: ['inconnue']
+  });
 
-test('refuse un upgrade sans budget même si le client prétend être riche', () => {
-  const state = createState();
-  assert.throws(
-    () => applyAction(state, { type: 'buyUpgrade', id: 'ssd', requests: 1e99 }),
-    /Budget insuffisant/
-  );
+  assert.equal(Object.hasOwn(state.buildings, 'inconnu'), false);
   assert.deepEqual(state.upgrades, []);
+  assert.deepEqual(state.certifications, []);
 });
 
-test('limite la cadence de clics sur le serveur', () => {
-  const state = createState();
-  for (let index = 0; index < 25; index += 1) applyAction(state, { type: 'click' });
-  assert.throws(() => applyAction(state, { type: 'click' }), /Cadence de clics refusée/);
-  assert.equal(state.antiCheatViolations, 1);
+test('refuse un corps de synchronisation absent', () => {
+  assert.throws(() => synchronizeState(createState()), /État de synchronisation invalide/);
 });
 
-test('n’expose pas la fenêtre interne de détection', () => {
+test('calcule la production hors ligne lors du chargement', () => {
   const state = createState();
-  applyAction(state, { type: 'click' });
-  assert.equal(Object.hasOwn(publicState(state), 'clickWindow'), false);
-});
-
-test('conserve le temps de jeu cumulé après un prestige', () => {
-  const state = createState();
-  const startedAt = Date.now() - 4 * 60 * 60 * 1000;
-  state.startedAt = startedAt;
-  state.lifetimeRequests = 1e6;
-  state.requests = 1e6;
-
-  applyAction(state, { type: 'prestige' });
-
-  assert.equal(state.startedAt, startedAt);
-  assert.equal(state.prestigeCount, 1);
-  assert.equal(state.lifetimeRequests, 0);
-});
-
-test('ne bloque plus la progression après un million de requêtes', () => {
-  const state = createState();
-  state.lifetimeRequests = 1e6;
-  state.requests = 1e6;
   state.buildings.bash = 10;
   state.lastTick = Date.now() - 1000;
+  const before = state.requests;
 
-  const before = state.lifetimeRequests;
   publicState(state);
 
-  assert.ok(state.lifetimeRequests > before);
-  assert.ok(state.requests > 1e6);
-});
-
-test('augmente progressivement le gain de prestige', () => {
-  assert.equal(prestigeGain(999999), 0);
-  assert.equal(prestigeGain(1e6), 1);
-  assert.equal(prestigeGain(10e6), 2);
-  assert.equal(prestigeGain(100e6), 3);
-  assert.equal(prestigeGain(10e9), 5);
-});
-
-test('accorde le gain progressif lors du prestige', () => {
-  const state = createState();
-  state.lifetimeRequests = 100e6;
-  state.requests = 100e6;
-
-  const result = applyAction(state, { type: 'prestige' });
-
-  assert.equal(result.gain, 3);
-  assert.equal(state.certificationPoints, 3);
+  assert.ok(state.requests > before);
 });
 
 test('applique une saturation progressive avec un plancher', () => {
@@ -99,47 +67,4 @@ test('applique une saturation progressive avec un plancher', () => {
   assert.ok(Math.abs(capacityEfficiency(1e9) - 2 / 3) < 0.001);
   assert.equal(capacityEfficiency(10e9), 0.5);
   assert.equal(capacityEfficiency(1e15), 0.35);
-});
-
-test('le prestige remet la capacité à son efficacité maximale', () => {
-  const state = createState();
-  state.lifetimeRequests = 10e9;
-  state.requests = 10e9;
-  assert.equal(capacityEfficiency(state.lifetimeRequests), 0.5);
-
-  applyAction(state, { type: 'prestige' });
-
-  assert.equal(capacityEfficiency(state.lifetimeRequests), 1);
-});
-
-test('autorise une reconstruction au prestige maximal sans créer de points inutiles', () => {
-  const state = createState();
-  state.certifications = CERTIFICATIONS.map(certification => certification.id);
-  state.certificationPoints = 4;
-  state.lifetimeRequests = 10e9;
-  state.requests = 10e9;
-
-  const result = applyAction(state, { type: 'prestige' });
-
-  assert.deepEqual(result, { gain: 0, maintenance: true });
-  assert.equal(state.certificationPoints, 4);
-  assert.equal(state.prestigeCount, 1);
-  assert.equal(state.lifetimeRequests, 0);
-  assert.equal(capacityEfficiency(state.lifetimeRequests), 1);
-});
-
-test('enregistre une seule fois le moment où le jeu est terminé', () => {
-  const state = createState();
-  state.upgrades = UPGRADES.slice(0, -1).map(upgrade => upgrade.id);
-  state.certifications = CERTIFICATIONS.map(certification => certification.id);
-  const finalUpgrade = UPGRADES.at(-1);
-  state.requests = finalUpgrade.cost;
-
-  applyAction(state, { type: 'buyUpgrade', id: finalUpgrade.id });
-
-  assert.ok(state.completedAt >= state.startedAt);
-  const completedAt = state.completedAt;
-  state.lifetimeRequests = 1e6;
-  applyAction(state, { type: 'prestige' });
-  assert.equal(state.completedAt, completedAt);
 });

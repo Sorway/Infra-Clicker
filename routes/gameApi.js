@@ -1,5 +1,5 @@
 const express = require('express');
-const { applyAction, createState, publicState } = require('../server/gameEngine');
+const { createState, publicState, synchronizeState } = require('../server/gameEngine');
 const {
   countOnlinePlayers,
   getLeaderboard,
@@ -59,24 +59,12 @@ router.get('/presence', async (req, res, next) => {
   }
 });
 
-router.post('/action', async (req, res, next) => {
+router.post('/sync', async (req, res, next) => {
   try {
     const payload = await transactSession(req, res, state => {
-      try {
-        const result = applyAction(state, req.body);
-        return { state: publicState(state), result };
-      } catch (error) {
-        return {
-          status: error.status || 400,
-          body: { error: error.message, state: publicState(state) }
-        };
-      }
+      synchronizeState(state, req.body?.state);
+      return { savedAt: state.lastSaved };
     });
-
-    if (payload.status) {
-      res.status(payload.status).json(payload.body);
-      return;
-    }
     res.json(payload);
   } catch (error) {
     next(error);

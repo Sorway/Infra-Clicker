@@ -13,7 +13,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET est obligatoire en production');
 }
 
-const CACHE_FLUSH_MS = Math.max(2000, Number(process.env.CACHE_FLUSH_MS) || 10000);
+const CACHE_FLUSH_MS = Math.max(5000, Number(process.env.CACHE_FLUSH_MS) || 5000);
 const CACHE_TTL_MS = Math.max(60000, Number(process.env.CACHE_TTL_MS) || 30 * 60 * 1000);
 const LEADERBOARD_CACHE_MS = Math.max(5000, Number(process.env.LEADERBOARD_CACHE_MS) || 15000);
 const cookieSecret = process.env.SESSION_SECRET || 'infra-clicker-development-secret-change-me';

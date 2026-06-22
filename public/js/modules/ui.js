@@ -459,15 +459,6 @@ export class GameUI {
     setTimeout(() => toast.remove(), 4700);
   }
 
-  showAntiCheat(reason) {
-    const modal = document.querySelector('#anti-cheat-modal');
-    document.querySelector('#anti-cheat-message').textContent = `${reason}. Cette action a été ignorée ou corrigée.`;
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('modal-open');
-    setTimeout(() => modal.querySelector('.anti-cheat-acknowledge')?.focus(), 50);
-  }
-
   showEvent(event) {
     const banner = document.querySelector('#event-banner');
     banner.classList.remove('hidden', 'danger', 'bonus');

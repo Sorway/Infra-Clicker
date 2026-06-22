@@ -8,8 +8,7 @@ test('normalise une ancienne sauvegarde JSON pour le schéma relationnel', () =>
     requests: 42,
     buildings: { bash: 3 },
     upgrades: ['ssd'],
-    certifications: ['lpic'],
-    clickWindow: [100, 200]
+    certifications: ['lpic']
   });
 
   assert.equal(state.requests, 42);
@@ -17,19 +16,16 @@ test('normalise une ancienne sauvegarde JSON pour le schéma relationnel', () =>
   assert.equal(state.buildings.worldcloud, 0);
   assert.deepEqual(state.upgrades, ['ssd']);
   assert.deepEqual(state.certifications, ['lpic']);
-  assert.deepEqual(state.clickWindow, [100, 200]);
 });
 
 test('remplace les collections JSON invalides par des collections sûres', () => {
   const state = hydrateLegacyState({
     buildings: null,
     upgrades: 'ssd',
-    certifications: {},
-    clickWindow: null
+    certifications: {}
   });
 
   assert.deepEqual(state.upgrades, []);
   assert.deepEqual(state.certifications, []);
-  assert.deepEqual(state.clickWindow, []);
   assert.equal(state.buildings.bash, 0);
 });

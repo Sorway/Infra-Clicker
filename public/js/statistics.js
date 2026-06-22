@@ -185,7 +185,6 @@ function render() {
   setText('stat-events', state.eventsCompleted || 0);
   setText('stat-prestiges', state.prestigeCount || 0);
   setText('stat-commands', new Set(state.commandsUsed).size);
-  setText('stat-anticheat', state.antiCheatViolations || 0);
   setText('stat-upgrades', `${state.upgrades.length} / ${UPGRADES.length}`);
   setText('stat-achievements', `${state.achievements.length} / ${ACHIEVEMENTS.length}`);
   setText('stat-certifications', `${state.certifications.length} / ${CERTIFICATIONS.length}`);

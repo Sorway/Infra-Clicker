@@ -1,8 +1,7 @@
 import { ACHIEVEMENTS, BUILDINGS } from './data.js';
 
 const SAVE_KEY = 'infra-clicker-save-v1';
-const SAVE_VERSION = 1;
-const INTEGRITY_SALT = 'infra-clicker::integrity::2026';
+const SAVE_VERSION = 2;
 const V2_RESET_NOTICE_KEY = 'infra-clicker-v2-reset-notice-seen';
 
 const LEGACY_SKILL_COSTS = {
@@ -15,54 +14,6 @@ const LEGACY_SKILL_COSTS = {
   resilience: 5,
   architect: 8
 };
-
-function integrityPayload(state, includeLegacySkills = false) {
-  const payload = {
-    version: state.version,
-    requests: state.requests,
-    lifetimeRequests: state.lifetimeRequests,
-    allTimeRequests: state.allTimeRequests,
-    manualClicks: state.manualClicks,
-    criticalClicks: state.criticalClicks,
-    bestCombo: state.bestCombo,
-    buildings: state.buildings,
-    upgrades: state.upgrades,
-    achievements: state.achievements,
-    certifications: state.certifications,
-    certificationPoints: state.certificationPoints,
-    prestigeCount: state.prestigeCount,
-    eventsCompleted: state.eventsCompleted,
-    commandsUsed: state.commandsUsed,
-    exported: state.exported,
-    maxBuyUsed: state.maxBuyUsed,
-    startedAt: state.startedAt,
-    lastTick: state.lastTick,
-    lastSaved: state.lastSaved,
-    soundEnabled: state.soundEnabled,
-    antiCheatViolations: state.antiCheatViolations,
-    productionHistory: state.productionHistory
-  };
-  if (includeLegacySkills) payload.permanentSkills = state.permanentSkills;
-  payload.dailyMissions = state.dailyMissions;
-  payload.totalBuildingsPurchased = state.totalBuildingsPurchased;
-  return payload;
-}
-
-function checksum(state, includeLegacySkills = false) {
-  const input = `${INTEGRITY_SALT}:${JSON.stringify(integrityPayload(state, includeLegacySkills))}`;
-  let hash = 2166136261;
-  for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(36);
-}
-
-function hasValidIntegrity(state) {
-  if (typeof state.integrity !== 'string') return false;
-  if (state.integrity === checksum(state)) return true;
-  return Object.hasOwn(state, 'permanentSkills') && state.integrity === checksum(state, true);
-}
 
 export function consumeV2ResetNotice() {
   if (localStorage.getItem(V2_RESET_NOTICE_KEY)) return false;
@@ -109,10 +60,7 @@ export function createDefaultState() {
     lastSaved: Date.now(),
     soundEnabled: true,
     activeEvent: null,
-    temporaryBonus: null,
-    antiCheatViolations: 0,
-    lastAntiCheatWarning: 0,
-    integrity: null
+    temporaryBonus: null
   };
 }
 
@@ -151,6 +99,10 @@ export class SaveManager {
       activeEvent: null
     };
     delete state.permanentSkills;
+    delete state.antiCheatViolations;
+    delete state.lastAntiCheatWarning;
+    delete state.clickWindow;
+    delete state.integrity;
     state.combo = 0;
     state.lastManualClick = 0;
     state.allTimeRequests = Number.isFinite(raw?.allTimeRequests) ? raw.allTimeRequests : state.lifetimeRequests;
@@ -165,11 +117,6 @@ export class SaveManager {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return createDefaultState();
       const parsed = JSON.parse(raw);
-      if (parsed.integrity && !hasValidIntegrity(parsed)) {
-        const clean = createDefaultState();
-        clean.loadWarning = 'Sauvegarde modifiée détectée : progression réinitialisée.';
-        return clean;
-      }
       const state = this.normalize(parsed);
       const elapsed = Math.min(8 * 60 * 60, Math.max(0, (Date.now() - (state.lastTick || Date.now())) / 1000));
       state.offlineSeconds = elapsed;
@@ -184,7 +131,6 @@ export class SaveManager {
     try {
       state.lastSaved = Date.now();
       state.lastTick = Date.now();
-      state.integrity = checksum(state);
       localStorage.setItem(SAVE_KEY, JSON.stringify(state));
       this.onStatus?.(`Miroir local actualisé à ${new Date().toLocaleTimeString('fr-FR')}`);
       return true;

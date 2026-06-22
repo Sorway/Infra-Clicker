@@ -1,5 +1,4 @@
 import { AchievementManager } from './modules/achievements.js';
-import { AntiCheat } from './modules/anticheat.js';
 import { AudioManager } from './modules/audio.js';
 import { BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
 import { Economy } from './modules/economy.js';
@@ -22,16 +21,13 @@ class InfraClicker {
     this.economy = new Economy(this.state);
     this.audio = new AudioManager(this.state.soundEnabled);
     this.ui = new GameUI(this.state, this.economy);
-    this.antiCheat = new AntiCheat(this.state, reason => {
-      this.ui.showAntiCheat(reason);
-    });
     this.achievements = new AchievementManager(this.state, this.economy, this.ui, this.audio);
     this.events = new EventManager(this.state, this.economy, this.ui, this.audio);
     this.missions = new MissionManager(this.state, this.ui);
     this.terminal = new Terminal(this.state, this.economy, this.ui, () => this.achievements.check());
     this.lastFrame = performance.now();
+    this.lastProductionAt = Date.now();
     this.lastAchievementCheck = 0;
-    this.lastIntegrityCheck = 0;
     this.lastHistorySample = 0;
     this.lastUiUpdate = 0;
     this.isDesynced = false;
@@ -57,20 +53,22 @@ class InfraClicker {
     this.applyProfile(initialPayload.profile);
     if (!initialPayload.profile?.username) await this.requireProfile();
     if (this.showV2ResetNotice) this.openV2ResetNotice();
-    if (this.state.loadWarning) {
-      setTimeout(() => this.ui.toast('Protection anti-triche', this.state.loadWarning, 'danger'), 400);
-      delete this.state.loadWarning;
-    }
     this.initialized = true;
     this.hideDesyncScreen();
     this.loop(performance.now());
     this.autosaveTimer = setInterval(() => this.saveManager.save(this.state), 30000);
-    this.serverSyncTimer = setInterval(() => this.synchronize(), 1000);
+    this.serverSyncTimer = setInterval(() => this.synchronize(), 5000);
     this.updateOnlinePlayers();
     this.presenceTimer = setInterval(() => this.updateOnlinePlayers(), 20000);
-    window.addEventListener('beforeunload', () => this.saveManager.save(this.state));
+    window.addEventListener('beforeunload', () => {
+      this.saveManager.save(this.state);
+      this.server.sync(this.state, true).catch(() => {});
+    });
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) this.saveManager.save(this.state);
+      if (document.hidden) {
+        this.saveManager.save(this.state);
+        this.synchronize();
+      }
       this.lastFrame = performance.now();
     });
   }
@@ -117,13 +115,13 @@ class InfraClicker {
     const status = document.querySelector('#desync-status-text');
     if (manual && status) status.textContent = 'Connexion au serveur…';
     try {
-      await this.server.load(this.state);
-      const wasDesynced = this.isDesynced;
-      this.hideDesyncScreen();
-      this.ui.update();
-      if (wasDesynced) this.ui.toast('Synchronisation restaurée', 'La progression serveur est de nouveau active.', 'info');
+      this.state.lastSaved = Date.now();
+      this.state.lastTick = Date.now();
+      await this.server.sync(this.state);
+      this.saveManager.save(this.state);
+      if (manual) this.ui.toast('Progression synchronisée', 'La sauvegarde serveur est à jour.', 'info');
     } catch (error) {
-      this.showDesyncScreen(error.message);
+      if (manual) this.ui.toast('Synchronisation impossible', error.message, 'danger');
     } finally {
       this.syncInProgress = false;
     }
@@ -210,20 +208,25 @@ class InfraClicker {
   }
 
   bindGameActions() {
-    const clickHandler = async event => {
-      if (this.isDesynced) return;
-      if (!this.antiCheat.canProcessClick()) return;
+    const clickHandler = event => {
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX || rect.left + rect.width / 2;
       const y = event.clientY || rect.top + rect.height / 2;
-      let result;
-      try {
-        result = await this.server.action(this.state, 'click');
-      } catch (error) {
-        this.ui.showAntiCheat(error.message);
-        return;
+      const now = Date.now();
+      this.state.combo = now - this.state.lastManualClick <= 900 ? this.state.combo + 1 : 1;
+      this.state.lastManualClick = now;
+      this.state.bestCombo = Math.max(this.state.bestCombo, this.state.combo);
+      const comboMultiplier = Math.min(3, 1 + Math.floor((this.state.combo - 1) / 10) * 0.25);
+      const critical = Math.random() < 0.05;
+      const power = this.economy.getClickPower() * comboMultiplier * (critical ? 10 : 1);
+      this.state.requests += power;
+      this.state.lifetimeRequests += power;
+      this.state.allTimeRequests += power;
+      this.state.manualClicks += 1;
+      if (critical) this.state.criticalClicks += 1;
+      if (this.state.overclockEndsAt <= now) {
+        this.state.overclockCharge = Math.min(100, this.state.overclockCharge + (critical ? 8 : 1));
       }
-      const { critical, comboMultiplier, power } = result;
       this.ui.clickEffect(x, y, power, { critical, comboMultiplier });
       this.audio.click();
     };
@@ -273,14 +276,10 @@ class InfraClicker {
     document.querySelector('#prestige-button').addEventListener('click', () => this.openPrestigeConfirmation());
     document.querySelector('#header-prestige-button').addEventListener('click', () => this.openPrestigeConfirmation());
     document.querySelector('#prestige-confirm-button').addEventListener('click', () => this.prestige());
-    document.querySelector('#overclock-button').addEventListener('click', async () => {
+    document.querySelector('#overclock-button').addEventListener('click', () => {
       if (this.state.overclockCharge < 100 || this.state.overclockEndsAt > Date.now()) return;
-      try {
-        await this.server.action(this.state, 'overclock');
-      } catch (error) {
-        this.ui.showAntiCheat(error.message);
-        return;
-      }
+      this.state.overclockCharge = 0;
+      this.state.overclockEndsAt = Date.now() + 30000;
       this.audio.event(false);
       this.ui.toast('Surcharge activée', 'Production doublée pendant 30 secondes.', 'bonus');
     });
@@ -382,18 +381,11 @@ class InfraClicker {
 
   bindSaveControls() {
     document.querySelector('#save-now').addEventListener('click', async () => {
-      try {
-        await this.server.load(this.state);
-        this.saveManager.save(this.state);
-        this.ui.update();
-        this.ui.toast('Progression synchronisée', 'Le serveur contient la dernière progression validée.', 'info');
-      } catch (error) {
-        this.ui.toast('Synchronisation impossible', error.message, 'danger');
-      }
+      await this.synchronize(true);
     });
     document.querySelector('#reset-game').addEventListener('click', async () => {
       if (!window.confirm('Réinitialiser définitivement toute la progression ?')) return;
-      this.saveManager.reset();
+      this.replaceState(this.saveManager.reset());
       await this.server.reset(this.state);
       this.ui.refreshCollections();
       this.ui.update();
@@ -439,7 +431,7 @@ class InfraClicker {
     this.ui.update();
   }
 
-  async buyBuilding(id) {
+  buyBuilding(id) {
     const building = BUILDINGS.find(item => item.id === id);
     if (!building) return;
     const purchase = this.economy.getBuildingCost(building, this.ui.buyAmount);
@@ -447,30 +439,20 @@ class InfraClicker {
       this.ui.toast('Budget insuffisant', `Il manque des requêtes pour ${building.name}.`, 'danger');
       return;
     }
-    try {
-      const result = await this.server.action(this.state, 'buyBuilding', {
-        id,
-        amount: this.ui.buyAmount
-      });
-      purchase.amount = result.amount;
-    } catch (error) {
-      this.ui.toast('Achat refusé', error.message, 'danger');
-      return;
-    }
+    this.state.requests -= purchase.cost;
+    this.state.buildings[id] += purchase.amount;
+    this.state.totalBuildingsPurchased += purchase.amount;
     this.audio.purchase();
     this.ui.toast('Infrastructure déployée', `${purchase.amount} × ${building.name}`, 'info');
     this.achievements.check();
   }
 
-  async buyUpgrade(id) {
+  buyUpgrade(id) {
     const upgrade = UPGRADES.find(item => item.id === id);
     if (!upgrade || !this.economy.canBuyUpgrade(upgrade)) return;
-    try {
-      await this.server.action(this.state, 'buyUpgrade', { id });
-    } catch (error) {
-      this.ui.toast('Upgrade refusé', error.message, 'danger');
-      return;
-    }
+    this.state.requests -= upgrade.cost;
+    this.state.upgrades.push(id);
+    this.markCompletion();
     this.audio.purchase();
     this.ui.renderUpgrades();
     this.ui.toast(`${upgrade.name} installé`, upgrade.description, 'bonus');
@@ -478,15 +460,12 @@ class InfraClicker {
     this.achievements.check();
   }
 
-  async buyCertification(id) {
+  buyCertification(id) {
     const certification = CERTIFICATIONS.find(item => item.id === id);
     if (!certification || this.state.certifications.includes(id) || this.state.certificationPoints < certification.cost) return;
-    try {
-      await this.server.action(this.state, 'buyCertification', { id });
-    } catch (error) {
-      this.ui.toast('Certification refusée', error.message, 'danger');
-      return;
-    }
+    this.state.certificationPoints -= certification.cost;
+    this.state.certifications.push(id);
+    this.markCompletion();
     this.audio.achievement();
     this.ui.renderCertifications();
     this.ui.toast(`Certification ${certification.name}`, certification.description, 'achievement');
@@ -494,18 +473,25 @@ class InfraClicker {
     this.achievements.check();
   }
 
-  async prestige() {
+  prestige() {
     const maintenance = this.state.certifications.length >= CERTIFICATIONS.length;
     const gain = this.economy.prestigeGain();
     if (gain < 1) return;
     this.closeModal(document.querySelector('#prestige-confirm-modal'));
-    try {
-      const result = await this.server.action(this.state, 'prestige');
-      this.lastPrestigeGain = result.gain;
-    } catch (error) {
-      this.ui.toast('Prestige refusé', error.message, 'danger');
-      return;
-    }
+    this.lastPrestigeGain = maintenance ? 0 : gain;
+    this.state.certificationPoints += this.lastPrestigeGain;
+    this.state.prestigeCount += 1;
+    this.state.requests = 0;
+    this.state.lifetimeRequests = 0;
+    this.state.combo = 0;
+    this.state.lastManualClick = 0;
+    this.state.overclockCharge = 0;
+    this.state.overclockEndsAt = 0;
+    this.state.totalBuildingsPurchased = this.state.totalBuildingsPurchased || 0;
+    this.state.buildings = Object.fromEntries(BUILDINGS.map(building => [building.id, 0]));
+    this.state.upgrades = [];
+    this.state.activeEvent = null;
+    this.state.temporaryBonus = null;
     this.ui.refreshCollections();
     this.ui.update();
     this.audio.prestige();
@@ -520,6 +506,14 @@ class InfraClicker {
     this.saveManager.save(this.state);
   }
 
+  markCompletion() {
+    if (!this.state.completedAt
+      && this.state.upgrades.length >= UPGRADES.length
+      && this.state.certifications.length >= CERTIFICATIONS.length) {
+      this.state.completedAt = Date.now();
+    }
+  }
+
   updateSoundButton() {
     const button = document.querySelector('#sound-toggle');
     button.textContent = this.state.soundEnabled ? '♪' : '×';
@@ -528,13 +522,15 @@ class InfraClicker {
   }
 
   loop(now) {
-    if (this.isDesynced) {
-      this.lastFrame = now;
-      requestAnimationFrame(timestamp => this.loop(timestamp));
-      return;
-    }
+    const wallNow = Date.now();
+    const elapsed = Math.min(8 * 60 * 60, Math.max(0, (wallNow - this.lastProductionAt) / 1000));
+    this.lastProductionAt = wallNow;
     this.lastFrame = now;
     const production = this.economy.getProduction();
+    const produced = production * elapsed;
+    this.state.requests += produced;
+    this.state.lifetimeRequests += produced;
+    this.state.allTimeRequests += produced;
 
     if (Date.now() - this.lastHistorySample >= 60000) {
       this.state.productionHistory ||= [];
@@ -577,10 +573,6 @@ class InfraClicker {
       this.achievements.check();
       if (this.state.achievements.length !== previousCount) this.ui.renderAchievements();
       this.lastAchievementCheck = now;
-    }
-    if (now - this.lastIntegrityCheck > 1000) {
-      this.antiCheat.validateState();
-      this.lastIntegrityCheck = now;
     }
     requestAnimationFrame(timestamp => this.loop(timestamp));
   }

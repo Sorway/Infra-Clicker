@@ -23,7 +23,6 @@ CREATE TABLE IF NOT EXISTS game_progress (
   overclock_ends_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
   certification_points BIGINT UNSIGNED NOT NULL DEFAULT 0,
   last_tick BIGINT UNSIGNED NOT NULL,
-  click_window LONGTEXT NOT NULL,
   CONSTRAINT fk_progress_session FOREIGN KEY (session_id)
     REFERENCES game_sessions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -39,7 +38,6 @@ CREATE TABLE IF NOT EXISTS game_stats (
   completed_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
   started_at BIGINT UNSIGNED NOT NULL,
   last_saved BIGINT UNSIGNED NOT NULL,
-  anti_cheat_violations INT UNSIGNED NOT NULL DEFAULT 0,
   CONSTRAINT fk_stats_session FOREIGN KEY (session_id)
     REFERENCES game_sessions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
