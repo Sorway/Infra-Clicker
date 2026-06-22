@@ -1429,6 +1429,41 @@ body {
   line-height: 1.6;
 }
 
+.v2-reset-modal {
+  width: min(520px, 100%);
+  text-align: center;
+}
+
+.v2-reset-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border: 1px solid var(--cyan);
+  border-radius: 20px;
+  color: var(--cyan);
+  font-size: 32px;
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+}
+
+.v2-reset-label {
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.v2-reset-modal h2 {
+  margin-top: 8px;
+}
+
+.v2-reset-modal > p {
+  margin: 12px 0 22px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
 .anti-cheat-details {
   display: grid;
   gap: 8px;

@@ -5,7 +5,7 @@ import { BUILDINGS, CERTIFICATIONS, UPGRADES } from './modules/data.js';
 import { Economy } from './modules/economy.js';
 import { EventManager } from './modules/events.js';
 import { MissionManager } from './modules/missions.js';
-import { SaveManager } from './modules/save.js';
+import { consumeV2ResetNotice, SaveManager } from './modules/save.js';
 import { ServerGame } from './modules/server.js';
 import { Terminal } from './modules/terminal.js';
 import { GameUI } from './modules/ui.js';
@@ -13,6 +13,7 @@ import { downloadJson } from './modules/utils.js';
 
 class InfraClicker {
   constructor() {
+    this.showV2ResetNotice = consumeV2ResetNotice();
     this.saveManager = new SaveManager(status => {
       const element = document.querySelector('#save-status');
       if (element) element.textContent = status;
@@ -48,6 +49,7 @@ class InfraClicker {
     this.bindSaveControls();
     this.updateSoundButton();
     this.ui.update();
+    if (this.showV2ResetNotice) this.openV2ResetNotice();
     if (this.state.loadWarning) {
       setTimeout(() => this.ui.toast('Protection anti-triche', this.state.loadWarning, 'danger'), 400);
       delete this.state.loadWarning;
@@ -62,6 +64,14 @@ class InfraClicker {
       if (document.hidden) this.saveManager.save(this.state);
       this.lastFrame = performance.now();
     });
+  }
+
+  openV2ResetNotice() {
+    const modal = document.querySelector('#v2-reset-modal');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    setTimeout(() => modal.querySelector('[data-close="v2-reset-modal"]')?.focus(), 50);
   }
 
   bindGameActions() {

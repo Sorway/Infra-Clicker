@@ -3,6 +3,7 @@ import { ACHIEVEMENTS, BUILDINGS } from './data.js';
 const SAVE_KEY = 'infra-clicker-save-v1';
 const SAVE_VERSION = 1;
 const INTEGRITY_SALT = 'infra-clicker::integrity::2026';
+const V2_RESET_NOTICE_KEY = 'infra-clicker-v2-reset-notice-seen';
 
 const LEGACY_SKILL_COSTS = {
   automation: 1,
@@ -71,6 +72,19 @@ function hasValidStructure(state) {
   if (!Array.isArray(state.upgrades) || !Array.isArray(state.achievements) || !Array.isArray(state.certifications)) return false;
   if (state.upgrades.length > 100 || state.achievements.length > 200 || state.certifications.length > 50) return false;
   return Object.values(state.buildings).every(value => Number.isInteger(value) && value >= 0 && value <= 1000000);
+}
+
+export function consumeV2ResetNotice() {
+  if (localStorage.getItem(V2_RESET_NOTICE_KEY)) return false;
+
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw || JSON.parse(raw)?.version !== 1) return false;
+    localStorage.setItem(V2_RESET_NOTICE_KEY, '1');
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function createDefaultState() {
