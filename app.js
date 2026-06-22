@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const indexRouter = require('./routes/index');
+const gameApiRouter = require('./routes/gameApi');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -27,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0
 }));
 
+app.use('/api/game', gameApiRouter);
 app.use('/', indexRouter);
 
 app.use((req, res) => {

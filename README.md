@@ -19,7 +19,7 @@ du **SysAdmin**, du **Réseau**, du **Cloud** et du **DevOps**.
 
 Dans **Infra Clicker**, chaque clic traite une requête réseau. Commencez avec un simple script Bash, déployez progressivement des serveurs, des datacenters et des clusters Kubernetes, puis construisez un cloud mondial.
 
-Le jeu fonctionne entièrement dans le navigateur. La progression est sauvegardée localement et aucune base de données n’est nécessaire.
+Le serveur Express est autoritaire sur l’économie du jeu. La progression est associée à un cookie de session HttpOnly et conservée dans un fichier runtime côté serveur.
 
 ## Fonctionnalités
 
@@ -29,7 +29,7 @@ Le jeu fonctionne entièrement dans le navigateur. La progression est sauvegard�
 - événements aléatoires : DDoS, panne disque, ransomware, buzz Hacker News…
 - système de prestige avec **8 certifications permanentes**
 - production automatique et progression hors ligne
-- sauvegarde locale toutes les 10 secondes
+- sauvegarde serveur autoritaire avec miroir local
 - import et export des sauvegardes au format JSON
 - terminal Linux interactif avec commandes et bonus temporaires
 - effets sonores générés avec la Web Audio API
@@ -131,13 +131,15 @@ Certaines commandes accordent un bonus temporaire de production.
 | `ui.js` | Rendu dynamique, graphiques et notifications |
 | `events.js` | Gestion des événements aléatoires |
 | `achievements.js` | Conditions et déblocage des succès |
-| `save.js` | Sauvegarde, import, export et progression hors ligne |
+| `server/gameEngine.js` | Calculs économiques et validation autoritaire des actions |
+| `server/gameStore.js` | Sessions signées et persistance serveur |
+| `save.js` | Miroir local et export de la progression |
 | `audio.js` | Effets sonores |
 | `terminal.js` | Faux terminal Linux et commandes |
 
 ## Sauvegarde
 
-La progression est enregistrée dans le `LocalStorage` du navigateur sous la clé :
+Un miroir de la progression est enregistré dans le `LocalStorage` sous la clé :
 
 ```text
 infra-clicker-save-v1
@@ -149,7 +151,7 @@ Le thème sélectionné est conservé séparément sous la clé :
 infra-clicker-theme
 ```
 
-Utilisez le menu des paramètres pour exporter régulièrement une copie JSON de votre partie.
+La source de vérité reste le serveur : un import JSON ne peut pas remplacer la progression autoritaire.
 
 ## Stack technique
 
@@ -173,7 +175,7 @@ PRIVACY_CONTACT=contact@example.com
 HOST_NAME=Nom et coordonnées de l’hébergeur
 ```
 
-Le jeu n’utilise aucun cookie publicitaire ou analytique. La progression et les préférences sont stockées uniquement dans le `LocalStorage` du navigateur.
+Le jeu utilise un cookie de session strictement nécessaire, `HttpOnly` et `SameSite=Strict`. Aucun cookie publicitaire ou analytique n’est utilisé.
 
 ## Contribution
 

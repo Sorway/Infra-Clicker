@@ -23,6 +23,7 @@ build/
 # Runtime files
 *.pid
 *.pid.lock
+data/game-sessions.json
 
 # Editors
 .vscode/
