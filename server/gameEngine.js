@@ -3,10 +3,18 @@ const { BUILDINGS, CERTIFICATIONS, UPGRADES } = require('./gameData');
 const MAX_CLICKS_PER_SECOND = 25;
 const MAX_OFFLINE_SECONDS = 8 * 60 * 60;
 const PRESTIGE_TARGET = 1e6;
+const SATURATION_START = 100e6;
+const MIN_CAPACITY_EFFICIENCY = 0.35;
 
 function prestigeGain(requests) {
   if (requests < PRESTIGE_TARGET) return 0;
   return Math.floor(Math.log10(requests / PRESTIGE_TARGET)) + 1;
+}
+
+function capacityEfficiency(requests) {
+  if (requests <= SATURATION_START) return 1;
+  const decades = Math.log10(requests / SATURATION_START);
+  return Math.max(MIN_CAPACITY_EFFICIENCY, 1 / (1 + 0.5 * decades));
 }
 
 function createState() {
@@ -61,7 +69,9 @@ function production(state) {
   const base = BUILDINGS.reduce((total, building) => (
     total + state.buildings[building.id] * building.baseProduction * buildingMultiplier(state, building.id)
   ), 0) * globalMultiplier(state);
-  return base * (state.overclockEndsAt > Date.now() ? 2 : 1);
+  return base
+    * capacityEfficiency(state.lifetimeRequests)
+    * (state.overclockEndsAt > Date.now() ? 2 : 1);
 }
 
 function clickPower(state) {
@@ -203,7 +213,17 @@ function applyAction(state, action = {}) {
 function publicState(state) {
   settle(state);
   const { clickWindow, ...safeState } = state;
-  return { ...safeState, production: production(state) };
+  return {
+    ...safeState,
+    production: production(state),
+    capacityEfficiency: capacityEfficiency(state.lifetimeRequests)
+  };
 }
 
-module.exports = { applyAction, createState, prestigeGain, publicState };
+module.exports = {
+  applyAction,
+  capacityEfficiency,
+  createState,
+  prestigeGain,
+  publicState
+};

@@ -3130,6 +3130,47 @@ body.modal-open {
   overflow: hidden;
 }
 
+.capacity-status {
+  width: min(430px, 92%);
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--orange) 42%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--orange) 8%, var(--panel));
+}
+
+.capacity-status > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--orange);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.capacity-track {
+  height: 5px;
+  margin: 9px 0 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--orange) 12%, var(--panel-3));
+}
+
+.capacity-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--red), var(--orange));
+  transition: width .3s ease;
+}
+
+.capacity-status small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
 .profile-modal {
   width: min(500px, 100%);
   text-align: center;

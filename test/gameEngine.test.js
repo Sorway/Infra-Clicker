@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   applyAction,
+  capacityEfficiency,
   createState,
   prestigeGain,
   publicState
@@ -90,4 +91,22 @@ test('accorde le gain progressif lors du prestige', () => {
 
   assert.equal(result.gain, 3);
   assert.equal(state.certificationPoints, 3);
+});
+
+test('applique une saturation progressive avec un plancher', () => {
+  assert.equal(capacityEfficiency(100e6), 1);
+  assert.ok(Math.abs(capacityEfficiency(1e9) - 2 / 3) < 0.001);
+  assert.equal(capacityEfficiency(10e9), 0.5);
+  assert.equal(capacityEfficiency(1e15), 0.35);
+});
+
+test('le prestige remet la capacité à son efficacité maximale', () => {
+  const state = createState();
+  state.lifetimeRequests = 10e9;
+  state.requests = 10e9;
+  assert.equal(capacityEfficiency(state.lifetimeRequests), 0.5);
+
+  applyAction(state, { type: 'prestige' });
+
+  assert.equal(capacityEfficiency(state.lifetimeRequests), 1);
 });

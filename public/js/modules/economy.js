@@ -1,5 +1,8 @@
 import { BUILDINGS, CERTIFICATIONS, INFRA_LEVELS, UPGRADES } from './data.js';
 
+const SATURATION_START = 100e6;
+const MIN_CAPACITY_EFFICIENCY = 0.35;
+
 export class Economy {
   constructor(state) {
     this.state = state;
@@ -74,7 +77,17 @@ export class Economy {
       ? this.state.temporaryBonus.multiplier
       : 1;
     const overclockMultiplier = this.state.overclockEndsAt > Date.now() ? 2 : 1;
-    return this.getBaseProduction() * eventMultiplier * temporaryMultiplier * overclockMultiplier;
+    return this.getBaseProduction()
+      * this.getCapacityEfficiency()
+      * eventMultiplier
+      * temporaryMultiplier
+      * overclockMultiplier;
+  }
+
+  getCapacityEfficiency() {
+    if (this.state.lifetimeRequests <= SATURATION_START) return 1;
+    const decades = Math.log10(this.state.lifetimeRequests / SATURATION_START);
+    return Math.max(MIN_CAPACITY_EFFICIENCY, 1 / (1 + 0.5 * decades));
   }
 
   getClickPower() {

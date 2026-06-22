@@ -208,6 +208,15 @@ export class GameUI {
       : prestigeGain > 0
         ? `Gain actuel : ${prestigeGain} point${prestigeGain > 1 ? 's' : ''}. Prochain palier à ${formatNumber(this.economy.nextPrestigeThreshold())}.`
         : 'Prestige disponible à partir de 1 million de requêtes sur ce cycle.';
+    const capacityEfficiency = this.economy.getCapacityEfficiency();
+    const capacityStatus = document.querySelector('#capacity-status');
+    const capacityPercent = Math.round(capacityEfficiency * 100);
+    capacityStatus.classList.toggle('hidden', capacityEfficiency >= 0.999);
+    document.querySelector('#capacity-efficiency').textContent = `${capacityPercent}%`;
+    document.querySelector('#capacity-bar').style.width = `${capacityPercent}%`;
+    document.querySelector('#prestige-capacity').textContent = capacityEfficiency >= 0.999
+      ? 'Capacité disponible : 100 %. La saturation commence à 100 millions de requêtes.'
+      : `Capacité saturée : efficacité ${capacityPercent} %. Un prestige restaure 100 %.`;
 
     this.updateBuildings();
     if (performance.now() - this.lastTelemetryUpdate > 700) {
