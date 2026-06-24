@@ -5,7 +5,6 @@ const {
   countOnlinePlayers,
   getLeaderboard,
   getProfile,
-  setProfile,
   transactSession
 } = require('../server/gameStore');
 
@@ -30,11 +29,7 @@ router.get('/state', async (req, res, next) => {
 
 router.post('/profile', async (req, res, next) => {
   try {
-    const payload = await transactSession(req, res, async (state, id, session) => ({
-      state: publicState(state),
-      profile: await setProfile(session, req.body?.username)
-    }));
-    res.json(payload);
+    res.status(410).json({ error: 'Le pseudo est maintenant synchronisé avec Discord.' });
   } catch (error) {
     if (error.status) {
       res.status(error.status).json({ error: error.message });

@@ -78,15 +78,6 @@ export class ServerGame {
     return request('/api/game/presence');
   }
 
-  async saveProfile(state, username) {
-    const payload = await request('/api/game/profile', {
-      method: 'POST',
-      body: JSON.stringify({ username, dlcId: state.dlcId })
-    });
-    this.merge(state, payload.state);
-    return payload.profile;
-  }
-
   async sync(state, keepalive = false) {
     const snapshot = Object.fromEntries(PROTECTED_FIELDS
       .filter(field => Object.hasOwn(state, field))

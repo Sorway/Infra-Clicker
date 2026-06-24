@@ -5,6 +5,7 @@ const path = require('path');
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const indexRouter = require('./routes/index');
+const authRouter = require('./routes/auth');
 const gameApiRouter = require('./routes/gameApi');
 const { closeDatabase, initializeDatabase } = require('./server/gameStore');
 
@@ -35,6 +36,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
   }
 }));
+app.use('/auth', authRouter);
 app.use('/api/game', gameApiRouter);
 app.use('/', indexRouter);
 

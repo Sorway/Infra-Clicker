@@ -1,3 +1,22 @@
+const { resolveCurrentProfile } = require('../server/gameStore');
+
+const showHome = async (req, res, next) => {
+  let profile = null;
+  try {
+    profile = await resolveCurrentProfile(req, res);
+  } catch (error) {
+    return next(error);
+  }
+
+  res.render('home', {
+    title: 'Infra Clicker — Accueil',
+    description: 'Choisissez une session locale ou connectez Discord pour synchroniser votre infrastructure.',
+    pageScript: '/js/home.js',
+    pageClass: 'home-body',
+    discordProfile: profile?.discord ? profile : null
+  });
+};
+
 const showGame = (req, res) => {
   res.render('index', {
     title: 'Infra Clicker — Le clicker SysAdmin & DevOps',
@@ -34,4 +53,4 @@ const showLeaderboard = (req, res) => {
   });
 };
 
-module.exports = { showGame, showLeaderboard, showStatistics, showPrivacy };
+module.exports = { showGame, showHome, showLeaderboard, showStatistics, showPrivacy };

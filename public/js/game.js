@@ -10,6 +10,8 @@ import { ServerGame } from './modules/server.js';
 import { Terminal } from './modules/terminal.js';
 import { GameUI } from './modules/ui.js';
 
+const SESSION_CHOICE_KEY = 'infra-clicker-session-choice';
+
 class InfraClicker {
   constructor() {
     this.showV2ResetNotice = consumeV2ResetNotice();
@@ -54,8 +56,9 @@ class InfraClicker {
     this.updateSoundButton();
     this.ui.update();
     this.applyProfile(initialPayload.profile);
+    this.showDiscordNotice();
     if (initialPayload.serverBehind) await this.server.sync(this.state);
-    if (!initialPayload.profile?.username) await this.requireProfile();
+    await this.requireSessionChoice(initialPayload.profile);
     if (this.showV2ResetNotice) this.openV2ResetNotice();
     this.initialized = true;
     this.hideDesyncScreen();
@@ -153,40 +156,71 @@ class InfraClicker {
   }
 
   applyProfile(profile) {
-    if (!profile?.username) return;
-    document.querySelector('#profile-name').textContent = profile.username;
+    document.querySelector('#profile-name').textContent = profile?.username || 'Session locale';
+    const avatar = document.querySelector('#profile-avatar');
+    if (avatar && profile?.discord?.avatarUrl) {
+      avatar.classList.add('discord-avatar');
+      avatar.replaceChildren();
+      const image = document.createElement('img');
+      image.src = profile.discord.avatarUrl;
+      image.alt = `Avatar Discord de ${profile.username || 'joueur'}`;
+      image.addEventListener('error', () => {
+        avatar.classList.remove('discord-avatar');
+        avatar.replaceChildren(document.createElement('span'));
+      }, { once: true });
+      avatar.appendChild(image);
+    } else if (avatar) {
+      avatar.classList.remove('discord-avatar');
+      avatar.replaceChildren(document.createElement('span'));
+    }
+    const discordButton = document.querySelector('#discord-login');
+    if (discordButton && profile?.discord) {
+      localStorage.setItem(SESSION_CHOICE_KEY, 'discord');
+      discordButton.textContent = 'Compte Discord lié';
+      discordButton.title = 'Authentification Discord conservée 24h';
+      discordButton.disabled = true;
+      discordButton.classList.add('is-linked');
+    }
   }
 
   requireProfile() {
     const modal = document.querySelector('#profile-modal');
-    const form = document.querySelector('#profile-form');
-    const input = document.querySelector('#profile-input');
-    const errorElement = document.querySelector('#profile-error');
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
-    setTimeout(() => input.focus(), 50);
+    setTimeout(() => document.querySelector('#profile-discord-login')?.focus(), 50);
+  }
+
+  requireSessionChoice(profile) {
+    if (profile?.discord || localStorage.getItem(SESSION_CHOICE_KEY)) return Promise.resolve();
+    const modal = document.querySelector('#session-choice-modal');
+    const localButton = document.querySelector('#session-choice-local');
+    const discordButton = document.querySelector('#session-choice-discord');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    document.querySelectorAll('body > header, body > main')
+      .forEach(element => { element.inert = true; });
+    setTimeout(() => localButton?.focus(), 50);
 
     return new Promise(resolve => {
-      form.addEventListener('submit', async event => {
-        event.preventDefault();
-        errorElement.textContent = '';
-        const button = form.querySelector('button[type="submit"]');
-        button.disabled = true;
-        try {
-          const profile = await this.server.saveProfile(this.state, input.value);
-          this.applyProfile(profile);
-          modal.classList.remove('open');
-          modal.setAttribute('aria-hidden', 'true');
-          document.body.classList.remove('modal-open');
-          resolve();
-        } catch (error) {
-          errorElement.textContent = error.message;
-          input.focus();
-        } finally {
-          button.disabled = false;
-        }
-      });
+      localButton.addEventListener('click', () => {
+        localStorage.setItem(SESSION_CHOICE_KEY, 'local');
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        document.querySelectorAll('body > header, body > main')
+          .forEach(element => { element.inert = false; });
+        this.ui.toast('Session locale', 'Vous pourrez lier Discord plus tard depuis les paramètres.', 'info');
+        resolve();
+      }, { once: true });
+
+      discordButton.addEventListener('click', async () => {
+        discordButton.disabled = true;
+        localStorage.setItem(SESSION_CHOICE_KEY, 'discord');
+        await this.synchronize(true);
+        window.location.href = '/auth/discord';
+      }, { once: true });
     });
   }
 
@@ -209,6 +243,25 @@ class InfraClicker {
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
     setTimeout(() => modal.querySelector('[data-close="v2-reset-modal"]')?.focus(), 50);
+  }
+
+  showDiscordNotice() {
+    const url = new URL(window.location.href);
+    const status = url.searchParams.get('discord');
+    if (!status) return;
+    url.searchParams.delete('discord');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    const messages = {
+      linked: ['Discord lié', 'Cette sauvegarde est maintenant synchronisée avec votre compte Discord.'],
+      merged: ['Progression synchronisée', 'Votre session locale a été fusionnée avec votre compte Discord.'],
+      existing: ['Sauvegarde Discord chargée', 'Une sauvegarde existante liée à ce compte a été reprise.'],
+      cancelled: ['Connexion annulée', 'Votre sauvegarde invitée reste disponible sur ce navigateur.'],
+      state: ['Connexion expirée', 'Relancez la connexion Discord depuis les paramètres.']
+    };
+    if (status === 'linked' || status === 'merged' || status === 'existing') localStorage.setItem(SESSION_CHOICE_KEY, 'discord');
+    if (status === 'cancelled' || status === 'state') localStorage.removeItem(SESSION_CHOICE_KEY);
+    const [title, message] = messages[status] || ['Discord indisponible', 'La liaison du compte n’a pas abouti.'];
+    this.ui.toast(title, message, ['linked', 'merged', 'existing'].includes(status) ? 'info' : 'danger');
   }
 
   bindGameActions() {
@@ -329,14 +382,20 @@ class InfraClicker {
       this.closeModal(document.querySelector(`#${button.dataset.close}`));
     }));
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.addEventListener('click', event => {
-      if (event.target === backdrop && backdrop.id !== 'profile-modal') this.closeModal(backdrop);
+      if (event.target === backdrop && !this.isLockedModal(backdrop)) this.closeModal(backdrop);
     }));
     window.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
-        document.querySelectorAll('.modal-backdrop.open:not(#profile-modal)').forEach(modal => this.closeModal(modal));
+        document.querySelectorAll('.modal-backdrop.open').forEach(modal => {
+          if (!this.isLockedModal(modal)) this.closeModal(modal);
+        });
         this.terminal.close();
       }
     });
+  }
+
+  isLockedModal(modal) {
+    return ['profile-modal', 'session-choice-modal'].includes(modal.id);
   }
 
   bindModal(triggerSelector, modalSelector, callback) {
@@ -396,6 +455,14 @@ class InfraClicker {
     document.querySelector('#save-now').addEventListener('click', async () => {
       await this.synchronize(true);
     });
+    const startDiscordLogin = async event => {
+      event.preventDefault();
+      localStorage.setItem(SESSION_CHOICE_KEY, 'discord');
+      await this.synchronize(true);
+      window.location.href = '/auth/discord';
+    };
+    document.querySelector('#discord-login')?.addEventListener('click', startDiscordLogin);
+    document.querySelector('#profile-discord-login')?.addEventListener('click', startDiscordLogin);
     document.querySelector('#reset-game').addEventListener('click', async () => {
       if (!window.confirm('Réinitialiser définitivement toute la progression ?')) return;
       this.replaceState(this.saveManager.reset());

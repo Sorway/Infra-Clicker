@@ -30,7 +30,7 @@ Le gameplay est calculé instantanément dans le navigateur, puis la progression
 - système de prestige avec **8 certifications permanentes**
 - production automatique et progression hors ligne
 - sauvegarde locale immédiate avec synchronisation serveur périodique
-- pseudo unique et classement mondial avec drapeau du pays
+- classement mondial réservé aux comptes Discord liés, avec avatar Discord
 - terminal Linux interactif avec commandes et bonus temporaires
 - effets sonores générés avec la Web Audio API
 - plusieurs thèmes pastel sur fond noir
@@ -185,6 +185,9 @@ DB_PORT=3306
 DB_USER=infra_clicker
 DB_PASSWORD=mot-de-passe-fort
 DB_NAME=infra_clicker
+DISCORD_CLIENT_ID=123456789012345678
+DISCORD_CLIENT_SECRET=secret-oauth2-discord
+DISCORD_REDIRECT_URI=https://clicker.consto.com/auth/discord/callback
 PRIVACY_CONTACT=contact@example.com
 HOST_NAME=Nom et coordonnées de l’hébergeur
 ```
@@ -192,14 +195,16 @@ HOST_NAME=Nom et coordonnées de l’hébergeur
 La base MariaDB et son utilisateur doivent exister avant le lancement. Le schéma
 relationnel est créé automatiquement et reste disponible dans `database/schema.sql` :
 
-- `game_sessions` : identité et dates de la partie ;
-- `game_progress` : monnaie et état du cycle en cours ;
-- `game_stats` : compteurs historiques séparés ;
-- `game_buildings` : quantités de bâtiments ;
-- `game_upgrades` : améliorations acquises ;
-- `game_certifications` : certifications acquises.
+- `GameUsers` : identité Discord optionnelle pour synchroniser une sauvegarde entre appareils ;
+- `GameSessions` : identité de partie, rattachement Discord optionnel et dates de la partie ;
+- `GameSessionLinks` : journal des liaisons Discord/session ;
+- `GameProgress` : monnaie et état du cycle en cours ;
+- `GameStats` : compteurs historiques séparés ;
+- `GameBuildings` : quantités de bâtiments ;
+- `GameUpgrades` : améliorations acquises ;
+- `GameCertifications` : certifications acquises.
 
-Les tables enfants sont reliées à `game_sessions` par des clés étrangères avec
+Les tables enfants sont reliées à `GameSessions` par des clés étrangères avec
 suppression en cascade.
 
 Pour transférer l’ancien fichier JSON vers MariaDB sans déconnecter les joueurs :
@@ -208,7 +213,7 @@ Pour transférer l’ancien fichier JSON vers MariaDB sans déconnecter les joue
 npm run migrate:sessions
 ```
 
-Le jeu utilise un cookie de session strictement nécessaire, `HttpOnly` et `SameSite=Strict`. Aucun cookie publicitaire ou analytique n’est utilisé.
+Le jeu utilise un cookie de session strictement nécessaire, `HttpOnly` et `SameSite=Strict`. La connexion Discord utilise un cookie OAuth temporaire `SameSite=Lax` pour vérifier le retour d’authentification. Aucun cookie publicitaire ou analytique n’est utilisé.
 
 ## Contribution
 

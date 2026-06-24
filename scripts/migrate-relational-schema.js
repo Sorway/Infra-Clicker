@@ -22,12 +22,14 @@ async function migrate() {
   const connection = await pool.getConnection();
   try {
     const tables = [
-      'game_sessions',
-      'game_progress',
-      'game_stats',
-      'game_buildings',
-      'game_upgrades',
-      'game_certifications'
+      'GameUsers',
+      'GameSessions',
+      'GameSessionLinks',
+      'GameProgress',
+      'GameStats',
+      'GameBuildings',
+      'GameUpgrades',
+      'GameCertifications'
     ];
     const counts = {};
     for (const table of tables) counts[table] = await count(connection, table);
@@ -35,14 +37,14 @@ async function migrate() {
     const orphanRows = await connection.query(`
       SELECT
         SUM(stats.session_id IS NULL) AS missing_stats
-      FROM game_progress progress
-      LEFT JOIN game_stats stats
+      FROM GameProgress progress
+      LEFT JOIN GameStats stats
         ON stats.session_id = progress.session_id
        AND stats.dlc_id = progress.dlc_id
     `);
     const dlcs = await connection.query(`
       SELECT dlc_id, COUNT(*) AS progressions
-      FROM game_progress
+      FROM GameProgress
       GROUP BY dlc_id
       ORDER BY dlc_id
     `);
@@ -50,7 +52,7 @@ async function migrate() {
       SELECT COUNT(*) AS count
       FROM information_schema.COLUMNS
       WHERE TABLE_SCHEMA = DATABASE()
-        AND TABLE_NAME = 'game_sessions'
+        AND TABLE_NAME = 'GameSessions'
         AND COLUMN_NAME = 'state'
     `);
 

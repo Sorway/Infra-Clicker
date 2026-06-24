@@ -1,0 +1,60 @@
+<header class="home-topbar">
+  <a class="brand" href="/" aria-label="Infra Clicker">
+    <img class="home-brand-logo" src="/img/favicon.png" alt="" aria-hidden="true">
+    <span><strong>INFRA</strong> CLICKER</span>
+  </a>
+  <nav class="home-nav" aria-label="Navigation">
+    <a href="/leaderboard">Classement</a>
+    <a href="/privacy">Confidentialité</a>
+  </nav>
+</header>
+
+<main class="home-page">
+  <section class="home-shell" aria-labelledby="home-title">
+    <div class="home-intro">
+      <div class="home-logo-lockup">
+        <img src="/img/favicon.png" alt="Logo Infra Clicker">
+        <div>
+          <span>Infra Clicker</span>
+          <small>Clicker SysAdmin & DevOps</small>
+        </div>
+      </div>
+      <div>
+        <span class="home-kicker">INFRASTRUCTURE READY</span>
+        <h1 id="home-title">Déployez votre empire serveur.</h1>
+        <p>Automatisez, améliorez, prestigez. Gardez une session locale ou connectez Discord pour synchroniser votre progression.</p>
+      </div>
+      <div class="home-server-preview" aria-hidden="true">
+        <img src="/img/infra-server-transparent.png" alt="">
+      </div>
+    </div>
+
+    <aside class="home-launch" aria-label="Démarrage de session">
+      <span class="home-launch-label">Démarrage</span>
+      <h2><%= discordProfile ? 'Session Discord active' : 'Choisir une session' %></h2>
+      <p><%= discordProfile ? 'Votre progression est liée à ce compte Discord.' : 'La session locale reste sur ce navigateur. Discord permet de reprendre ailleurs.' %></p>
+      <% if (discordProfile) { %>
+        <section class="home-account" aria-label="Compte Discord connecté">
+          <img src="<%= discordProfile.discord.avatarUrl %>" alt="Avatar Discord de <%= discordProfile.username %>">
+          <div>
+            <span>Connecté avec Discord</span>
+            <strong><%= discordProfile.username %></strong>
+          </div>
+          <a href="/game">Reprendre</a>
+        </section>
+      <% } else { %>
+        <section class="home-session-note" aria-label="Session actuelle">
+          <span></span>
+          <div>
+            <strong>Aucune connexion Discord active</strong>
+            <small>Vous pouvez commencer maintenant, puis lier Discord plus tard.</small>
+          </div>
+        </section>
+      <% } %>
+      <div class="home-actions">
+        <button id="home-local-session" class="secondary-button" type="button">Session locale</button>
+        <a id="home-discord-session" class="primary-button" href="<%= discordProfile ? '/game' : '/auth/discord' %>"><%= discordProfile ? 'Jouer avec Discord' : 'Continuer avec Discord' %></a>
+      </div>
+    </aside>
+  </section>
+</main>

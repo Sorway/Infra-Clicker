@@ -25,6 +25,19 @@ function flagElement(player) {
   return flag;
 }
 
+function identityBadge(player) {
+  if (!player.avatarUrl) return flagElement(player);
+  const avatar = document.createElement('span');
+  avatar.className = 'leaderboard-avatar';
+  const image = document.createElement('img');
+  image.src = player.avatarUrl;
+  image.alt = `Avatar Discord de ${player.username}`;
+  image.loading = 'lazy';
+  image.addEventListener('error', () => avatar.replaceWith(flagElement(player)), { once: true });
+  avatar.appendChild(image);
+  return avatar;
+}
+
 function formatDuration(milliseconds) {
   const totalSeconds = Math.max(0, Math.floor(Number(milliseconds) / 1000));
   const days = Math.floor(totalSeconds / 86400);
@@ -52,7 +65,7 @@ function podiumCard(player, place) {
 
   const identity = document.createElement('div');
   identity.className = 'podium-player';
-  identity.append(flagElement(player));
+  identity.append(identityBadge(player));
   const name = document.createElement('strong');
   name.textContent = player.username;
   identity.appendChild(name);
@@ -79,7 +92,7 @@ function row(player) {
   identity.className = 'leaderboard-player';
   const name = document.createElement('strong');
   name.textContent = player.username;
-  identity.append(flagElement(player), name);
+  identity.append(identityBadge(player), name);
   const prestige = document.createElement('span');
   prestige.className = 'leaderboard-prestige';
   prestige.textContent = `${player.prestigeCount} ◆`;
