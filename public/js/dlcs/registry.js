@@ -1,11 +1,16 @@
 import { DLC as infra } from './infra.js';
+import { DLC as ynov } from './ynov.js';
+import { DLC as linear } from './linear.js';
+import { DLC as noc } from './noc.js';
 
 export const DLC_STORAGE_KEY = 'clicker-active-dlc';
 export const DEFAULT_DLC_ID = 'infra';
 const REMOVED_DLC_STORAGE_KEYS = ['clicker-save-space-v1'];
+const REMOVED_DLC_IDS = ['space'];
 
 REMOVED_DLC_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
-if (localStorage.getItem(DLC_STORAGE_KEY) !== DEFAULT_DLC_ID) {
+// Purge le pointeur de DLC actif uniquement s'il référence un DLC retiré.
+if (REMOVED_DLC_IDS.includes(localStorage.getItem(DLC_STORAGE_KEY))) {
   localStorage.removeItem(DLC_STORAGE_KEY);
 }
 function validateDlc(dlc) {
@@ -26,7 +31,10 @@ function validateDlc(dlc) {
 }
 
 export const DLC_REGISTRY = Object.freeze({
-  infra: validateDlc(infra)
+  infra: validateDlc(infra),
+  ynov: validateDlc(ynov),
+  linear: validateDlc(linear),
+  noc: validateDlc(noc)
 });
 export const DLCS = Object.freeze(Object.values(DLC_REGISTRY));
 

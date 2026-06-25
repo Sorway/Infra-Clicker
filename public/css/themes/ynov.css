@@ -1,0 +1,1509 @@
+/* =============================================================
+   Thème surcouche — YNOV · GRAND FORMAT (Magazine de campus)
+   -------------------------------------------------------------
+   Refonte graphique COMPLÈTE (direction gagnante d'un workflow de
+   design adversarial). Parti-pris : « la marque mange la donnée ».
+   Mise en page ÉDITORIALE — le compteur devient un titre géant
+   Montserrat ferré à gauche ; bande de chiffres-clés ; masthead ;
+   boutique en sommaire à folios. Distinct de la console NOC
+   (data-first/mono) : ici marque-first/Montserrat/composition.
+
+   Identité Ynov officielle : teal #1f9e91 + palette des formations,
+   typographie Montserrat, logo SVG. Aucun aurora, aucun glow
+   gratuit, aucun dégradé décoratif. Tout scopé [data-theme="ynov"].
+   ============================================================= */
+
+:root[data-theme="ynov"] {
+  /* Marque */
+  --ynov-primary: #1f9e91;
+  --ynov-primary-bright: #2bc7b6;
+  --ynov-primary-deep: #187b73;
+  --ynov-primary-rgb: 31, 158, 145;
+
+  /* Palette des formations (accents sémantiques, usage parcimonieux) */
+  --ynov-tech: #3d68d1;
+  --ynov-info: #5ec5ea;
+  --ynov-cyber: #5affb6;
+  --ynov-archi: #3ca55b;
+  --ynov-ia: #f5822b;
+  --ynov-3d: #c259ff;
+
+  /* Surfaces — aplat sombre uni (PAS de nappe aurora) */
+  --bg: #050a09;
+  --panel: #0a1311;
+  --panel-2: #0e1a17;
+  --panel-3: #14241f;
+  --line: #1d3b35;
+  --line-soft: rgba(31, 158, 145, .14);
+  --text: #f2fffb;
+  --muted: #a8cfc8;          /* relevé pour passer AA sur capitales */
+  --faint: #6f928b;
+
+  /* Remap tokens du jeu */
+  --cyan: var(--ynov-primary);
+  --cyan-bright: var(--ynov-primary-bright);
+  --green: var(--ynov-cyber);
+  --orange: var(--ynov-ia);
+  --red: #e6172d;
+  --purple: var(--ynov-3d);
+  --accent-rgb: var(--ynov-primary-rgb);
+  --accent-deep: var(--ynov-primary-deep);
+  --accent-deep-2: #1f9e91;
+
+  --ynov-font: "Montserrat", "Segoe UI", system-ui, sans-serif;
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+}
+
+/* Hooks Ynov-only masqués hors du thème */
+.ynov-masthead-rule, .ynov-figures, .ynov-gauges, .ynov-menu-slot { display: none; }
+
+/* =============================================================
+   BASE & TYPO
+   ============================================================= */
+:root[data-theme="ynov"] body {
+  font-family: var(--ynov-font);
+  background: var(--bg);          /* aplat — supprime l'aurora */
+  letter-spacing: 0;
+}
+:root[data-theme="ynov"] .ambient-grid { display: none; }
+:root[data-theme="ynov"] * { text-shadow: none !important; }
+:root[data-theme="ynov"] .topbar,
+:root[data-theme="ynov"] .left-panel,
+:root[data-theme="ynov"] .right-panel,
+:root[data-theme="ynov"] .center-stage,
+:root[data-theme="ynov"] .metric-card,
+:root[data-theme="ynov"] .menu-launch-button,
+:root[data-theme="ynov"] .building-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none;
+}
+/* Chiffres animés : tabular-nums obligatoire (Montserrat proportionnel) */
+:root[data-theme="ynov"] #main-counter,
+:root[data-theme="ynov"] #main-rps,
+:root[data-theme="ynov"] #header-rps,
+:root[data-theme="ynov"] .ynov-fig strong,
+:root[data-theme="ynov"] .metric-card strong,
+:root[data-theme="ynov"] .building-owned,
+:root[data-theme="ynov"] .building-price {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* =============================================================
+   TOPBAR → NAMEPLATE + MASTHEAD
+   ============================================================= */
+:root[data-theme="ynov"] .topbar {
+  height: 56px;
+  margin: 0;
+  padding: 0 24px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--bg);
+}
+/* Nameplate : logo ynov (mask) + CLICKER */
+:root[data-theme="ynov"] .brand { gap: 10px; }
+:root[data-theme="ynov"] .brand-mark {
+  width: 64px; height: 26px;
+  flex: 0 0 auto;
+  padding: 0; border: 0; border-radius: 0;
+  background: var(--ynov-primary);
+  -webkit-mask: url("/img/ynov-logo2.svg") left center / contain no-repeat;
+  mask: url("/img/ynov-logo2.svg") left center / contain no-repeat;
+}
+:root[data-theme="ynov"] .brand-mark span { display: none; }
+:root[data-theme="ynov"] .brand > span:last-child { font-size: 0; }
+:root[data-theme="ynov"] .brand > span:last-child::after {
+  content: "CLICKER";
+  font-size: 13px; font-weight: 700; letter-spacing: .2em; color: var(--text);
+}
+/* PRODUCTION 0,0 req/s du haut-centre : retiré (déjà au centre + bande) */
+:root[data-theme="ynov"] .global-status { display: none; }
+
+/* « joueurs en ligne » centré tout en haut ; le reste des boutons à droite */
+:root[data-theme="ynov"] .topbar { align-items: center; }
+:root[data-theme="ynov"] .brand { grid-column: 1; grid-row: 1; align-self: center; }
+:root[data-theme="ynov"] .online-status {
+  grid-column: 2; grid-row: 1; justify-self: center; align-self: center; margin: 0;
+  font-family: var(--ynov-font); font-weight: 600; letter-spacing: .04em; color: var(--muted);
+}
+:root[data-theme="ynov"] .top-actions { grid-column: 3; grid-row: 1; align-self: center; }
+:root[data-theme="ynov"] .status-dot { box-shadow: none; background: var(--ynov-cyber); }
+:root[data-theme="ynov"] .header-capacity,
+:root[data-theme="ynov"] .header-prestige-button { border-radius: 2px; }
+:root[data-theme="ynov"] #header-capacity-bar { background: var(--ynov-primary); }
+:root[data-theme="ynov"] .header-prestige-button:not([disabled]) { border-color: var(--ynov-primary); color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] .online-dot { background: var(--ynov-cyber); box-shadow: none; }
+:root[data-theme="ynov"] .icon-button {
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+:root[data-theme="ynov"] .icon-button:hover { border-color: var(--ynov-primary); color: var(--ynov-primary-bright); transform: none; }
+
+/* Filet de masthead pleine largeur sous la topbar */
+:root[data-theme="ynov"] .ynov-masthead-rule {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 30px;
+  padding: 0 24px;
+  background: var(--ynov-primary);
+  color: #04201d;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+:root[data-theme="ynov"] .ynov-edition-no {
+  font-weight: 800; letter-spacing: .2em;
+  padding-right: 14px; border-right: 1px solid rgba(4, 32, 29, .35);
+}
+:root[data-theme="ynov"] .ynov-ticker {
+  letter-spacing: .04em; text-transform: none; font-weight: 600; font-size: 12px;
+}
+:root[data-theme="ynov"] .ynov-ticker.ynov-ticker-in { animation: ynovTickerIn .4s ease; }
+@keyframes ynovTickerIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* =============================================================
+   GRILLE : panneaux à plat séparés par filets
+   ============================================================= */
+:root[data-theme="ynov"] .dashboard {
+  height: calc(100vh - 56px - 30px);
+  gap: 1px;
+  padding: 0;
+  background: var(--line);
+  grid-template-columns: minmax(290px, 23vw) minmax(440px, 1fr) minmax(320px, 26vw);
+}
+:root[data-theme="ynov"] .left-panel,
+:root[data-theme="ynov"] .right-panel,
+:root[data-theme="ynov"] .center-stage {
+  margin: 0; border: 0; border-radius: 0; background: var(--panel);
+}
+
+/* En-têtes de section éditoriaux */
+:root[data-theme="ynov"] .section-title,
+:root[data-theme="ynov"] .shop-header {
+  margin: 0; padding: 14px 18px 10px;
+  border-bottom: 2px solid var(--line);
+  font-family: var(--ynov-font);
+}
+:root[data-theme="ynov"] .section-title span,
+:root[data-theme="ynov"] .shop-header h2 {
+  font-weight: 800; letter-spacing: .14em; text-transform: uppercase; font-size: 12px; color: var(--text); margin: 0;
+}
+:root[data-theme="ynov"] .section-title { display: flex; align-items: center; justify-content: space-between; }
+:root[data-theme="ynov"] .text-button { color: var(--ynov-primary); font-weight: 700; letter-spacing: .08em; }
+:root[data-theme="ynov"] .panel-section { margin: 0; padding: 16px 18px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
+:root[data-theme="ynov"] .panel-section:hover { background: transparent; border-color: var(--line); }
+
+/* Profil — gros logo de niveau à droite, texte + barre à gauche */
+:root[data-theme="ynov"] .profile-section { position: relative; }
+:root[data-theme="ynov"] .profile-row h1 { font-family: var(--ynov-font); font-weight: 800; font-size: 19px; }
+:root[data-theme="ynov"] .server-avatar {
+  position: absolute; top: 14px; right: 16px;
+  width: 96px; height: 96px;
+  flex: none; border-radius: 2px; border: 1px solid var(--line);
+  box-shadow: none;
+  overflow: hidden; z-index: 1;
+  background:
+    var(--avatar-img, var(--panel-2)) center / cover no-repeat,
+    var(--panel-2);
+}
+:root[data-theme="ynov"] .server-avatar > span { display: none; }
+/* libère la place du logo à droite : texte plein-gauche + barre raccourcie */
+:root[data-theme="ynov"] .profile-section .profile-row,
+:root[data-theme="ynov"] .profile-section .level-row,
+:root[data-theme="ynov"] .profile-section > .progress { padding-right: 112px; }
+:root[data-theme="ynov"] .profile-section .profile-row > div { min-width: 0; }
+:root[data-theme="ynov"] .progress, :root[data-theme="ynov"] .progress.thin { background: var(--panel-3); border-radius: 1px; box-shadow: none; }
+:root[data-theme="ynov"] .progress span { background: var(--ynov-primary); box-shadow: none; border-radius: 1px; }
+:root[data-theme="ynov"] .progress.cpu span { background: var(--ynov-ia); }
+:root[data-theme="ynov"] .progress.ram span { background: var(--ynov-3d); }
+:root[data-theme="ynov"] .progress.network span { background: var(--ynov-cyber); }
+:root[data-theme="ynov"] .gauge-marker { box-shadow: none; }
+
+/* Les barres CPU/RAM/BANDE sont remplacées par des gauges radiales Grafana */
+:root[data-theme="ynov"] .resource-row { display: none; }
+:root[data-theme="ynov"] .ynov-gauges {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+:root[data-theme="ynov"] .yg {
+  position: relative;
+  aspect-ratio: 1 / 0.94;
+}
+:root[data-theme="ynov"] .yg-svg { display: block; width: 100%; height: 100%; }
+:root[data-theme="ynov"] .yg-track {
+  fill: none;
+  stroke: var(--panel-3);
+  stroke-width: 11;
+  stroke-linecap: round;
+}
+:root[data-theme="ynov"] .yg-value {
+  fill: none;
+  stroke-width: 11;
+  stroke-linecap: round;
+  transition: stroke-dasharray .3s ease, stroke .3s ease;
+}
+:root[data-theme="ynov"] .yg-center {
+  position: absolute;
+  left: 0; right: 0; top: 46%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  pointer-events: none;
+}
+:root[data-theme="ynov"] .yg-center strong {
+  font-family: var(--ynov-font);
+  font-weight: 800;
+  font-size: clamp(15px, 1.5vw, 22px);
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+:root[data-theme="ynov"] .yg-center span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* Jauges CPU/RAM/BANDE façon Grafana : demi-cercle + dégradé, et valeur /
+   label / sparkline RENDUS DANS L'ARC (tout en SVG, comme l'exemple). */
+:root[data-theme="ynov"] .yg2-svg { display: block; width: 100%; height: auto; }
+/* bases d'arc à plat (butt) : pas de capuchon rond qui déborde sous la ligne de base */
+:root[data-theme="ynov"] .yg2-thin { fill: none; stroke-width: 2.5; stroke-linecap: butt; }
+:root[data-theme="ynov"] .yg2-track { fill: none; stroke: #2a2f37; stroke-width: 9; stroke-linecap: butt; }
+:root[data-theme="ynov"] .yg2-val {
+  fill: none; stroke-width: 9; stroke-linecap: butt;
+  transition: stroke-dasharray .35s ease;
+}
+:root[data-theme="ynov"] .yg2-num {
+  fill: #f4f6f8; font-family: var(--ynov-font); font-weight: 800;
+  text-anchor: middle; font-variant-numeric: tabular-nums;
+  /* font-size posée en inline (adaptée à la longueur de la valeur) */
+}
+:root[data-theme="ynov"] .yg2-lbl {
+  fill: var(--muted); font-weight: 700; font-size: 7px; letter-spacing: .3px; text-anchor: middle;
+}
+:root[data-theme="ynov"] .yg2-spark { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+/* Cartes stats du panneau gauche → cartouches nets */
+:root[data-theme="ynov"] .metric-card {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 2px;
+}
+:root[data-theme="ynov"] .metric-card span { color: var(--faint); letter-spacing: .06em; }
+:root[data-theme="ynov"] .metric-card strong { color: var(--text); font-family: var(--ynov-font); font-weight: 800; }
+:root[data-theme="ynov"] .metric-icon { background: var(--panel-3); border: 1px solid var(--line); color: var(--ynov-primary); border-radius: 2px; }
+:root[data-theme="ynov"] .metric-live-dot { background: var(--ynov-cyber); box-shadow: none; }
+/* graphe req/s : aplat — pas de grille fantôme ni de glow sur le tracé */
+:root[data-theme="ynov"] .sparkline { background: none; }
+:root[data-theme="ynov"] .spark-line { stroke: var(--ynov-primary); stroke-width: 2; filter: none; }
+:root[data-theme="ynov"] .spark-point { fill: var(--ynov-primary-bright); filter: none; stroke: none; }
+
+/* Retrait du doublon "REQUÊTES TRAITÉES" (déjà en compteur central + bande) */
+:root[data-theme="ynov"] .metric-card.metric-wide { display: none; }
+/* Grille : REQUÊTES/SEC pleine largeur, puis UTILISATEURS + BANDE PASSANTE côte à côte */
+:root[data-theme="ynov"] .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+:root[data-theme="ynov"] .metric-card { padding: 14px; }
+:root[data-theme="ynov"] .metric-card:has(.sparkline) { grid-column: 1 / -1; }
+:root[data-theme="ynov"] .metric-bp-ynov { display: flex; flex-direction: column; gap: 4px; }
+:root[data-theme="ynov"] .metric-card .metric-heading span,
+:root[data-theme="ynov"] .metric-card > span { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+/* Graphe req/s agrandi */
+:root[data-theme="ynov"] .metric-card .sparkline { height: 72px; margin-top: 10px; }
+:root[data-theme="ynov"] #rps-stat { font-size: 26px; color: var(--ynov-primary-bright); }
+/* UTILISATEURS + BANDE PASSANTE : cartes stat soignées
+   (liseré coloré + filigrane d'icône dans l'angle + chiffres tabulaires) */
+:root[data-theme="ynov"] .metrics .metric-card:has(#users-stat),
+:root[data-theme="ynov"] .metric-bp-ynov {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 12px 14px; border-left: 3px solid var(--accent, var(--ynov-primary));
+}
+:root[data-theme="ynov"] .metrics .metric-card:has(#users-stat) {
+  --accent: var(--ynov-info);
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='8' r='3.2'/%3E%3Cpath d='M2.5 20c0-3.4 2.9-5 6.5-5s6.5 1.6 6.5 5'/%3E%3Cpath d='M16.6 5.3a2.8 2.8 0 0 1 0 5.4'/%3E%3Cpath d='M17 15.2c2.6 .3 4.5 2 4.5 4.8'/%3E%3C/svg%3E");
+}
+:root[data-theme="ynov"] .metric-bp-ynov {
+  --accent: var(--ynov-cyber);
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Crect x='3' y='13' width='3.6' height='8' rx='1.2'/%3E%3Crect x='10.2' y='8' width='3.6' height='13' rx='1.2'/%3E%3Crect x='17.4' y='3' width='3.6' height='18' rx='1.2'/%3E%3C/svg%3E");
+}
+:root[data-theme="ynov"] .metrics .metric-card:has(#users-stat)::after,
+:root[data-theme="ynov"] .metric-bp-ynov::after {
+  content: ""; position: absolute; right: -6px; bottom: -9px; z-index: -1;
+  width: 48px; height: 48px; opacity: .14; pointer-events: none;
+  background: var(--accent);
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+:root[data-theme="ynov"] #users-stat,
+:root[data-theme="ynov"] #ynov-bp-value {
+  font-family: var(--ynov-font); font-weight: 800; line-height: 1;
+  letter-spacing: -.01em; font-variant-numeric: tabular-nums;
+}
+:root[data-theme="ynov"] #users-stat { font-size: 24px; color: var(--ynov-info); }
+:root[data-theme="ynov"] #ynov-bp-value { font-size: 22px; color: var(--ynov-cyber); }
+
+/* =============================================================
+   CENTRE = LA UNE : compteur-titre géant + chiffres-clés
+   ============================================================= */
+:root[data-theme="ynov"] .center-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  gap: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+/* Bandeau événement = surtitre d'actualité (aplat, sans glassmorphism) */
+:root[data-theme="ynov"] .event-banner {
+  max-width: 560px; margin: 14px auto 6px;
+  --fam: var(--ynov-ia);
+  border: 1px solid var(--line); border-left: 4px solid var(--fam); border-radius: 2px;
+  background: var(--panel-2); font-family: var(--ynov-font);
+  box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-theme="ynov"] .event-banner.danger { --fam: var(--red); }
+:root[data-theme="ynov"] .event-banner.bonus { --fam: var(--ynov-cyber); }
+/* pastille icône carrée teintée filière (au lieu du cercle de base) */
+:root[data-theme="ynov"] .event-banner .event-icon {
+  border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--fam) 45%, var(--line));
+  background: color-mix(in srgb, var(--fam) 16%, var(--panel-3)); color: var(--fam);
+}
+:root[data-theme="ynov"] .event-banner strong { font-family: var(--ynov-font); font-weight: 800; color: var(--text); }
+:root[data-theme="ynov"] .event-banner small { color: var(--muted); }
+/* effet (« Production -65% · Clic -40% ») = étiquette nette */
+:root[data-theme="ynov"] .event-banner .event-effect {
+  border-radius: 2px; background: color-mix(in srgb, var(--fam) 14%, var(--panel-3));
+  color: var(--fam); font-family: var(--ynov-font); font-weight: 800;
+  font-variant-numeric: tabular-nums; letter-spacing: .02em;
+}
+:root[data-theme="ynov"] .event-banner.bonus .event-effect { color: var(--ynov-cyber); }
+:root[data-theme="ynov"] .event-banner .event-timer { background: var(--panel-3); }
+:root[data-theme="ynov"] .event-banner .event-timer span { background: var(--fam); }
+
+/* =============================================================
+   NOTIFICATIONS (toasts) — habillage éditorial + ancrées EN BAS
+   AU CENTRE de la colonne centrale (au lieu du coin bas-droite).
+   pointer-events:none → les clics traversent vers la scène.
+   ============================================================= */
+:root[data-theme="ynov"] .toast-container {
+  right: auto; left: 50%; transform: translateX(-50%);
+  bottom: 22px; width: min(384px, 92vw);
+  justify-items: stretch; pointer-events: none;
+}
+:root[data-theme="ynov"] .toast {
+  --fam: var(--ynov-primary);
+  grid-template-columns: 30px 1fr; gap: 11px; padding: 12px 13px;
+  border: 1px solid var(--line); border-left: 3px solid var(--fam); border-radius: 2px;
+  background: var(--panel-2); box-shadow: 0 12px 30px rgba(0, 0, 0, .5);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  font-family: var(--ynov-font);
+}
+:root[data-theme="ynov"] .toast.danger { --fam: var(--red); }
+:root[data-theme="ynov"] .toast.bonus { --fam: var(--ynov-cyber); }
+:root[data-theme="ynov"] .toast.achievement { --fam: var(--ynov-ia); }
+:root[data-theme="ynov"] .toast > span {
+  width: 30px; height: 30px; border-radius: 2px; font-weight: 800;
+  border: 1px solid color-mix(in srgb, var(--fam) 40%, var(--line));
+  background: color-mix(in srgb, var(--fam) 16%, var(--panel-3)); color: var(--fam);
+}
+:root[data-theme="ynov"] .toast strong { font-family: var(--ynov-font); font-weight: 800; font-size: 12px; color: var(--text); letter-spacing: .01em; }
+:root[data-theme="ynov"] .toast small { color: var(--muted); font-size: 10.5px; line-height: 1.35; }
+
+/* LE GESTE SIGNATURE : compteur = titre de Une */
+:root[data-theme="ynov"] .request-counter {
+  margin: 0;
+  padding: 22px 32px 16px;
+  text-align: center;
+  overflow: clip;
+  border-bottom: 1px solid var(--line);
+}
+:root[data-theme="ynov"] .request-counter > span {
+  display: block;
+  font-weight: 700; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 6px;
+}
+:root[data-theme="ynov"] .request-counter > strong {
+  display: inline-block;
+  font-family: var(--ynov-font);
+  font-weight: 800;
+  font-size: clamp(54px, 9vw, 132px);
+  line-height: .9;
+  letter-spacing: -.025em;
+  color: var(--text);
+  border-bottom: 4px solid var(--ynov-primary);
+  padding-bottom: 8px;
+}
+:root[data-theme="ynov"] .request-counter small {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted); font-weight: 600; letter-spacing: .04em; font-size: 13px;
+}
+:root[data-theme="ynov"] .request-counter small span { color: var(--ynov-primary-bright); }
+
+/* Logo Ynov central, cliquable (élément de jeu #server-button) */
+:root[data-theme="ynov"] .pulse-ring,
+:root[data-theme="ynov"] .server-glow,
+:root[data-theme="ynov"] .rack-floor { display: none; }
+:root[data-theme="ynov"] .server-zone {
+  display: grid; place-items: center;
+  width: auto; height: auto; min-height: 0; margin: 0; perspective: none;
+}
+:root[data-theme="ynov"] .server-button {
+  position: relative;
+  width: min(240px, 26vw);
+  aspect-ratio: 100 / 40;
+  filter: none;
+  transition: transform .12s ease;
+}
+:root[data-theme="ynov"] .server-button img { visibility: hidden; }
+/* le visuel central Ynov est toujours le logo campus, jamais l'icône d'un DLC */
+:root[data-theme="ynov"] .dlc-clicker-icon { display: none; }
+:root[data-theme="ynov"] .server-button::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--ynov-primary);
+  -webkit-mask: url("/img/ynov-logo.svg") center / contain no-repeat;
+  mask: url("/img/ynov-logo.svg") center / contain no-repeat;
+}
+:root[data-theme="ynov"] .server-button:hover { transform: translateY(-2px); }
+:root[data-theme="ynov"] .server-button:hover::after { background: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] .server-button:active { transform: scale(.97); }
+
+/* Rangée centrale : combo (gauche) · logo (centre) · surcharge (droite) */
+:root[data-theme="ynov"] .ynov-stage-mid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 32px;
+  border-bottom: 1px solid var(--line);
+}
+:root[data-theme="ynov"] .ynov-stage-mid #combo-meter { justify-self: center; }
+:root[data-theme="ynov"] .ynov-stage-mid #overclock-button { justify-self: center; }
+
+/* COMBO en gauge RADIALE (même style que les jauges CPU) : affiche le
+   multiplicateur atteint, ne réagit pas à chaque clic. */
+:root[data-theme="ynov"] #combo-meter {
+  width: 184px; min-height: 0;
+  display: grid; place-items: center;
+  padding: 4px;
+  background: transparent; border: 0;
+}
+/* On masque l'ancienne présentation verticale (réutilisée par les autres thèmes) */
+:root[data-theme="ynov"] #combo-meter .combo-head,
+:root[data-theme="ynov"] #combo-meter .combo-track,
+:root[data-theme="ynov"] #combo-meter #combo-hint { display: none; }
+/* La gauge radiale injectée */
+#ynov-combo-arc { display: none; }
+:root[data-theme="ynov"] #ynov-combo-arc { display: block; width: 100%; aspect-ratio: 1 / 0.94; position: relative; }
+:root[data-theme="ynov"] #ynov-combo-arc .yg-track,
+:root[data-theme="ynov"] #ynov-combo-arc .yg-value { stroke-width: 9; }
+:root[data-theme="ynov"] #ynov-combo-arc .yg-center strong {
+  color: var(--combo-color, var(--ynov-primary-bright));
+  font-size: clamp(22px, 2.4vw, 32px);
+  transition: color .3s ease;
+}
+:root[data-theme="ynov"] #ynov-combo-arc .yg-center span { font-size: 10px; }
+
+/* SURCHARGE : bouton "boost" soigné à droite, équilibré avec le combo */
+:root[data-theme="ynov"] #overclock-button {
+  width: 100%; max-width: 184px; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: 18px 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 2px;
+  text-align: center;
+  transition: border-color .2s ease, background .2s ease, transform .1s ease, box-shadow .2s ease;
+}
+:root[data-theme="ynov"] #overclock-button .overclock-ring { width: 92px; height: 92px; }
+:root[data-theme="ynov"] #overclock-button .overclock-glyph { width: 28px; height: 28px; color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] #overclock-button .action-status-text { display: flex; flex-direction: column; gap: 2px; }
+:root[data-theme="ynov"] #overclock-button strong {
+  color: var(--text); font-weight: 800; font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
+}
+:root[data-theme="ynov"] #overclock-button small { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+/* Désactivée (charge en cours) : sobre et atténuée */
+:root[data-theme="ynov"] #overclock-button[disabled] { opacity: .82; }
+:root[data-theme="ynov"] #overclock-button[disabled] .overclock-glyph { color: var(--faint); }
+/* Prête : double liseré teal franc (aplat, sans halo), glyphe vif, invite au clic */
+:root[data-theme="ynov"] #overclock-button:not([disabled]) {
+  border-color: var(--ynov-primary); cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(31, 158, 145, .35);
+}
+:root[data-theme="ynov"] #overclock-button:not([disabled]):hover { background: var(--panel-3); transform: translateY(-2px); }
+:root[data-theme="ynov"] #overclock-button:not([disabled]) strong { color: var(--ynov-primary-bright); }
+
+/* La barre d'actions d'origine est vidée (combo/surcharge/menus déplacés) */
+:root[data-theme="ynov"] .action-bar,
+:root[data-theme="ynov"] .action-status { display: none; }
+
+/* Bande CHIFFRES-CLÉS retirée (remplacée par capacité/prestige sous TRAITER) */
+:root[data-theme="ynov"] .ynov-figures { display: none; }
+
+/* Menus rangés dans Infrastructure, sous deux sous-catégories Tuning / Skills */
+:root[data-theme="ynov"] .ynov-menu-slot {
+  display: flex; flex-direction: column; gap: 10px; flex: 0 0 auto;
+  padding: 12px; border-top: 2px solid var(--line); background: var(--panel);
+}
+:root[data-theme="ynov"] .ynov-cat-label {
+  display: block; margin-bottom: 6px;
+  font-family: var(--ynov-font); font-weight: 800; font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--faint);
+}
+:root[data-theme="ynov"] .ynov-cat-items { display: grid; grid-template-columns: 1fr; gap: 6px; }
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button { min-height: 0; padding: 8px 11px; grid-template-columns: 40px 1fr auto; }
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-text small { display: none; }
+/* Icônes des menus = images fournies (tuning / certification / missions) */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-icon {
+  width: 40px; height: 40px; border: 0; background: transparent;
+  background-size: contain; background-position: center; background-repeat: no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .5));
+}
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-icon svg { display: none; }
+:root[data-theme="ynov"] .upgrades-launch .menu-launch-icon { background-image: url("/img/buildings/tuning.png"); }
+:root[data-theme="ynov"] .certifications-launch .menu-launch-icon { background-image: url("/img/buildings/certification.png"); }
+:root[data-theme="ynov"] .missions-launch .menu-launch-icon { background-image: url("/img/buildings/missions.png"); }
+:root[data-theme="ynov"] .ynov-fig {
+  flex: 1 1 0;
+  min-width: 120px;
+  padding: 16px 18px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+:root[data-theme="ynov"] .ynov-fig:last-child { border-right: 0; }
+:root[data-theme="ynov"] .ynov-fig strong {
+  font-family: var(--ynov-font); font-weight: 800; font-size: clamp(20px, 2vw, 30px); color: var(--text); line-height: 1;
+}
+:root[data-theme="ynov"] .ynov-fig:nth-child(2) strong { color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] .ynov-fig span { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+
+/* Bouton TRAITER = bouton central sous le logo */
+:root[data-theme="ynov"] .process-button {
+  margin: 20px auto 0;
+  width: min(360px, 80%);
+  height: 56px;
+  border: 0; border-radius: 2px;
+  background: var(--ynov-primary);
+  box-shadow: none;
+  font-family: var(--ynov-font); font-weight: 800; letter-spacing: .14em;
+  color: #04201d;
+  transition: background .14s ease, transform .1s ease;
+}
+:root[data-theme="ynov"] .process-button:hover { background: var(--ynov-primary-bright); box-shadow: none; }
+:root[data-theme="ynov"] .process-button:active { transform: translateY(1px); }
+:root[data-theme="ynov"] .process-button span,
+:root[data-theme="ynov"] .process-button strong { color: #04201d; font-family: var(--ynov-font); }
+:root[data-theme="ynov"] .play-hints { justify-content: center; padding: 10px 32px 0; color: var(--faint); }
+
+/* Barre d'actions (combo/surcharge/menus) */
+:root[data-theme="ynov"] .action-bar { width: 100%; margin: 16px 0 0; padding: 0 32px 24px; gap: 10px; }
+:root[data-theme="ynov"] .combo-meter,
+:root[data-theme="ynov"] .overclock-button,
+:root[data-theme="ynov"] .menu-launch-button {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 2px; box-shadow: none;
+}
+:root[data-theme="ynov"] .combo-meter strong { color: var(--ynov-primary); }
+:root[data-theme="ynov"] .combo-track { background: var(--panel-3); }
+:root[data-theme="ynov"] .combo-track span { background: var(--ynov-primary); box-shadow: none; }
+:root[data-theme="ynov"] .overclock-ring { background: conic-gradient(var(--ynov-primary) var(--charge), var(--panel-3) 0); }
+:root[data-theme="ynov"] .menu-launch-icon { background: var(--panel-3); border: 1px solid var(--line); color: var(--ynov-primary); border-radius: 2px; }
+:root[data-theme="ynov"] .menu-launch-button strong { color: var(--text); font-family: var(--ynov-font); }
+:root[data-theme="ynov"] .menu-launch-button em { background: var(--panel-3); border: 1px solid var(--line); border-radius: 2px; color: var(--ynov-primary-bright); font-family: var(--ynov-font); }
+:root[data-theme="ynov"] .menu-launch-button::before { display: none; }
+:root[data-theme="ynov"] .menu-launch-button:hover { background: var(--panel-3); border-color: var(--ynov-primary); transform: none; }
+/* Identité couleur par menu (formations) */
+:root[data-theme="ynov"] .upgrades-launch .menu-launch-icon { color: var(--ynov-tech); }
+:root[data-theme="ynov"] .certifications-launch .menu-launch-icon { color: var(--ynov-info); }
+:root[data-theme="ynov"] .missions-launch .menu-launch-icon { color: var(--ynov-cyber); }
+
+/* =============================================================
+   MENUS Tuning/Skills — survol :
+   (1) shine — traînée lumineuse diagonale qui balaie le bouton,
+   (2) deux traits penchés en diagonale, collés juste après le logo,
+   (3) libellé en typo YNOV (Montserrat) gras MAJUSCULE, coloré.
+   ============================================================= */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  --fam: var(--ynov-primary-bright);
+  --msg: "Go !";
+  background: var(--panel-2);
+  transition: border-color .2s ease;
+}
+:root[data-theme="ynov"] .ynov-menu-slot .upgrades-launch { --fam: #2bc7b6; --msg: "Tune ton infra !"; }
+:root[data-theme="ynov"] .ynov-menu-slot .certifications-launch { --fam: #5ec5ea; --msg: "Valide tes skills !"; }
+:root[data-theme="ynov"] .ynov-menu-slot .missions-launch { --fam: #5affb6; --msg: "Relève le défi !"; }
+
+/* survol : liseré famille (le fond plein + le message arrivent via ::after) */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover {
+  border-color: var(--fam);
+}
+/* compteur 0/x : pastille rouge pleine, en gras, dans l'angle haut-droit */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button em {
+  position: absolute; top: 0; right: 0;
+  min-width: 0; height: auto; padding: 3px 7px;
+  background: var(--red); border: 0; border-radius: 0 2px 0 8px;
+  color: #fff; font-family: var(--ynov-font); font-weight: 800; font-size: 10px;
+  letter-spacing: .02em; line-height: 1.15; z-index: 4;
+}
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button em.complete { background: var(--ynov-cyber); color: #04201d; }
+
+/* COULEUR PLEINE + MESSAGE : le fond plein et le message se révèlent de GAUCHE À DROITE.
+   Décalé à droite du logo + des traits ; le logo reste visible au-dessus (z-index 4). */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::after {
+  content: var(--msg);
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  display: flex; align-items: center; justify-content: center; padding: 0 14px 0 78px;
+  background: var(--fam); color: #04201d;
+  font-family: var(--ynov-font); font-weight: 800; font-size: 12.5px;
+  letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path .34s cubic-bezier(.22, .61, .36, 1);
+}
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover::after,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible::after,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover::after {
+  clip-path: inset(0 0 0 0);
+}
+
+/* (2) DEUX TRAITS PENCHÉS PARALLÈLES, juste après le logo, au-dessus du fond plein */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::before {
+  content: ""; display: block;
+  position: absolute; left: 56px; top: 50%; z-index: 4;
+  width: 15px; height: 22px;
+  transform: translateY(-50%);
+  background: linear-gradient(118deg,
+    transparent 0 26%, #04201d 26% 42%,
+    transparent 42% 60%, #04201d 60% 76%,
+    transparent 76%);
+  opacity: 0;
+  transition: opacity .2s ease .12s;
+}
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover::before,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible::before,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover::before {
+  opacity: 1;
+}
+
+/* (3) LIBELLÉ en typo YNOV gras MAJUSCULE coloré, décalé après les traits */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button .menu-launch-text strong {
+  font-family: var(--ynov-font);
+  transition: color .2s ease, letter-spacing .2s ease, transform .26s cubic-bezier(.22, .61, .36, 1);
+}
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover .menu-launch-text strong,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible .menu-launch-text strong,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover .menu-launch-text strong {
+  color: var(--fam); font-weight: 800; text-transform: uppercase; letter-spacing: .07em;
+  transform: translateX(16px);
+}
+
+/* le LOGO reste visible au-dessus du fond plein (z-index 4), léger pop */
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button .menu-launch-icon {
+  position: relative; z-index: 4; transition: transform .2s ease;
+}
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover .menu-launch-icon,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible .menu-launch-icon,
+:root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover .menu-launch-icon { transform: scale(1.06); }
+
+/* Accessibilité : mouvement réduit → fond + message instantanés (pas de balayage) */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button { transition: border-color .2s ease; }
+  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::after { transition: none; }
+  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::before { transition: opacity .12s ease; }
+  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover .menu-launch-icon,
+  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible .menu-launch-icon,
+  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover .menu-launch-icon { transform: none; }
+}
+
+/* =============================================================
+   PANNEAU DROIT = SOMMAIRE / INDEX (folios + liseré filière)
+   ============================================================= */
+:root[data-theme="ynov"] .shop-header { display: flex; align-items: center; justify-content: space-between; }
+:root[data-theme="ynov"] .buy-modes { border: 1px solid var(--line); border-radius: 2px; overflow: hidden; gap: 0; }
+:root[data-theme="ynov"] .buy-mode { border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--panel-2); color: var(--muted); font-family: var(--ynov-font); font-weight: 700; }
+:root[data-theme="ynov"] .buy-mode:last-child { border-right: 0; }
+:root[data-theme="ynov"] .buy-mode.active { background: var(--ynov-primary); color: #04201d; }
+/* Résumé Infra (PRODUCTION + ÉQUIPEMENTS) entièrement retiré */
+:root[data-theme="ynov"] .shop-summary { display: none; }
+/* bandeau de recommandation (« Conseillé … est disponible ») masqué */
+:root[data-theme="ynov"] .shop-guidance { display: none; }
+
+:root[data-theme="ynov"] .right-panel { display: flex; flex-direction: column; }
+:root[data-theme="ynov"] .building-list {
+  padding: 1px 0 0; gap: 1px;
+  display: grid; grid-template-columns: 1fr 1fr; align-items: stretch;
+  grid-auto-rows: minmax(68px, 1fr);
+  counter-reset: bldg;
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  background: var(--line);
+}
+:root[data-theme="ynov"] .building-card {
+  min-height: 0; height: auto;
+  margin: 0; padding: 9px 10px 9px 12px;
+  border: 0; border-radius: 0;
+  background: var(--panel); position: relative;
+  grid-template-columns: 56px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  /* neutralise l'animation d'entrée (translateX + transition-delay décalée)
+     qui faisait dériver les 2 colonnes */
+  transform: none !important;
+  opacity: 1 !important;
+  transition: background .15s ease, border-color .15s ease;
+}
+:root[data-theme="ynov"] .building-info { min-width: 0; }
+/* Liseré filière (mapping en dur par data-building) */
+:root[data-theme="ynov"] .building-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--fam, var(--ynov-primary)); opacity: .9;
+}
+:root[data-theme="ynov"] .building-card[data-building="bash"],
+:root[data-theme="ynov"] .building-card[data-building="kubernetes"] { --fam: var(--ynov-ia); }
+:root[data-theme="ynov"] .building-card[data-building="pi"],
+:root[data-theme="ynov"] .building-card[data-building="mini"],
+:root[data-theme="ynov"] .building-card[data-building="switch"] { --fam: var(--ynov-tech); }
+:root[data-theme="ynov"] .building-card[data-building="nas"],
+:root[data-theme="ynov"] .building-card[data-building="serverroom"] { --fam: var(--ynov-info); }
+:root[data-theme="ynov"] .building-card[data-building="firewall"] { --fam: var(--ynov-cyber); }
+:root[data-theme="ynov"] .building-card[data-building="rack"],
+:root[data-theme="ynov"] .building-card[data-building="datacenter"] { --fam: var(--ynov-archi); }
+:root[data-theme="ynov"] .building-card[data-building="privatecloud"],
+:root[data-theme="ynov"] .building-card[data-building="worldcloud"] { --fam: var(--ynov-3d); }
+:root[data-theme="ynov"] .building-card:hover { background: var(--panel-2); }
+:root[data-theme="ynov"] .building-card.recommended { background: rgba(31, 158, 145, .07); }
+:root[data-theme="ynov"] .building-card.unaffordable { opacity: .5; }
+:root[data-theme="ynov"] .building-icon {
+  width: 56px; height: 56px; border-radius: 9px;
+  background: radial-gradient(120% 120% at 50% 20%, rgba(31, 158, 145, .14), var(--panel-3));
+  border: 1px solid var(--line-soft); color: var(--ynov-primary);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .04); font-size: 18px; overflow: hidden;
+}
+/* Image intégrée dans une zone : remplit le cadre (sans détourage flottant) */
+:root[data-theme="ynov"] .building-icon.has-img {
+  padding: 0;
+  border-color: color-mix(in srgb, var(--fam, var(--ynov-primary)) 50%, var(--line));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(0, 0, 0, .18)),
+    radial-gradient(120% 120% at 50% 12%, color-mix(in srgb, var(--fam, var(--ynov-primary)) 26%, var(--panel-3)), var(--panel-3));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
+}
+:root[data-theme="ynov"] .building-icon.has-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: none; mix-blend-mode: normal;
+}
+/* Assets non récupérables : zone + image grisées (priorité sur le filter:none ci-dessus) */
+:root[data-theme="ynov"] .building-card[aria-disabled="true"] .building-icon.has-img img {
+  filter: grayscale(1) brightness(.55) contrast(.9);
+}
+:root[data-theme="ynov"] .building-card[aria-disabled="true"] .building-icon.has-img {
+  filter: saturate(.2);
+  border-color: var(--line);
+  background: var(--panel-3);
+}
+:root[data-theme="ynov"] .building-name {
+  font-family: var(--ynov-font); font-weight: 700; font-size: 12px; color: var(--text);
+  white-space: normal; line-height: 1.15;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+:root[data-theme="ynov"] .building-output { color: var(--faint); font-size: 8px; }
+:root[data-theme="ynov"] .building-buy { text-align: right; }
+:root[data-theme="ynov"] .building-owned { color: var(--text); font-family: var(--ynov-font); font-weight: 800; font-size: 15px; line-height: 1; }
+:root[data-theme="ynov"] .building-price { color: var(--ynov-ia); font-family: var(--ynov-font); font-weight: 700; font-size: 9px; }
+:root[data-theme="ynov"] .building-affordability { background: var(--panel-3); }
+:root[data-theme="ynov"] .building-affordability i { background: var(--ynov-primary); }
+
+/* =============================================================
+   STATISTIQUES — « INFRASTRUCTURE / Parc déployé »
+   Galerie filière : grande vignette image + jauge + production.
+   ============================================================= */
+:root[data-theme="ynov"] .building-stats {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+}
+:root[data-theme="ynov"] .building-stat-row {
+  --fam: var(--ynov-primary);
+  position: relative; overflow: hidden; min-width: 0;
+  grid-template-columns: 64px minmax(0, 1fr); column-gap: 12px; row-gap: 5px;
+  align-items: stretch;
+  padding: 11px 13px 11px 15px;
+  background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--fam);
+  border-radius: 2px;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+:root[data-theme="ynov"] .building-stat-row:hover { background: var(--panel-3); transform: translateY(-1px); }
+:root[data-theme="ynov"] .building-stat-row.empty { opacity: .45; }
+/* mapping filière (identique à la boutique) */
+:root[data-theme="ynov"] .building-stat-row[data-building="bash"],
+:root[data-theme="ynov"] .building-stat-row[data-building="kubernetes"] { --fam: var(--ynov-ia); }
+:root[data-theme="ynov"] .building-stat-row[data-building="pi"],
+:root[data-theme="ynov"] .building-stat-row[data-building="mini"],
+:root[data-theme="ynov"] .building-stat-row[data-building="switch"] { --fam: var(--ynov-tech); }
+:root[data-theme="ynov"] .building-stat-row[data-building="nas"],
+:root[data-theme="ynov"] .building-stat-row[data-building="serverroom"] { --fam: var(--ynov-info); }
+:root[data-theme="ynov"] .building-stat-row[data-building="firewall"] { --fam: var(--ynov-cyber); }
+:root[data-theme="ynov"] .building-stat-row[data-building="rack"],
+:root[data-theme="ynov"] .building-stat-row[data-building="datacenter"] { --fam: var(--ynov-archi); }
+:root[data-theme="ynov"] .building-stat-row[data-building="privatecloud"],
+:root[data-theme="ynov"] .building-stat-row[data-building="worldcloud"] { --fam: var(--ynov-3d); }
+
+/* vignette image (colonne de gauche, hauteur pleine carte), cadre teinté filière */
+:root[data-theme="ynov"] .building-stat-icon {
+  grid-row: 1 / -1; align-self: stretch;
+  width: 64px; height: auto; min-height: 64px; border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--fam) 45%, var(--line));
+  background: color-mix(in srgb, var(--fam) 14%, var(--panel-3));
+  color: var(--fam); font-family: var(--ynov-font); font-size: 22px;
+}
+:root[data-theme="ynov"] .building-stat-icon.has-img {
+  padding: 0; overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(0, 0, 0, .18)),
+    radial-gradient(120% 120% at 50% 12%, color-mix(in srgb, var(--fam) 26%, var(--panel-3)), var(--panel-3));
+}
+:root[data-theme="ynov"] .building-stat-icon.has-img img { object-fit: cover; }
+
+/* infos : nom + compteur (accent filière) */
+:root[data-theme="ynov"] .building-stat-info > div:first-child { align-items: baseline; }
+:root[data-theme="ynov"] .building-stat-info strong { font-family: var(--ynov-font); font-weight: 700; font-size: 12.5px; color: var(--text); }
+:root[data-theme="ynov"] .building-stat-info span { font-family: var(--ynov-font); font-weight: 700; font-size: 9px; letter-spacing: .03em; color: var(--fam); }
+:root[data-theme="ynov"] .building-stat-bar { height: 5px; margin-top: 7px; border-radius: 0; background: var(--panel); }
+:root[data-theme="ynov"] .building-stat-bar span { border-radius: 0; background: var(--fam); }
+
+/* production : sous la jauge, pleine largeur de la colonne droite */
+:root[data-theme="ynov"] .building-stat-output {
+  grid-column: 2; justify-self: start; margin-top: 1px;
+  color: var(--text); font-family: var(--ynov-font); font-weight: 800; font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+:root[data-theme="ynov"] .building-stat-output small { color: var(--faint); font-weight: 700; }
+
+@media (max-width: 760px) {
+  :root[data-theme="ynov"] .building-stats { grid-template-columns: 1fr; }
+}
+
+/* =============================================================
+   MODALES — cartouches éditoriaux
+   ============================================================= */
+:root[data-theme="ynov"] .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 2px; box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+:root[data-theme="ynov"] .modal-backdrop { background: rgba(2, 6, 5, .72); }
+:root[data-theme="ynov"] .upgrade-card,
+:root[data-theme="ynov"] .cert-card,
+:root[data-theme="ynov"] .achievement-item,
+:root[data-theme="ynov"] .prestige-summary,
+:root[data-theme="ynov"] .mission-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 2px; box-shadow: none; }
+:root[data-theme="ynov"] .primary-button,
+:root[data-theme="ynov"] .prestige-confirm-button { background: var(--ynov-primary); border-color: var(--ynov-primary); color: #04201d; }
+:root[data-theme="ynov"] .terminal-window { background: var(--bg); border: 1px solid var(--line); border-radius: 2px; }
+
+/* =============================================================
+   FENÊTRE AMÉLIORATIONS — habillage Ynov éditorial
+   (en-tête plein cadre + filtres segmentés + cartes à liseré filière)
+   ============================================================= */
+:root[data-theme="ynov"] #upgrades-modal .game-menu-modal {
+  width: min(860px, 100%); max-height: 86vh; padding: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  font-family: var(--ynov-font);
+  border: 1px solid var(--line); border-top: 3px solid var(--ynov-primary);
+}
+:root[data-theme="ynov"] #upgrades-modal .modal-heading {
+  margin: 0; padding: 20px 26px 16px; gap: 14px; flex: 0 0 auto;
+  border-bottom: 1px solid var(--line); background: var(--panel-2);
+}
+:root[data-theme="ynov"] #upgrades-modal .modal-heading h2 { font-family: var(--ynov-font); font-weight: 800; font-size: 22px; color: var(--text); }
+:root[data-theme="ynov"] #upgrades-modal .modal-heading p { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+:root[data-theme="ynov"] #upgrades-modal .modal-heading-icon {
+  width: 52px; height: 52px; border: 0; border-radius: 0;
+  background: url("/img/buildings/tuning2.png") center / contain no-repeat;
+  font-size: 0;   /* masque le glyphe ⬡ d'origine */
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .45));
+}
+:root[data-theme="ynov"] #upgrades-modal .modal-close {
+  right: 16px; top: 14px; width: 30px; height: 30px; border-radius: 2px;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--muted);
+  font-size: 18px; line-height: 1; display: grid; place-items: center;
+  transition: border-color .15s ease, color .15s ease;
+}
+:root[data-theme="ynov"] #upgrades-modal .modal-close:hover { border-color: var(--ynov-primary); color: var(--ynov-primary-bright); }
+
+/* filtres de catégorie = contrôle segmenté */
+:root[data-theme="ynov"] #upgrades-modal .upgrade-filters { gap: 6px; margin: 0; padding: 14px 26px 2px; flex: 0 0 auto; }
+:root[data-theme="ynov"] #upgrades-modal .filter-button {
+  padding: 7px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--panel-2); color: var(--muted);
+  font-family: var(--ynov-font); font-weight: 700; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+:root[data-theme="ynov"] #upgrades-modal .filter-button:hover { border-color: var(--ynov-primary); color: var(--text); }
+:root[data-theme="ynov"] #upgrades-modal .filter-button.active { background: var(--ynov-primary); border-color: var(--ynov-primary); color: #04201d; }
+
+/* grille scrollable + cartes à liseré filière */
+:root[data-theme="ynov"] #upgrades-modal .upgrade-grid {
+  padding: 12px 26px 24px; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr));
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start;
+}
+/* tuile verticale : grande image en bannière + pied compact nom/état */
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card {
+  --fam: var(--ynov-primary);
+  flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0;
+  height: auto; min-height: 138px; padding: 0; overflow: hidden;
+  background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--fam);
+  border-radius: 2px; box-shadow: none;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card:has(.upgrade-icon.devops) { --fam: var(--ynov-ia); }
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card:has(.upgrade-icon.reseau) { --fam: var(--ynov-tech); }
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card:has(.upgrade-icon.stockage) { --fam: var(--ynov-info); }
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card:has(.upgrade-icon.securite) { --fam: var(--ynov-cyber); }
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card:hover:not(.locked):not(.owned) {
+  border-color: var(--line); border-left-color: var(--fam); background: var(--panel-3); transform: translateY(-2px);
+}
+/* pied : nom + état, aligné à gauche */
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card > span {
+  width: 100%; min-width: 0; padding: 8px 10px 9px;
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+}
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card strong { font-family: var(--ynov-font); font-weight: 700; font-size: 12px; color: var(--text); }
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card small { font-family: var(--ynov-font); font-weight: 700; font-size: 9px; letter-spacing: .04em; color: var(--ynov-ia); }
+/* gain de production (info positive) : pastille verte tabulaire */
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card .upgrade-effect {
+  margin: 1px 0 0; font-style: normal; font-family: var(--ynov-font); font-weight: 800;
+  font-size: 9.5px; letter-spacing: .02em; color: var(--ynov-cyber);
+  font-variant-numeric: tabular-nums; white-space: normal;
+}
+/* fallback glyphe (amélioration sans image fournie) */
+:root[data-theme="ynov"] #upgrades-modal .upgrade-icon {
+  flex: 1 1 auto; width: 100%; min-height: 84px; height: auto; border-radius: 0;
+  border: 0; border-bottom: 1px solid color-mix(in srgb, var(--fam) 30%, var(--line));
+  background: color-mix(in srgb, var(--fam) 14%, var(--panel-3)); color: var(--fam);
+  font-family: var(--ynov-font); font-size: 30px;
+}
+/* l'image d'amélioration occupe toute la bannière de la carte */
+:root[data-theme="ynov"] #upgrades-modal .upgrade-icon.has-img {
+  flex: 1 1 auto; width: 100%; min-height: 92px; height: auto; padding: 8px;
+  border: 0; border-bottom: 1px solid color-mix(in srgb, var(--fam) 30%, var(--line)); border-radius: 0;
+  background: radial-gradient(125% 120% at 50% 24%, color-mix(in srgb, var(--fam) 20%, var(--panel-3)), var(--panel-2));
+}
+:root[data-theme="ynov"] #upgrades-modal .upgrade-icon.has-img img {
+  width: 100%; height: 100%; min-height: 76px; object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .45));
+}
+/* acquis = accent teal ; verrouillé = grisé (cadenas géré par style.css) */
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card.owned { opacity: .9; --fam: var(--ynov-primary); background: rgba(31, 158, 145, .07); }
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card.owned small { color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] #upgrades-modal .upgrade-card.locked { opacity: .42; }
+
+/* =============================================================
+   FENÊTRE CERTIFICATIONS — habillage Ynov + badges hexagonaux
+   (couleur par éditeur + monogramme ; pas de logos officiels,
+    sous copyright — remplaçables par des PNG fournis).
+   ============================================================= */
+:root[data-theme="ynov"] #certifications-modal .game-menu-modal {
+  width: min(740px, 100%); max-height: 86vh; padding: 0; overflow: hidden;
+  display: flex; flex-direction: column; font-family: var(--ynov-font);
+  border: 1px solid var(--line); border-top: 3px solid var(--ynov-primary);
+}
+:root[data-theme="ynov"] #certifications-modal .modal-heading {
+  margin: 0; padding: 20px 26px 16px; gap: 14px; flex: 0 0 auto;
+  border-bottom: 1px solid var(--line); background: var(--panel-2);
+}
+:root[data-theme="ynov"] #certifications-modal .modal-heading h2 { font-family: var(--ynov-font); font-weight: 800; font-size: 22px; color: var(--text); }
+:root[data-theme="ynov"] #certifications-modal .modal-heading p { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+:root[data-theme="ynov"] #certifications-modal .modal-heading-icon {
+  width: 52px; height: 52px; border: 0; border-radius: 0; clip-path: none;
+  background: url("/img/buildings/certification.png") center / contain no-repeat;
+  font-size: 0;   /* masque le glyphe ◆ */
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .45));
+}
+:root[data-theme="ynov"] #certifications-modal .modal-close {
+  right: 16px; top: 14px; width: 30px; height: 30px; border-radius: 2px;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--muted);
+  font-size: 18px; line-height: 1; display: grid; place-items: center;
+  transition: border-color .15s ease, color .15s ease;
+}
+:root[data-theme="ynov"] #certifications-modal .modal-close:hover { border-color: var(--ynov-primary); color: var(--ynov-primary-bright); }
+
+/* bloc prestige en tête de la modale */
+:root[data-theme="ynov"] #certifications-modal .prestige-summary {
+  margin: 14px 26px 0; padding: 14px 16px; flex: 0 0 auto;
+  background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--ynov-3d); border-radius: 2px;
+}
+
+/* grille scrollable */
+:root[data-theme="ynov"] #certifications-modal .certification-grid {
+  padding: 14px 26px 24px; gap: 8px; margin: 12px 0 0; grid-template-columns: repeat(2, 1fr);
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start;
+}
+
+/* cartes : liseré éditeur + badge hexagonal coloré */
+:root[data-theme="ynov"] #certifications-modal .cert-card {
+  --certc: var(--ynov-primary);
+  grid-template-columns: 46px 1fr auto; gap: 12px; padding: 10px 12px;
+  background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--certc);
+  border-radius: 2px; box-shadow: none;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+:root[data-theme="ynov"] #certifications-modal .cert-card[data-certification="lpic"] { --certc: var(--ynov-cyber); }
+:root[data-theme="ynov"] #certifications-modal .cert-card[data-certification="rhcsa"],
+:root[data-theme="ynov"] #certifications-modal .cert-card[data-certification="rhce"] { --certc: var(--red); }
+:root[data-theme="ynov"] #certifications-modal .cert-card[data-certification="ccna"],
+:root[data-theme="ynov"] #certifications-modal .cert-card[data-certification="ccnp"] { --certc: var(--ynov-tech); }
+:root[data-theme="ynov"] #certifications-modal .cert-card[data-certification="cka"],
+:root[data-theme="ynov"] #certifications-modal .cert-card[data-certification="ckad"] { --certc: var(--ynov-info); }
+:root[data-theme="ynov"] #certifications-modal .cert-card[data-certification="cissp"] { --certc: var(--ynov-3d); }
+:root[data-theme="ynov"] #certifications-modal .cert-card:hover:not(.owned) {
+  border-color: var(--line); border-left-color: var(--certc); background: var(--panel-3); transform: translateY(-1px);
+}
+:root[data-theme="ynov"] #certifications-modal .cert-icon {
+  width: 44px; height: 48px; flex: 0 0 44px; border: 0; border-radius: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: color-mix(in srgb, var(--certc) 24%, var(--panel));
+  color: var(--certc); font-family: var(--ynov-font); font-weight: 800; font-size: 14px;
+}
+/* badge image fourni : on retire l'hexagone et on montre le logo */
+:root[data-theme="ynov"] #certifications-modal .cert-icon.has-img {
+  height: 44px; clip-path: none; background: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .4));
+}
+:root[data-theme="ynov"] #certifications-modal .cert-card strong { font-family: var(--ynov-font); font-weight: 700; font-size: 13px; color: var(--text); }
+:root[data-theme="ynov"] #certifications-modal .cert-card small { color: var(--muted); font-size: 9.5px; }
+:root[data-theme="ynov"] #certifications-modal .cert-card em { font-family: var(--ynov-font); font-weight: 800; font-size: 9.5px; color: var(--certc); }
+/* acquise = accent teal */
+:root[data-theme="ynov"] #certifications-modal .cert-card.owned { --certc: var(--ynov-primary); background: rgba(31, 158, 145, .07); }
+:root[data-theme="ynov"] #certifications-modal .cert-card.owned em { color: var(--ynov-primary-bright); }
+
+/* =============================================================
+   FENÊTRE MISSIONS QUOTIDIENNES — habillage Ynov éditorial
+   ============================================================= */
+:root[data-theme="ynov"] #missions-modal .game-menu-modal {
+  width: min(900px, 100%); max-height: 86vh; padding: 0; overflow-y: auto;
+  font-family: var(--ynov-font);
+  border: 1px solid var(--line); border-top: 3px solid var(--ynov-primary);
+}
+:root[data-theme="ynov"] #missions-modal .modal-heading {
+  position: sticky; top: 0; z-index: 3;
+  margin: 0; padding: 20px 26px 16px; gap: 14px;
+  border-bottom: 1px solid var(--line); background: var(--panel-2);
+}
+:root[data-theme="ynov"] #missions-modal .modal-heading h2 { font-family: var(--ynov-font); font-weight: 800; font-size: 22px; color: var(--text); }
+:root[data-theme="ynov"] #missions-modal .modal-heading p { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+:root[data-theme="ynov"] #missions-modal .modal-heading-icon {
+  width: 52px; height: 52px; border: 0; border-radius: 0;
+  background: url("/img/buildings/missions.png") center / contain no-repeat;
+  font-size: 0; filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .45));
+}
+:root[data-theme="ynov"] #missions-modal .modal-close {
+  right: 16px; top: 14px; width: 30px; height: 30px; border-radius: 2px; z-index: 4;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--muted);
+  font-size: 18px; line-height: 1; display: grid; place-items: center;
+  transition: border-color .15s ease, color .15s ease;
+}
+:root[data-theme="ynov"] #missions-modal .modal-close:hover { border-color: var(--ynov-primary); color: var(--ynov-primary-bright); }
+
+/* cartes mission */
+:root[data-theme="ynov"] #missions-modal .missions-grid { padding: 16px 26px 0; gap: 10px; margin: 0; }
+:root[data-theme="ynov"] #missions-modal .mission-card {
+  padding: 14px; background: var(--panel-2); border: 1px solid var(--line);
+  border-left: 3px solid var(--ynov-primary); border-radius: 2px;
+}
+:root[data-theme="ynov"] #missions-modal .mission-card.complete { background: rgba(31, 158, 145, .07); border-left-color: var(--ynov-cyber); }
+:root[data-theme="ynov"] #missions-modal .mission-card.claimed { opacity: .5; }
+:root[data-theme="ynov"] #missions-modal .mission-card-heading > span {
+  width: 38px; height: 38px; flex: 0 0 38px; border-radius: 2px;
+  background: color-mix(in srgb, var(--ynov-primary) 16%, var(--panel-3));
+  border: 1px solid var(--line-soft); color: var(--ynov-primary-bright);
+}
+:root[data-theme="ynov"] #missions-modal .mission-card-heading strong { font-family: var(--ynov-font); font-weight: 700; font-size: 12px; color: var(--text); }
+:root[data-theme="ynov"] #missions-modal .mission-card-heading small { color: var(--muted); font-size: 9.5px; }
+:root[data-theme="ynov"] #missions-modal .mission-progress-label { font-family: var(--ynov-font); font-size: 10px; color: var(--muted); }
+:root[data-theme="ynov"] #missions-modal .mission-progress-label em { color: var(--ynov-primary-bright); font-weight: 800; }
+:root[data-theme="ynov"] #missions-modal .mission-progress { background: var(--panel-3); border-radius: 2px; height: 7px; }
+:root[data-theme="ynov"] #missions-modal .mission-progress span { background: var(--ynov-primary); border-radius: 0; }
+:root[data-theme="ynov"] #missions-modal .mission-card.complete .mission-progress span { background: var(--ynov-cyber); }
+:root[data-theme="ynov"] #missions-modal .mission-card button {
+  border-radius: 2px; border: 1px solid var(--line); background: var(--panel-3);
+  color: var(--muted); font-family: var(--ynov-font); font-weight: 800; letter-spacing: .06em;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+:root[data-theme="ynov"] #missions-modal .mission-card button:not(:disabled) {
+  border-color: var(--ynov-primary); background: var(--ynov-primary); color: #04201d; cursor: pointer;
+}
+:root[data-theme="ynov"] #missions-modal .mission-card button:not(:disabled):hover { background: var(--ynov-primary-bright); border-color: var(--ynov-primary-bright); }
+
+/* cycle suivant + note de réinitialisation */
+:root[data-theme="ynov"] #missions-modal .tomorrow-missions {
+  margin: 16px 26px; padding: 14px 16px; background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 2px;
+}
+:root[data-theme="ynov"] #missions-modal .tomorrow-missions-heading span { color: var(--ynov-primary); font-family: var(--ynov-font); font-weight: 800; letter-spacing: .12em; }
+:root[data-theme="ynov"] #missions-modal .tomorrow-missions-heading strong { color: var(--muted); font-family: var(--ynov-font); }
+:root[data-theme="ynov"] #missions-modal .tomorrow-missions-list article { background: var(--panel-3); border: 1px solid var(--line); border-radius: 2px; }
+:root[data-theme="ynov"] #missions-modal .tomorrow-missions-list article > span {
+  border-radius: 2px; background: color-mix(in srgb, var(--ynov-primary) 14%, var(--panel)); color: var(--ynov-primary-bright);
+}
+:root[data-theme="ynov"] #missions-modal .tomorrow-missions-list strong { font-family: var(--ynov-font); color: var(--text); }
+:root[data-theme="ynov"] #missions-modal .tomorrow-missions-list small { color: var(--faint); }
+:root[data-theme="ynov"] #missions-modal .tomorrow-missions-list em { color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] #missions-modal .missions-reset { color: var(--faint); padding: 0 26px 22px; margin: 12px 0 0; }
+
+/* Pastille du sélecteur de thème : teintes des formations Ynov uniquement
+   (pas d'arc-en-ciel décoratif — chaque teinte = une filière réelle).
+   Hex littéraux car ce sélecteur n'est pas scopé sous [data-theme="ynov"]. */
+.theme-option[data-theme="ynov"] i {
+  background: conic-gradient(from 210deg, #1f9e91, #5ec5ea, #3d68d1, #c259ff, #f5822b, #3ca55b, #1f9e91);
+}
+
+/* ---------- EFFET DE FRAPPE SUR LA JAUGE COMBO ---------- */
+:root[data-theme="ynov"] #combo-meter { position: relative; }
+:root[data-theme="ynov"] #combo-meter.hit { animation: ynovComboPop .18s ease; }
+:root[data-theme="ynov"] #combo-meter.hit .combo-head strong { animation: ynovComboPop .2s ease; }
+:root[data-theme="ynov"] .combo-hit {
+  position: absolute; left: 50%; top: 40%;
+  transform: translate(-50%, 0);
+  font-family: var(--ynov-font); font-weight: 800; font-size: 17px;
+  color: var(--combo-color, var(--ynov-primary-bright));
+  pointer-events: none; white-space: nowrap; z-index: 2;
+  animation: ynovComboHit .64s ease-out forwards;
+}
+:root[data-theme="ynov"] .combo-hit.crit { color: #fff0bd; font-size: 19px; }
+@keyframes ynovComboPop { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
+@keyframes ynovComboHit {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(.8); }
+  22% { opacity: 1; transform: translate(-50%, 0) scale(1.12); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
+}
+
+/* ---------- SURCHARGE : ÉCLAIR IMMERSIF QUAND ACTIVÉE ---------- */
+:root[data-theme="ynov"] #overclock-button.active {
+  border-color: var(--ynov-cyber);
+  background: rgba(90, 255, 182, .08);
+  animation: ynovCharbonne 1.1s ease-in-out infinite;
+}
+:root[data-theme="ynov"] #overclock-button.active .overclock-ring {
+  background: conic-gradient(var(--ynov-cyber) 360deg, var(--ynov-cyber) 0);
+}
+:root[data-theme="ynov"] #overclock-button.active .overclock-glyph {
+  color: #04140f;
+  animation: ynovBolt .55s ease-in-out infinite;
+}
+:root[data-theme="ynov"] #overclock-button.active strong { color: var(--ynov-cyber); }
+@keyframes ynovBolt {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.22); }
+}
+/* « respiration » de l'état actif par aplat de fond (pas de halo flou) */
+@keyframes ynovCharbonne {
+  0%, 100% { background: rgba(90, 255, 182, .06); }
+  50% { background: rgba(90, 255, 182, .16); }
+}
+
+/* ---------- MENUS REMONTÉS EN HAUT À DROITE (icônes) ---------- */
+:root[data-theme="ynov"] .top-actions .action-menus { display: flex; gap: 7px; }
+:root[data-theme="ynov"] .top-actions .menu-launch-button {
+  position: relative;
+  width: 42px; height: 42px; min-height: 0; padding: 0;
+  display: grid; place-items: center;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 2px;
+  transition: border-color .15s ease, background .15s ease;
+}
+:root[data-theme="ynov"] .top-actions .menu-launch-button:hover { border-color: var(--ynov-primary); background: var(--panel-3); transform: none; }
+:root[data-theme="ynov"] .top-actions .menu-launch-button::before { display: none; }
+:root[data-theme="ynov"] .top-actions .menu-launch-text { display: none; }
+:root[data-theme="ynov"] .top-actions .menu-launch-icon { width: 22px; height: 22px; background: transparent; border: 0; }
+:root[data-theme="ynov"] .top-actions .menu-launch-button em {
+  position: absolute; top: -6px; right: -6px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  display: grid; place-items: center;
+  font-family: var(--ynov-font); font-weight: 800; font-size: 9px;
+  color: #04201d; background: var(--ynov-primary);
+  border: 0; border-radius: 9px;
+}
+:root[data-theme="ynov"] .top-actions .menu-launch-button em.complete { background: var(--ynov-cyber); }
+
+/* ---------- CAPACITÉ / SATURATION + PRESTIGE SOUS TRAITER ----------
+   Panneau-instrument : jauge honnête (canal encaissé + graduations au quart),
+   liseré teal qui vire à l'orange en saturation, et action prestige avec la
+   médaille prestige.png en emblème (grisée tant que verrouillée). */
+:root[data-theme="ynov"] .center-stage > .header-capacity {
+  display: flex; flex-direction: column; align-items: stretch; gap: 11px;
+  width: min(400px, 88%); margin: 18px auto 26px; padding: 14px 16px 15px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-left: 3px solid var(--ynov-primary); border-radius: 2px;
+  transition: border-color .25s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity.saturated { border-left-color: var(--ynov-ia); }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-capacity-label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--ynov-font); font-size: 11px; letter-spacing: .12em; color: var(--faint); text-transform: uppercase;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity #header-saturation {
+  color: var(--ynov-primary); font-weight: 800; font-size: 15px;
+  font-variant-numeric: tabular-nums; transition: color .25s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity.saturated #header-saturation { color: var(--ynov-ia); }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-capacity-track {
+  position: relative; width: 100%; height: 11px;
+  background: var(--panel-3); border-radius: 2px; overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--line-soft);
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-capacity-track::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--line-soft) calc(25% - 1px) 25%);
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity #header-capacity-bar {
+  height: 100%; background: var(--ynov-primary);
+  transition: width .45s cubic-bezier(.22, .61, .36, 1), background-color .3s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity.saturated #header-capacity-bar { background: var(--ynov-ia); }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button {
+  display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto;
+  align-items: center; column-gap: 12px; justify-items: start;
+  width: 100%; padding: 9px 12px; text-align: left;
+  background: var(--panel-3); border: 1px solid var(--line); border-radius: 2px;
+  font-family: var(--ynov-font);
+  transition: border-color .2s ease, background .2s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button > span {
+  grid-row: 1 / 3; width: 40px; height: 40px; font-size: 0;
+  background: url("/img/buildings/prestige.png") center / contain no-repeat;
+  filter: grayscale(1) brightness(.85) opacity(.45); transition: filter .25s ease;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button #header-prestige-gain {
+  grid-column: 2; grid-row: 1; font-size: 18px; font-weight: 800; line-height: 1; color: var(--muted);
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button small {
+  grid-column: 2; grid-row: 2; margin-top: 2px;
+  font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--faint);
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button:not([disabled]) {
+  border-color: var(--ynov-primary); cursor: pointer;
+}
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button:not([disabled]) > span { filter: none; }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button:not([disabled]) #header-prestige-gain { color: var(--ynov-primary-bright); }
+:root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button:not([disabled]):hover {
+  background: var(--panel); border-color: var(--ynov-primary-bright);
+}
+/* Le bloc est recentré (large) en Ynov : on conserve le libellé + la légende
+   même sous 1100px, là où la barre supérieure d'origine les masquait. */
+@media (max-width: 1100px) {
+  :root[data-theme="ynov"] .center-stage > .header-capacity .header-capacity-label span { display: inline; }
+  :root[data-theme="ynov"] .center-stage > .header-capacity .header-prestige-button small { display: block; }
+}
+
+/* ---------- ÉCLAIR PLEIN ÉCRAN À L'ACTIVATION DE LA SURCHARGE ---------- */
+.ynov-strike {
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  display: grid; place-items: center;
+  animation: ynovStrikeFlash 2.1s ease-out forwards;
+}
+.ynov-strike-bolt {
+  width: min(240px, 42vw); height: auto;
+  fill: #eafff9;
+  filter: drop-shadow(0 0 28px #5affb6) drop-shadow(0 0 70px #1f9e91);
+  animation: ynovStrikeBolt 2.1s ease-out forwards;
+}
+@keyframes ynovStrikeFlash {
+  0% { background: rgba(90, 255, 182, 0); }
+  7% { background: rgba(255, 255, 255, .6); }
+  16% { background: rgba(90, 255, 182, .2); }
+  70% { background: rgba(31, 158, 145, .06); }
+  100% { background: rgba(0, 0, 0, 0); }
+}
+@keyframes ynovStrikeBolt {
+  0% { opacity: 0; transform: scale(.6) rotate(-5deg); }
+  7% { opacity: 1; transform: scale(1.06) rotate(0deg); }
+  13% { opacity: .25; }
+  19% { opacity: 1; }
+  26% { opacity: .5; }
+  33% { opacity: 1; }
+  78% { opacity: .85; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
+/* ---------- COUP DE MARTEAU SUR LE LOGO CENTRAL À CHAQUE CLIC ---------- */
+.ynov-hammer {
+  position: fixed; z-index: 55; pointer-events: none; height: auto;
+  transform-origin: 26% 22%;            /* pivot près de la tête du marteau */
+  filter: drop-shadow(0 4px 7px rgba(0, 0, 0, .45));
+  animation: ynovHammerHit .43s cubic-bezier(.34, 1.3, .5, 1) forwards;
+  will-change: transform, opacity;
+}
+@keyframes ynovHammerHit {
+  0%   { opacity: 0; transform: rotate(var(--ang, -48deg)) translateY(-12px) scale(.92); }
+  26%  { opacity: 1; transform: rotate(var(--ang, -48deg)) translateY(-12px) scale(1); }
+  54%  { opacity: 1; transform: rotate(9deg) translateY(3px) scale(1.05); }   /* frappe */
+  68%  { transform: rotate(-3deg) translateY(-2px) scale(1); }                 /* rebond */
+  100% { opacity: 0; transform: rotate(5deg) translateY(0) scale(.97); }
+}
+@media (prefers-reduced-motion: reduce) { .ynov-hammer { display: none; } }
+
+/* ---------- CÉLÉBRATION PLEIN ÉCRAN À CHAQUE MONTÉE DE NIVEAU ---------- */
+.ynov-levelup {
+  position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  display: grid; place-items: center;
+  animation: ynovLevelWash 2.4s ease-out forwards;
+}
+.ynov-levelup-stack {
+  position: relative; display: grid; justify-items: center; gap: 8px;
+}
+.ynov-levelup.leaving .ynov-levelup-stack { animation: ynovLevelOut .55s ease-in forwards; }
+.ynov-levelup-tag {
+  width: min(196px, 42vw); height: auto;
+  animation: ynovLevelTag .55s cubic-bezier(.34, 1.4, .5, 1) both;
+}
+.ynov-levelup-badge {
+  width: min(132px, 28vw); height: auto;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, .55));
+  animation: ynovLevelBadge .6s cubic-bezier(.34, 1.56, .5, 1) both;
+}
+.ynov-levelup-cap {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: var(--ynov-font); text-align: center;
+  animation: ynovLevelCap .5s ease-out .22s both;
+}
+.ynov-levelup-cap strong { font-size: 23px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--text); }
+.ynov-levelup-cap span { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ynov-primary-bright); }
+.ynov-levelup-stars { position: absolute; inset: 0; pointer-events: none; }
+.ynov-star {
+  position: absolute; left: 50%; top: 46%; margin: -8px 0 0 -8px;
+  width: 16px; height: 16px; background: #f5c542;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  opacity: 0;
+  animation: ynovStarBurst 1.2s ease-out var(--delay, 0ms) forwards;
+}
+.ynov-star.alt { background: var(--ynov-primary-bright); }
+@keyframes ynovLevelWash {
+  0% { background: radial-gradient(58% 50% at 50% 44%, rgba(31, 158, 145, 0), rgba(0, 0, 0, 0)); }
+  10% { background: radial-gradient(58% 50% at 50% 44%, rgba(31, 158, 145, .16), rgba(5, 10, 9, .36)); }
+  72% { background: radial-gradient(58% 50% at 50% 44%, rgba(31, 158, 145, .06), rgba(5, 10, 9, .12)); }
+  100% { background: radial-gradient(58% 50% at 50% 44%, rgba(31, 158, 145, 0), rgba(0, 0, 0, 0)); }
+}
+@keyframes ynovLevelBadge {
+  0% { opacity: 0; transform: scale(.55); }
+  55% { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes ynovLevelTag {
+  0% { opacity: 0; transform: translateY(-22px) scale(.9); }
+  60% { opacity: 1; transform: translateY(0) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ynovLevelCap { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ynovLevelOut { to { opacity: 0; transform: translateY(-10px) scale(1.04); } }
+@keyframes ynovStarBurst {
+  0% { opacity: 0; transform: translate(0, 0) scale(.2) rotate(0); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--tx, 0), var(--ty, 0)) scale(.45) rotate(var(--spin, 360deg)); }
+}
+
+/* reduced-motion : neutralise les animations ajoutées */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="ynov"] .process-button:active { transform: none; }
+  :root[data-theme="ynov"] #overclock-button.active,
+  :root[data-theme="ynov"] #overclock-button.active .overclock-glyph,
+  :root[data-theme="ynov"] .ynov-ticker.ynov-ticker-in,
+  .ynov-strike, .ynov-strike-bolt { animation: none; }
+  .ynov-strike { background: rgba(90, 255, 182, .12); }
+  .ynov-levelup { animation: ynovLevelFadeRM 1.4s ease both; background: rgba(5, 10, 9, .2); }
+  .ynov-levelup-tag, .ynov-levelup-badge, .ynov-levelup-cap, .ynov-levelup-stack { animation: none; }
+  .ynov-star { display: none; }
+}
+@keyframes ynovLevelFadeRM { 0% { opacity: 0; } 16%, 76% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- PREMIÈRE OBTENTION : carte équipement / certif (grand format) ---------- */
+.ynov-unlock {
+  position: fixed; inset: 0; z-index: 9997; pointer-events: none;
+  display: grid; place-items: center; --ac: var(--ynov-primary);
+  animation: ynovUnlockWash 3.5s ease-out forwards;
+}
+.ynov-unlock.is-cert { --ac: var(--ynov-3d); }
+/* rayons rotatifs derrière la carte */
+.ynov-unlock-rays {
+  position: absolute; left: 50%; top: 50%; width: 150vmax; height: 150vmax; z-index: 0;
+  transform: translate(-50%, -50%) scale(.2); opacity: 0;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--ac) 42%, transparent) 0deg 6deg, transparent 6deg 17deg);
+  -webkit-mask: radial-gradient(circle, #000 8%, transparent 60%);
+  mask: radial-gradient(circle, #000 8%, transparent 60%);
+  animation: ynovUnlockRays 3.4s ease-out forwards;
+}
+/* gerbe d'étoiles */
+.ynov-unlock-stars { position: absolute; inset: 0; z-index: 1; }
+.ynov-unlock .ynov-star.alt { background: var(--ac); }
+
+.ynov-unlock-card {
+  position: relative; z-index: 2; width: min(330px, 84vw);
+  padding: 24px 24px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center;
+  background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--ac);
+  border-radius: 2px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .6), 0 0 0 1px color-mix(in srgb, var(--ac) 30%, transparent);
+  animation: ynovUnlockIn .55s cubic-bezier(.34, 1.5, .5, 1) both;
+}
+.ynov-unlock.leaving .ynov-unlock-card { animation: ynovUnlockOut .55s ease-in forwards; }
+.ynov-unlock-kicker { font-family: var(--ynov-font); font-weight: 800; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ac); }
+.ynov-unlock-media { position: relative; width: 120px; height: 120px; display: grid; place-items: center; margin: 6px 0 2px; animation: ynovUnlockPop .7s cubic-bezier(.34, 1.56, .5, 1) both; }
+.ynov-unlock-media img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 22px rgba(0, 0, 0, .55)); }
+.ynov-unlock-glyph { font-family: var(--ynov-font); font-weight: 800; font-size: 56px; color: var(--ac); }
+/* onde de choc autour de l'image */
+.ynov-unlock-ring {
+  position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px;
+  border-radius: 50%; border: 3px solid var(--ac); opacity: 0;
+  animation: ynovUnlockRing 1s ease-out .15s forwards;
+}
+.ynov-unlock-name { font-family: var(--ynov-font); font-weight: 800; font-size: 21px; color: var(--text); }
+.ynov-unlock-stat { font-family: var(--ynov-font); font-weight: 800; font-size: 13px; color: var(--ac); font-variant-numeric: tabular-nums; }
+.ynov-unlock-desc { color: var(--faint); font-size: 11px; line-height: 1.4; max-width: 268px; }
+.ynov-unlock-quote {
+  margin: 8px 0 0; padding-top: 10px; width: 100%; border-top: 1px solid var(--line);
+  font-family: var(--ynov-font); font-style: italic; font-size: 12px; color: var(--muted); line-height: 1.45;
+}
+@keyframes ynovUnlockWash {
+  0% { background: rgba(5, 10, 9, 0); }
+  10% { background: rgba(5, 10, 9, .6); }
+  80% { background: rgba(5, 10, 9, .55); }
+  100% { background: rgba(5, 10, 9, 0); }
+}
+@keyframes ynovUnlockRays {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.2) rotate(0deg); }
+  16% { opacity: .85; }
+  70% { opacity: .4; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1) rotate(42deg); }
+}
+@keyframes ynovUnlockRing { 0% { opacity: .85; transform: scale(.4); } 100% { opacity: 0; transform: scale(5); } }
+@keyframes ynovUnlockIn { 0% { opacity: 0; transform: translateY(16px) scale(.9); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes ynovUnlockOut { to { opacity: 0; transform: translateY(-12px) scale(.96); } }
+@keyframes ynovUnlockPop {
+  0% { opacity: 0; transform: scale(.4) rotate(-8deg); filter: brightness(2.4); }
+  50% { opacity: 1; transform: scale(1.18) rotate(3deg); filter: brightness(1.25); }
+  72% { transform: scale(.96) rotate(-1deg); filter: brightness(1); }
+  100% { transform: scale(1) rotate(0); filter: brightness(1); }
+}
+:root.performance-mode .ynov-unlock-rays { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ynov-unlock { animation: ynovUnlockWashRM 3.3s ease both; }
+  .ynov-unlock-card, .ynov-unlock-media { animation: none; }
+  .ynov-unlock-rays, .ynov-unlock-ring, .ynov-unlock .ynov-star { display: none; }
+}
+@keyframes ynovUnlockWashRM { 0%, 100% { background: rgba(5, 10, 9, 0); } 12%, 80% { background: rgba(5, 10, 9, .4); } }
+
+/* Responsive : sous 900px, une colonne, titre réduit */
+@media (max-width: 900px) {
+  :root[data-theme="ynov"] .request-counter > strong { font-size: clamp(56px, 18vw, 110px); }
+}

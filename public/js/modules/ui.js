@@ -12,6 +12,7 @@ export class GameUI {
     this.lastBuildingsUpdate = 0;
     this.lastSecondaryUpdate = 0;
     this.lastCompletedAt = Number(state.completedAt) || 0;
+    this.lastKnownLevel = null;
     this.renderCache = new Map();
     this.styleCache = new Map();
     this.buildingElements = new Map();
@@ -77,9 +78,16 @@ export class GameUI {
 
   renderBuildings() {
     const container = this.el['building-list'];
+    const images = {
+      bash: 'bash_script', pi: 'raspberry_pi', mini: 'mini_server', nas: 'nas', serverroom: 'salle_server',
+      switch: 'switch', firewall: 'firewall', rack: 'rack_42u', datacenter: 'datacenter',
+      kubernetes: 'cluster_kubernetes', privatecloud: 'cloud_private', worldcloud: 'cloud_mondial'
+    };
     container.innerHTML = BUILDINGS.map((building, index) => `
       <button class="building-card" data-building="${building.id}" style="--delay:${index * 35}ms">
-        <span class="building-icon">${building.icon}</span>
+        <span class="building-icon${images[building.id] ? ' has-img' : ''}">${images[building.id]
+          ? `<img src="/img/buildings/${images[building.id]}.png" alt="" loading="lazy" draggable="false">`
+          : building.icon}</span>
         <span class="building-info">
           <span class="building-name">${building.name}</span>
           <span class="building-output">
@@ -108,25 +116,48 @@ export class GameUI {
 
   renderUpgrades() {
     const filtered = UPGRADES.filter(upgrade => this.activeUpgradeCategory === 'Tous' || upgrade.category === this.activeUpgradeCategory);
+    const images = {
+      ssd: 'ssd', raid: 'raid_ssd', nvme: 'nvme', ceph: 'ceph', zfs: 'zfs', 'distributed-storage': 'distributed_storage',
+      cat5: 'cat5', cat6: 'cat6', fiber: 'fiber', sfp: 'sfp', '10gb': '10gbe', '40gb': '40gbe', '100gb': '100gbe', backbone: 'backbone',
+      cron: 'cron', systemd: 'systemd', docker: 'docker', ansible: 'ansible', terraform: 'terraform', k8s: 'k8s', gitops: 'gitops', cicd: 'ci-cd',
+      fail2ban: 'fail2ban', ids: 'ids', ips: 'ips', mfa: 'mfa', 'zero-trust': '0trust', soc: 'soc', 'anti-ddos-ai': 'anti_ddos'
+    };
+    const effectText = (up) => {
+      const e = up.effect || {};
+      if (typeof e.production === 'number') return `+${Math.round((e.production - 1) * 100)} % production`;
+      if (typeof e.click === 'number') return `Clic ×${e.click}`;
+      if (e.building && e.multiplier) {
+        const b = BUILDINGS.find(item => item.id === e.building);
+        return `${b ? b.name : 'Bâtiment'} ×${e.multiplier}`;
+      }
+      if (e.multiplier) return `Production ×${e.multiplier}`;
+      return '';
+    };
     this.el['upgrade-grid'].innerHTML = filtered.map(upgrade => {
       const owned = this.state.upgrades.includes(upgrade.id);
+      const img = images[upgrade.id];
       const locked = upgrade.requires && !this.state.upgrades.includes(upgrade.requires);
       const requirement = locked ? UPGRADES.find(item => item.id === upgrade.requires)?.name : '';
+      const effect = effectText(upgrade);
       return `
         <button class="upgrade-card ${owned ? 'owned' : ''} ${locked ? 'locked' : ''}" data-upgrade="${upgrade.id}" title="${upgrade.description}">
-          <span class="upgrade-icon ${upgrade.category.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}">${upgrade.icon}</span>
-          <span><strong>${upgrade.name}</strong><small>${owned ? 'INSTALLÉ' : locked ? `REQUIS : ${requirement}` : formatNumber(upgrade.cost)}</small></span>
+          <span class="upgrade-icon ${upgrade.category.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}${img ? ' has-img' : ''}">${img ? `<img src="/img/buildings/${img}.png" alt="" loading="lazy" draggable="false" onerror="this.closest('.upgrade-icon').classList.remove('has-img');this.replaceWith(document.createTextNode('${upgrade.icon}'))">` : upgrade.icon}</span>
+          <span><strong>${upgrade.name}</strong>${effect ? `<em class="upgrade-effect">${effect}</em>` : ''}<small>${owned ? 'INSTALLÉ' : locked ? `REQUIS : ${requirement}` : formatNumber(upgrade.cost)}</small></span>
         </button>
       `;
     }).join('');
   }
 
   renderCertifications() {
+    const images = { lpic: 'lpic', rhcsa: 'rhcsa', rhce: 'rhce', ccna: 'ccna', ccnp: 'ccnp', cka: 'cka', ckad: 'ckad', cissp: 'cissp' };
     this.el['certification-grid'].innerHTML = CERTIFICATIONS.map(certification => {
       const owned = this.state.certifications.includes(certification.id);
+      const img = images[certification.id];
       return `
         <button class="cert-card ${owned ? 'owned' : ''}" data-certification="${certification.id}">
-          <span class="cert-icon">${certification.icon}</span>
+          <span class="cert-icon${img ? ' has-img' : ''}">${img
+            ? `<img src="/img/buildings/${img}.png" alt="" loading="lazy" draggable="false">`
+            : certification.icon}</span>
           <span><strong>${certification.name}</strong><small>${certification.description}</small></span>
           <em>${owned ? 'ACQUISE' : `${certification.cost} CP`}</em>
         </button>
@@ -212,6 +243,8 @@ export class GameUI {
     const production = this.economy.getProduction();
     const clickPower = this.economy.getClickPower();
     this.setText(this.el['header-rps'], `${formatNumber(production)} req/s`);
+    this.updateNocTopstats(production);
+    this.updateYnovFigures();
     this.setText(this.el['requests-stat'], formatNumber(this.state.requests));
     this.setText(this.el['rps-stat'], formatNumber(production));
     this.setText(this.el['users-stat'], formatNumber(Math.max(1, Math.sqrt(this.state.lifetimeRequests) * 0.7)));
@@ -253,6 +286,14 @@ export class GameUI {
     const level = this.economy.getInfraLevel();
     this.setText(this.el['infra-level'], String(level.level));
     this.setText(this.el['infra-title'], level.title);
+    const avatar = document.querySelector('.server-avatar');
+    if (avatar) avatar.style.setProperty('--avatar-img', `url("/img/buildings/level${clamp(level.level, 1, 9)}.png")`);
+    // Célébration de montée de niveau (thème Ynov). Le garde !== null évite
+    // tout déclenchement au premier rendu (chargement / rechargement).
+    if (this.lastKnownLevel !== null && level.level > this.lastKnownLevel) {
+      this.ynovLevelUp(level.level, level.title);
+    }
+    this.lastKnownLevel = level.level;
     this.setText(this.el['level-progress-label'], level.next
       ? `${formatNumber(this.state.lifetimeRequests)} / ${formatNumber(level.next)}`
       : 'MAX');
@@ -307,8 +348,17 @@ export class GameUI {
     const comboProgress = combo > 0 ? ((combo - 1) % 10 + 1) * 10 : 0;
     this.setText(this.el['combo-label'], `x${comboMultiplier.toFixed(comboMultiplier % 1 ? 2 : 0)}`);
     this.setText(this.el['combo-hint'], combo > 1 ? `${combo} requêtes enchaînées` : 'Enchaînez les requêtes');
+    const comboMeter = this.el['combo-meter'];
     this.setStyle(this.el['combo-bar'], 'width', `${comboProgress}%`);
-    this.el['combo-meter'].classList.toggle('active', combo > 1);
+    comboMeter.style.setProperty('--combo-fill', `${comboProgress}%`);
+    // Couleur qui « monte » avec le multiplicateur (teal → cyber → orange → rouge)
+    const comboColor = comboMultiplier >= 2.5 ? '#e6172d'
+      : comboMultiplier >= 1.75 ? '#f5822b'
+        : comboMultiplier >= 1.25 ? '#5affb6'
+          : '#1f9e91';
+    comboMeter.style.setProperty('--combo-color', comboColor);
+    comboMeter.classList.toggle('active', combo > 1);
+    this.renderYnovComboGauge(comboMultiplier, comboColor);
 
     const button = this.el['overclock-button'];
     const activeRemaining = Math.max(0, this.state.overclockEndsAt - Date.now());
@@ -386,9 +436,11 @@ export class GameUI {
     this.setText(this.el['cpu-label'], `${Math.round(cpu)}%`);
     this.setText(this.el['ram-label'], ramMb >= 1024 ? `${formatNumber(ramMb / 1024)} GB` : `${Math.round(ramMb)} MB`);
     this.setText(this.el['bandwidth-label'], `${formatNumber(bandwidth)}b/s`);
+    const bwPercent = clamp(Math.log10(bandwidth + 1) * 12, 1, 95);
+    this.renderYnovGauges(cpu, ramPercent, bwPercent);
     this.setStyle(this.el['cpu-bar'], 'width', `${cpu}%`);
     this.setStyle(this.el['ram-bar'], 'width', `${ramPercent}%`);
-    this.setStyle(this.el['bandwidth-bar'], 'width', `${clamp(Math.log10(bandwidth + 1) * 12, 1, 95)}%`);
+    this.setStyle(this.el['bandwidth-bar'], 'width', `${bwPercent}%`);
     this.rpsHistory.push(production);
     this.rpsHistory.shift();
     const max = Math.max(...this.rpsHistory, 1);
@@ -411,6 +463,173 @@ export class GameUI {
         <circle class="spark-point" cx="${lastPoint[0]}" cy="${lastPoint[1]}" r="1.7"/>
       </svg>
     `;
+    this.renderNocGraph();
+  }
+
+  // Graphe "DÉBIT EN DIRECT" du thème NOC : vraie série temporelle tracée
+  // à partir de rpsHistory, avec axe Y en req/s et une ligne de seuil
+  // CAPACITÉ pointillée qui descend vers la courbe à mesure qu'on sature.
+  renderNocGraph() {
+    const host = document.querySelector('#noc-graph');
+    if (!host || document.documentElement.dataset.theme !== 'noc') return;
+    const W = 1000;
+    const H = 300;
+    const padT = 16;
+    const padB = 18;
+    const usable = H - padT - padB;
+    const max = Math.max(...this.rpsHistory, 1);
+    const n = this.rpsHistory.length;
+    const coords = this.rpsHistory.map((value, index) => {
+      const x = index / (n - 1) * W;
+      const y = padT + usable - Math.max(0, value / max * usable);
+      return [x, y];
+    });
+    const points = coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    const areaPath = `M 0 ${padT + usable} L ${coords.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L ')} L ${W} ${padT + usable} Z`;
+    const last = coords[coords.length - 1];
+    const gridY = [0, 0.25, 0.5, 0.75, 1].map(r => padT + usable * r);
+    const axis = [1, 0.75, 0.5, 0.25, 0].map(r => formatNumber(max * r));
+
+    const capacity = this.economy.getCapacityStatus();
+    const headroom = clamp(capacity.efficiency ?? 1, 0, 1);
+    const capY = padT + (1 - headroom) * usable;
+    const capLabel = capacity.saturated ? `SATURATION ${Math.round(capacity.percent)}%` : 'CAPACITÉ';
+    const capColor = capacity.saturated ? 'var(--crit)' : 'var(--warn)';
+
+    host.innerHTML = `
+      <div class="noc-graph-axis" aria-hidden="true">${axis.map(v => `<span>${v}</span>`).join('')}</div>
+      <svg class="noc-graph-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Débit en direct">
+        <defs>
+          <linearGradient id="noc-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--signal)" stop-opacity=".18"/>
+            <stop offset="100%" stop-color="var(--signal)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <g class="noc-graph-grid">${gridY.map(y => `<line x1="0" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}"/>`).join('')}</g>
+        <line class="noc-graph-cap" x1="0" y1="${capY.toFixed(1)}" x2="${W}" y2="${capY.toFixed(1)}" stroke="${capColor}"/>
+        <text class="noc-graph-cap-label" x="${W - 6}" y="${(capY - 5).toFixed(1)}" fill="${capColor}">${capLabel}</text>
+        <path class="noc-graph-area" d="${areaPath}" fill="url(#noc-area)"/>
+        <polyline class="noc-graph-line" points="${points}"/>
+        <circle class="noc-graph-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4"/>
+      </svg>
+    `;
+  }
+
+  // Cluster de statut NOC en haut : DÉBIT · SATURATION · UPTIME · INCIDENTS.
+  // Remplace la lecture isolée "PRODUCTION 0,0 req/s". Inactif hors NOC.
+  updateNocTopstats(production) {
+    const rps = document.querySelector('#noc-ts-rps');
+    if (!rps || document.documentElement.dataset.theme !== 'noc') return;
+    rps.textContent = `${formatNumber(production)} req/s`;
+
+    const capacity = this.economy.getCapacityStatus();
+    const sat = Math.round(capacity.saturated ? capacity.percent : 0);
+    const satCell = document.querySelector('#noc-ts-sat');
+    satCell.textContent = `${sat}%`;
+    const satWrap = satCell.closest('.noc-ts');
+    if (satWrap) {
+      satWrap.classList.toggle('warn', sat >= 40 && sat < 70);
+      satWrap.classList.toggle('crit', sat >= 70);
+    }
+
+    const elapsed = Math.max(0, Math.floor((Date.now() - (this.state.startedAt || Date.now())) / 1000));
+    const hh = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    const mm = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    const ss = String(elapsed % 60).padStart(2, '0');
+    document.querySelector('#noc-ts-uptime').textContent = `${hh}:${mm}:${ss}`;
+
+    document.querySelector('#noc-ts-incidents').textContent = String(this.state.eventsCompleted || 0);
+  }
+
+  // Jauges CPU/RAM/BANDE façon Grafana (thème Ynov) : demi-cercle avec
+  // dégradé vert→jaune→rouge, valeur + label centrés, mini-sparkline de
+  // tendance + point coloré en bout. Inactif hors Ynov.
+  renderYnovGauges(cpu, ram, bw) {
+    const host = document.querySelector('#ynov-gauges');
+    if (!host || document.documentElement.dataset.theme !== 'ynov') return;
+    this.ynovMetricHistory ||= { cpu: Array(26).fill(0), ram: Array(26).fill(0), bp: Array(26).fill(0) };
+    const R = 42, L = Math.PI * R;                 // longueur du demi-cercle
+    const arc = r => `M ${50 - r} 50 A ${r} ${r} 0 0 1 ${50 + r} 50`;
+    const stateColor = p => (p >= 80 ? '#f2495c' : p >= 55 ? '#f2cc0c' : '#73bf69');
+    // Tout est dans le SVG → valeur, label et sparkline À L'INTÉRIEUR de l'arc.
+    const gauge = (key, pct, valueText, name) => {
+      const p = Math.max(0, Math.min(100, pct));
+      const dash = (p / 100 * L).toFixed(1);
+      const col = stateColor(p);
+      const hist = this.ynovMetricHistory[key];
+      hist.push(p); hist.shift();
+      const min = Math.min(...hist), max = Math.max(...hist), range = Math.max(1, max - min);
+      const sx = i => (26 + i / (hist.length - 1) * 48).toFixed(1);
+      const sy = v => (49 - (v - min) / range * 5).toFixed(1);   // bas de l'arc, sans passer sous la base (y=50)
+      const pts = hist.map((v, i) => `${sx(i)},${sy(v)}`).join(' ');
+      const lx = sx(hist.length - 1), ly = sy(hist[hist.length - 1]);
+      // Taille de la valeur adaptée à sa longueur pour ne jamais toucher l'arc.
+      const n = (valueText || '').length;
+      const fs = n <= 2 ? 18 : n <= 3 ? 16.5 : n <= 4 ? 14.5 : n <= 6 ? 12 : 10;
+      return `
+        <svg class="yg2-svg" viewBox="0 0 100 58" aria-hidden="true">
+          <defs><linearGradient id="yggrad-${key}" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#73bf69"/><stop offset="48%" stop-color="#f2cc0c"/>
+            <stop offset="78%" stop-color="#ff9830"/><stop offset="100%" stop-color="#f2495c"/>
+          </linearGradient></defs>
+          <path class="yg2-thin" d="${arc(48)}" stroke="url(#yggrad-${key})"/>
+          <path class="yg2-track" d="${arc(R)}"/>
+          <path class="yg2-val" d="${arc(R)}" stroke="url(#yggrad-${key})" stroke-dasharray="${dash} ${L.toFixed(1)}"/>
+          <text class="yg2-num" x="50" y="34" style="font-size:${fs}px">${valueText}</text>
+          <text class="yg2-lbl" x="50" y="44">${name}</text>
+          <polyline class="yg2-spark" points="${pts}" style="stroke:${col}"/>
+          <circle class="yg2-dot" cx="${lx}" cy="${ly}" r="1.7" style="fill:${col}"/>
+        </svg>`;
+    };
+    // CPU + RAM en grandes jauges (pleine largeur, 2 colonnes)
+    host.innerHTML =
+      gauge('cpu', cpu, this.el['cpu-label'].textContent, 'CPU')
+      + gauge('ram', ram, this.el['ram-label'].textContent, 'RAM');
+    // BANDE PASSANTE déplacée en stat compacte à côté d'UTILISATEURS
+    const bpValue = document.querySelector('#ynov-bp-value');
+    if (bpValue) bpValue.textContent = this.el['bandwidth-label'].textContent;
+  }
+
+  // Combo en gauge radiale (thème Ynov), même style que les jauges CPU.
+  // Affiche le MULTIPLICATEUR atteint ; ne se met à jour que lorsqu'il change
+  // (donc ne bouge pas à chaque clic dans un même palier).
+  renderYnovComboGauge(multiplier, color) {
+    const meter = document.querySelector('#combo-meter');
+    if (!meter || document.documentElement.dataset.theme !== 'ynov') return;
+    let arc = meter.querySelector('#ynov-combo-arc');
+    if (!arc) {
+      arc = document.createElement('div');
+      arc.id = 'ynov-combo-arc';
+      arc.className = 'yg';
+      arc.innerHTML = '<svg viewBox="0 0 100 100" class="yg-svg" aria-hidden="true">'
+        + '<circle class="yg-track" cx="50" cy="50" r="40" transform="rotate(135 50 50)" stroke-dasharray="188.5 251.3"></circle>'
+        + '<circle class="yg-value" cx="50" cy="50" r="40" transform="rotate(135 50 50)" stroke-dasharray="0 251.3"></circle>'
+        + '</svg><div class="yg-center"><strong>x1</strong><span>COMBO</span></div>';
+      meter.appendChild(arc);
+    }
+    if (multiplier === this._comboGaugeMult) return;
+    this._comboGaugeMult = multiplier;
+    const ARC = 188.5;
+    const pct = clamp((multiplier - 1) / 2, 0, 1);
+    arc.querySelector('.yg-value').setAttribute('stroke-dasharray', `${(pct * ARC).toFixed(1)} 251.3`);
+    arc.querySelector('.yg-value').style.stroke = color;
+    arc.querySelector('.yg-center strong').textContent = `x${multiplier.toFixed(multiplier % 1 ? 2 : 0)}`;
+  }
+
+  // Bande chiffres-clés du thème Ynov GRAND FORMAT : miroir des stats
+  // déjà calculées (zéro recalcul, aucune duplication). Inactif hors Ynov.
+  updateYnovFigures() {
+    const probe = document.querySelector('#yf-req');
+    if (!probe || document.documentElement.dataset.theme !== 'ynov') return;
+    const map = {
+      'yf-req': 'requests-stat', 'yf-rps': 'rps-stat', 'yf-users': 'users-stat',
+      'yf-cpu': 'cpu-label', 'yf-ram': 'ram-label', 'yf-bp': 'bandwidth-label'
+    };
+    for (const dst in map) {
+      const src = document.getElementById(map[dst]);
+      const cell = document.getElementById(dst);
+      if (src && cell) cell.textContent = src.textContent;
+    }
   }
 
   clickEffect(x, y, amount, options = {}) {
@@ -450,6 +669,165 @@ export class GameUI {
       setTimeout(() => particle.remove(), 700);
     }
     document.body.appendChild(fragment);
+  }
+
+  // Effet plein écran "éclair" à l'activation de la Surcharge (thème Ynov).
+  ynovLightningStrike() {
+    if (document.documentElement.dataset.theme !== 'ynov') return;
+    document.querySelector('.ynov-strike')?.remove();
+    const el = document.createElement('div');
+    el.className = 'ynov-strike';
+    el.innerHTML = '<svg viewBox="0 0 200 400" class="ynov-strike-bolt" aria-hidden="true"><path d="M116 8 44 214 100 214 84 392 168 168 110 168 132 8Z"/></svg>';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2200);
+  }
+
+  // Coup de marteau (hammer.png) sur le logo central à chaque clic (thème Ynov).
+  // Position aléatoire sur le logo pour l'immersion ; léger et auto-nettoyé.
+  ynovHammerStrike() {
+    if (document.documentElement.dataset.theme !== 'ynov' || this.performanceMode) return;
+    const zone = document.querySelector('#server-zone');
+    if (!zone) return;
+    const rect = zone.getBoundingClientRect();
+    if (!rect.width) return;
+    const px = rect.left + rect.width * (0.28 + Math.random() * 0.44);
+    const py = rect.top + rect.height * (0.30 + Math.random() * 0.40);
+    const size = Math.max(46, Math.round(rect.width * 0.34));
+    const ham = document.createElement('img');
+    ham.src = '/img/buildings/hammer.png';
+    ham.alt = '';
+    ham.className = 'ynov-hammer';
+    ham.style.width = `${size}px`;
+    ham.style.left = `${px - size * 0.24}px`;   // tête (~24%,20% de l'image) sur le point d'impact
+    ham.style.top = `${py - size * 0.20}px`;
+    ham.style.setProperty('--ang', `${Math.round(randomBetween(-58, -38))}deg`);
+    document.body.appendChild(ham);
+    setTimeout(() => ham.remove(), 430);
+  }
+
+  // Célébration plein écran à chaque montée de niveau (thème Ynov) :
+  // bandeau « LEVEL UP! » + badge du niveau atteint + gerbe d'étoiles.
+  // Gated Ynov + performanceMode (pas d'étoiles), pointer-events:none, auto-nettoyée.
+  ynovLevelUp(level, title) {
+    if (document.documentElement.dataset.theme !== 'ynov') return;
+    document.querySelector('.ynov-levelup')?.remove();
+    const n = clamp(level, 1, 9);
+    const el = document.createElement('div');
+    el.className = 'ynov-levelup';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = `
+      <div class="ynov-levelup-stars"></div>
+      <div class="ynov-levelup-stack">
+        <img class="ynov-levelup-tag" src="/img/buildings/level_up.png" alt="">
+        <img class="ynov-levelup-badge" src="/img/buildings/level${n}.png" alt="">
+        <div class="ynov-levelup-cap"><strong>NIVEAU ${level}</strong><span>${title || ''}</span></div>
+      </div>`;
+    if (!this.performanceMode) {
+      const stars = el.querySelector('.ynov-levelup-stars');
+      for (let i = 0; i < 16; i += 1) {
+        const star = document.createElement('i');
+        star.className = 'ynov-star' + (i % 3 === 0 ? ' alt' : '');
+        const angle = randomBetween(0, Math.PI * 2);
+        const distance = randomBetween(120, 260);
+        star.style.setProperty('--tx', `${Math.round(Math.cos(angle) * distance)}px`);
+        star.style.setProperty('--ty', `${Math.round(Math.sin(angle) * distance)}px`);
+        star.style.setProperty('--spin', `${Math.round(randomBetween(180, 540))}deg`);
+        star.style.setProperty('--delay', `${Math.round(randomBetween(0, 120))}ms`);
+        stars.appendChild(star);
+      }
+    }
+    document.body.appendChild(el);
+    setTimeout(() => el.classList.add('leaving'), 1700);
+    setTimeout(() => el.remove(), 2400);
+  }
+
+  // Première obtention d'un équipement infra ou d'une certif (thème Ynov) :
+  // overlay avec l'image + les stats de l'objet et une phrase loufoque aléatoire.
+  ynovItemUnlock(kind, item) {
+    if (!item || document.documentElement.dataset.theme !== 'ynov') return;
+    document.querySelector('.ynov-unlock')?.remove();
+    const buildingImages = {
+      bash: 'bash_script', pi: 'raspberry_pi', mini: 'mini_server', nas: 'nas', serverroom: 'salle_server',
+      switch: 'switch', firewall: 'firewall', rack: 'rack_42u', datacenter: 'datacenter',
+      kubernetes: 'cluster_kubernetes', privatecloud: 'cloud_private', worldcloud: 'cloud_mondial'
+    };
+    const certImages = { lpic: 'lpic', rhcsa: 'rhcsa', rhce: 'rhce', ccna: 'ccna', ccnp: 'ccnp', cka: 'cka', ckad: 'ckad', cissp: 'cissp' };
+    const upgradeImages = {
+      ssd: 'ssd', raid: 'raid_ssd', nvme: 'nvme', ceph: 'ceph', zfs: 'zfs', 'distributed-storage': 'distributed_storage',
+      cat5: 'cat5', cat6: 'cat6', fiber: 'fiber', sfp: 'sfp', '10gb': '10gbe', '40gb': '40gbe', '100gb': '100gbe', backbone: 'backbone',
+      cron: 'cron', systemd: 'systemd', docker: 'docker', ansible: 'ansible', terraform: 'terraform', k8s: 'k8s', gitops: 'gitops', cicd: 'ci-cd',
+      fail2ban: 'fail2ban', ids: 'ids', ips: 'ips', mfa: 'mfa', 'zero-trust': '0trust', soc: 'soc', 'anti-ddos-ai': 'anti_ddos'
+    };
+    const categoryAccents = { stockage: '#5ec5ea', réseau: '#2bc7b6', reseau: '#2bc7b6', devops: '#b98cff', sécurité: '#ff8a5c', securite: '#ff8a5c' };
+    const quotes = [
+      'C\'est pas un datacenter, mais on fait avec.',
+      'Pas de salle info ? On improvise.',
+      'ça marche, mais c\'est pas documenté. On garde.',
+      'Validé par le groupe de la doc.',
+      'À nous les madeleines !',
+      'La référente pédagogique ne saura jamais.',
+      'Poubelle ? Non : promotion !',
+      'Un grand savant N.L hocherait la tête.',
+      'Encore un truc qui tourne par miracle.',
+      'C\'est de la qualité, ça, madame.'
+    ];
+    const isCert = kind === 'cert';
+    const isUpgrade = kind === 'upgrade';
+    const file = isCert ? certImages[item.id] : isUpgrade ? upgradeImages[item.id] : buildingImages[item.id];
+    const upgradeStat = (up) => {
+      const e = up.effect || {};
+      if (typeof e.production === 'number') return `+${Math.round((e.production - 1) * 100)}% production`;
+      if (typeof e.click === 'number') return `Clic ×${e.click}`;
+      if (e.multiplier) return `Boost ×${e.multiplier}`;
+      return 'Setup optimisé';
+    };
+    const stat = isCert
+      ? (item.bonus >= 1 ? 'Production ×2' : `+${Math.round((item.bonus || 0) * 100)}% production`)
+      : isUpgrade
+        ? upgradeStat(item)
+        : `${formatNumber(item.baseProduction || 0)} req/s`;
+    const kicker = isCert ? 'CERTIFICATION OBTENUE' : isUpgrade ? 'AMÉLIORATION INSTALLÉE' : 'NOUVEL ÉQUIPEMENT';
+    const quote = quotes[Math.floor(Math.random() * quotes.length)];
+    const el = document.createElement('div');
+    el.className = 'ynov-unlock' + (isCert ? ' is-cert' : '') + (isUpgrade ? ' is-upgrade' : '');
+    if (isUpgrade) {
+      const accent = categoryAccents[(item.category || '').toLowerCase()];
+      if (accent) el.style.setProperty('--ac', accent);
+    }
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = `
+      <div class="ynov-unlock-rays"></div>
+      <div class="ynov-unlock-stars"></div>
+      <div class="ynov-unlock-card">
+        <span class="ynov-unlock-kicker">${kicker}</span>
+        <div class="ynov-unlock-media">
+          <span class="ynov-unlock-ring"></span>
+          ${file
+            ? `<img src="/img/buildings/${file}.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ynov-unlock-glyph',textContent:'${item.icon || '◆'}'}))">`
+            : `<span class="ynov-unlock-glyph">${item.icon || '◆'}</span>`}
+        </div>
+        <strong class="ynov-unlock-name">${item.name}</strong>
+        <span class="ynov-unlock-stat">${stat}</span>
+        <small class="ynov-unlock-desc">${item.description || ''}</small>
+        <p class="ynov-unlock-quote">« ${quote} »</p>
+      </div>`;
+    if (!this.performanceMode) {
+      const starbox = el.querySelector('.ynov-unlock-stars');
+      for (let i = 0; i < 22; i += 1) {
+        const star = document.createElement('i');
+        star.className = 'ynov-star' + (i % 2 ? ' alt' : '');
+        const angle = randomBetween(0, Math.PI * 2);
+        const distance = randomBetween(150, 330);
+        star.style.setProperty('--tx', `${Math.round(Math.cos(angle) * distance)}px`);
+        star.style.setProperty('--ty', `${Math.round(Math.sin(angle) * distance)}px`);
+        star.style.setProperty('--spin', `${Math.round(randomBetween(180, 560))}deg`);
+        star.style.setProperty('--delay', `${Math.round(randomBetween(0, 160))}ms`);
+        starbox.appendChild(star);
+      }
+    }
+    document.body.appendChild(el);
+    setTimeout(() => el.classList.add('leaving'), 2900);
+    setTimeout(() => el.remove(), 3500);
   }
 
   celebrateMaxProgress() {

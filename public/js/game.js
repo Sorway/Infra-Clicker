@@ -64,6 +64,7 @@ class InfraClicker {
     this.serverSyncTimer = setInterval(() => this.synchronize(), 5000);
     this.updateOnlinePlayers();
     this.presenceTimer = setInterval(() => this.updateOnlinePlayers(), 20000);
+    this.startYnovTicker();
     window.addEventListener('beforeunload', () => {
       this.saveManager.save(this.state);
       this.server.sync(this.state, true).catch(() => {});
@@ -232,6 +233,7 @@ class InfraClicker {
         this.state.overclockCharge = Math.min(100, this.state.overclockCharge + (critical ? 8 : 1));
       }
       this.ui.clickEffect(x, y, power, { critical, comboMultiplier });
+      this.ui.ynovHammerStrike();
       this.audio.click();
     };
     document.querySelector('#server-button').addEventListener('click', clickHandler);
@@ -285,6 +287,7 @@ class InfraClicker {
       this.state.overclockCharge = 0;
       this.state.overclockEndsAt = Date.now() + 30000;
       this.audio.event(false);
+      this.ui.ynovLightningStrike();
       this.ui.toast('Surcharge activée', 'Production doublée pendant 30 secondes.', 'bonus');
     });
     document.querySelector('#sound-toggle').addEventListener('click', () => {
@@ -414,10 +417,17 @@ class InfraClicker {
   }
 
   initTheme() {
-    const themes = ['ruby', 'sunset', 'lavender', 'mint', 'ocean'];
+    // Les skins Ynov / Linear / NOC sont désormais des DLC : un DLC à skin impose
+    // son thème ; le DLC de base (infra) laisse le choix parmi les palettes couleur.
+    const palettes = ['ruby', 'sunset', 'lavender', 'mint', 'ocean'];
+    if (ACTIVE_DLC.theme) {
+      this.applyTheme(ACTIVE_DLC.theme);
+      const themeSettings = document.querySelector('.theme-settings');
+      if (themeSettings) themeSettings.style.display = 'none';
+      return;
+    }
     const savedTheme = localStorage.getItem('infra-clicker-theme');
-    const initialTheme = themes.includes(savedTheme) ? savedTheme : 'ocean';
-    this.applyTheme(initialTheme);
+    this.applyTheme(palettes.includes(savedTheme) ? savedTheme : 'ocean');
 
     document.querySelector('#theme-picker').addEventListener('click', event => {
       const option = event.target.closest('[data-theme]');
@@ -432,6 +442,94 @@ class InfraClicker {
     document.querySelectorAll('.theme-option').forEach(option => {
       option.classList.toggle('active', option.dataset.theme === theme);
     });
+    this.applyYnovLayout(theme === 'ynov');
+  }
+
+  // Bandeau Ynov : fait défiler des messages aléatoires (gadget d'ambiance).
+  startYnovTicker() {
+    const messages = [
+      'C\'est la météo des classes, à nous les madeleines !',
+      'La référente pédagogique vous a signalé qu\'on était pas un datacenter non plus...',
+      'Dommage ! Pas de place pour une salle informatique.',
+      'ça marche pas, c\'est pas documenté, poubelle ! N.L.',
+      'Tfaçon vous, vous êtes le groupe de la doc',
+      'C\'est de la merde ça poubelle !',
+      'C\'est un vrai sujet, ça',
+      'C\'était présenté aux assises de Monaco ?',
+      'Aussi p\'tit que le micro-p',
+      '+ efficace + ergonomique',
+      'C\'est clarinette !',
+      'Le prochain qui fait ça je le monte en l\'air !'
+    ];
+    const pick = () => {
+      const el = document.querySelector('#ynov-ticker');
+      if (!el || document.documentElement.dataset.theme !== 'ynov') return;
+      const next = messages[Math.floor(Math.random() * messages.length)];
+      if (next === el.textContent) return;
+      el.classList.remove('ynov-ticker-in');
+      void el.offsetWidth;
+      el.textContent = next;
+      el.classList.add('ynov-ticker-in');
+    };
+    pick();
+    this.tickerTimer = setInterval(pick, 9000);
+  }
+
+  // Recomposition spécifique au thème Ynov (réversible, sans toucher au HTML
+  // partagé) : combo + logo + surcharge sur une rangée centrale ; les menus
+  // (améliorations/certifs/missions) remontés en haut à droite ; le bloc
+  // capacité/prestige descendu sous TRAITER. Le reparentage préserve les
+  // écouteurs liés aux éléments.
+  applyYnovLayout(on) {
+    const center = document.querySelector('.center-stage');
+    const actionBar = document.querySelector('.action-bar');
+    const actionStatus = document.querySelector('.action-status');
+    const combo = document.querySelector('#combo-meter');
+    const overclock = document.querySelector('#overclock-button');
+    const menus = document.querySelector('.action-menus');
+    const topActions = document.querySelector('.top-actions');
+    const topbar = document.querySelector('.topbar');
+    const onlineStatus = document.querySelector('.online-status');
+    const headerCapacity = document.querySelector('.header-capacity');
+    const counter = document.querySelector('.request-counter');
+    const serverZone = document.querySelector('#server-zone');
+    const processBtn = document.querySelector('#process-button');
+    const upgrades = document.querySelector('#upgrades-open');
+    const certifs = document.querySelector('#certifications-open');
+    const missions = document.querySelector('#missions-open');
+    const tuningSlot = document.querySelector('#ynov-cat-tuning');
+    const skillsSlot = document.querySelector('#ynov-cat-skills');
+    if (!center || !actionBar || !actionStatus || !combo || !overclock || !menus || !topActions) return;
+
+    let mid = document.querySelector('#ynov-stage-mid');
+    if (on) {
+      if (!mid) {
+        mid = document.createElement('div');
+        mid.id = 'ynov-stage-mid';
+        mid.className = 'ynov-stage-mid';
+      }
+      if (counter) center.insertBefore(mid, counter.nextSibling);
+      mid.append(combo, serverZone, overclock);              // combo · logo · surcharge
+      // Menus rangés dans Infrastructure, sous Tuning / Skills
+      if (tuningSlot && upgrades) tuningSlot.append(upgrades);
+      if (skillsSlot && certifs && missions) skillsSlot.append(certifs, missions);
+      if (headerCapacity) center.append(headerCapacity);      // capacité/prestige sous TRAITER
+      if (onlineStatus && topbar) topbar.append(onlineStatus); // joueurs en ligne au centre
+    } else if (mid) {
+      if (serverZone && processBtn) center.insertBefore(serverZone, processBtn);
+      actionStatus.append(combo, overclock);
+      if (upgrades && certifs && missions) menus.append(upgrades, certifs, missions);
+      // ordre d'origine de la topbar : [capacité, joueurs en ligne, …icônes]
+      if (onlineStatus) topActions.insertBefore(onlineStatus, topActions.firstChild);
+      if (headerCapacity) topActions.insertBefore(headerCapacity, topActions.firstChild);
+      mid.remove();
+    } else {
+      if (upgrades && certifs && missions && menus.children.length < 3) menus.append(upgrades, certifs, missions);
+      if (onlineStatus && onlineStatus.parentElement !== topActions) topActions.insertBefore(onlineStatus, topActions.firstChild);
+      if (headerCapacity && headerCapacity.parentElement !== topActions) {
+        topActions.insertBefore(headerCapacity, topActions.firstChild);
+      }
+    }
   }
 
   replaceState(nextState) {
@@ -452,6 +550,7 @@ class InfraClicker {
       this.ui.toast('Budget insuffisant', `Il manque des requêtes pour ${building.name}.`, 'danger');
       return;
     }
+    const firstTime = (this.state.buildings[id] || 0) === 0;
     this.state.requests -= purchase.cost;
     this.state.buildings[id] += purchase.amount;
     this.state.totalBuildingsPurchased += purchase.amount;
@@ -459,6 +558,7 @@ class InfraClicker {
     this.ui.lastBuildingsUpdate = performance.now();
     this.ui.update();
     this.audio.purchase();
+    if (firstTime) this.ui.ynovItemUnlock('building', building);
     this.ui.toast('Infrastructure déployée', `${purchase.amount} × ${building.name}`, 'info');
     this.achievements.check();
   }
@@ -471,6 +571,7 @@ class InfraClicker {
     this.markCompletion();
     this.audio.purchase();
     this.ui.renderUpgrades();
+    this.ui.ynovItemUnlock('upgrade', upgrade);
     this.ui.toast(`${upgrade.name} installé`, upgrade.description, 'bonus');
     this.ui.update();
     this.achievements.check();
@@ -484,6 +585,7 @@ class InfraClicker {
     this.markCompletion();
     this.audio.achievement();
     this.ui.renderCertifications();
+    this.ui.ynovItemUnlock('cert', certification);
     this.ui.toast(`Certification ${certification.name}`, certification.description, 'achievement');
     this.ui.update();
     this.achievements.check();

@@ -8,6 +8,12 @@
     <span>PRODUCTION</span>
     <strong id="header-rps">0 req/s</strong>
   </div>
+  <div class="noc-topstats" aria-hidden="true">
+    <span class="noc-ts"><b>DÉBIT</b><strong id="noc-ts-rps">0 req/s</strong></span>
+    <span class="noc-ts"><b>SATURATION</b><strong id="noc-ts-sat">0%</strong></span>
+    <span class="noc-ts"><b>UPTIME</b><strong id="noc-ts-uptime">00:00:00</strong></span>
+    <span class="noc-ts"><b>INCIDENTS</b><strong id="noc-ts-incidents">0</strong></span>
+  </div>
   <nav class="top-actions" aria-label="Actions">
     <div class="header-capacity" title="Saturation de la capacité de production">
       <div class="header-capacity-label">
@@ -26,7 +32,13 @@
       <strong id="online-count">1</strong>
       <span id="online-label">joueur en ligne</span>
     </div>
-    <a class="icon-button icon-link" href="/leaderboard" title="Classement" aria-label="Classement">🏆</a>
+    <a class="icon-button icon-link" href="/leaderboard" title="Classement" aria-label="Classement">
+      <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 4h12v3a6 6 0 0 1-12 0V4Z"></path>
+        <path d="M6 6H4a2 2 0 0 0 2 4M18 6h2a2 2 0 0 1-2 4"></path>
+        <path d="M12 13v3M9 20h6M10 20a2 2 0 0 1 1-1.7M14 20a2 2 0 0 0-1-1.7"></path>
+      </svg>
+    </a>
     <a class="icon-button icon-link" id="statistics-link" href="/statistics" title="Statistiques complètes" aria-label="Statistiques complètes">
       <svg class="stats-icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M5 19V11M12 19V5M19 19v-7"></path>
@@ -37,6 +49,11 @@
     <button class="icon-button" id="settings-toggle" title="Sauvegarde et paramètres" aria-label="Paramètres">⚙</button>
   </nav>
 </header>
+
+<div class="ynov-masthead-rule" aria-hidden="true">
+  <span class="ynov-edition-no">YNOV</span>
+  <span class="ynov-ticker" id="ynov-ticker">C'est la météo des classes, à nous les madeleines !</span>
+</div>
 
 <main class="dashboard">
   <aside class="left-panel panel-scroll">
@@ -70,6 +87,9 @@
         <article class="metric-card">
           <span>UTILISATEURS</span><strong id="users-stat">1</strong>
         </article>
+        <article class="metric-card metric-bp-ynov">
+          <span>BANDE PASSANTE</span><strong id="ynov-bp-value">0 b/s</strong>
+        </article>
       </div>
       <div class="resource-row">
         <div class="resource-header"><span>CPU</span><strong id="cpu-label">4%</strong></div>
@@ -83,6 +103,7 @@
         <div class="resource-header"><span>BANDE PASSANTE</span><strong id="bandwidth-label">0 Kb/s</strong></div>
         <div class="progress thin network"><span id="bandwidth-bar"></span><i class="gauge-marker"></i></div>
       </div>
+      <div class="ynov-gauges" id="ynov-gauges" aria-hidden="true"></div>
     </section>
 
     <section class="panel-section achievements-section">
@@ -103,11 +124,17 @@
       <div class="event-timer"><span id="event-timer-bar"></span></div>
     </div>
 
+    <div class="noc-panelhead" aria-hidden="true">
+      <span>DÉBIT EN DIRECT</span>
+      <span class="noc-range">60 s</span>
+    </div>
+
     <div class="request-counter">
       <span data-currency-label>REQUÊTES</span>
       <strong id="main-counter">0</strong>
       <small><span id="main-rps">0</span> par seconde</small>
     </div>
+    <div class="noc-graph" id="noc-graph" aria-hidden="true"></div>
     <div class="server-zone" id="server-zone">
       <div class="pulse-ring ring-one"></div>
       <div class="pulse-ring ring-two"></div>
@@ -128,35 +155,64 @@
       <span><i></i> 5% de requête critique</span>
     </div>
 
-    <div class="active-gameplay">
-      <div class="combo-meter" id="combo-meter">
-        <div><span>COMBO</span><strong id="combo-label">x1</strong></div>
-        <div class="combo-track"><span id="combo-bar"></span></div>
-        <small id="combo-hint">Enchaînez les requêtes</small>
+    <div class="action-bar">
+      <div class="action-status">
+        <div class="combo-meter" id="combo-meter">
+          <div class="combo-head"><span>COMBO</span><strong id="combo-label">x1</strong></div>
+          <div class="combo-track"><span id="combo-bar"></span></div>
+          <small id="combo-hint">Enchaînez les requêtes</small>
+        </div>
+        <button id="overclock-button" class="overclock-button" disabled>
+          <i class="overclock-ring" id="overclock-ring">
+            <svg class="action-icon overclock-glyph" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"></path>
+            </svg>
+          </i>
+          <span class="action-status-text"><strong>Surcharge</strong><small id="overclock-status">Charge 0%</small></span>
+        </button>
       </div>
-      <button id="overclock-button" class="overclock-button" disabled>
-        <span class="overclock-icon">ϟ</span>
-        <span><strong>Surcharge</strong><small id="overclock-status">Charge 0%</small></span>
-        <i class="overclock-ring" id="overclock-ring"></i>
-      </button>
+
+      <div class="action-menus" role="group" aria-label="Menus de jeu">
+        <button id="upgrades-open" class="menu-launch-button upgrades-launch" title="Améliorations — optimiser l’infrastructure">
+          <span class="menu-launch-icon">
+            <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2.5 20 7v10l-8 4.5L4 17V7l8-4.5Z"></path>
+              <path d="M12 8.5 15.5 10.5v3L12 15.5 8.5 13.5v-3L12 8.5Z"></path>
+            </svg>
+          </span>
+          <span class="menu-launch-text"><strong>Améliorations</strong><small>Optimiser l’infra</small></span>
+          <em id="upgrade-badge">0</em>
+        </button>
+        <button id="certifications-open" class="menu-launch-button certifications-launch" title="Certifications — bonus permanents">
+          <span class="menu-launch-icon">
+            <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="9" r="5.5"></circle>
+              <path d="M8.5 13.5 7 21l5-2.5L17 21l-1.5-7.5"></path>
+            </svg>
+          </span>
+          <span class="menu-launch-text"><strong>Certifications</strong><small>Bonus permanents</small></span>
+          <em id="cert-points">0</em>
+        </button>
+        <button id="missions-open" class="menu-launch-button missions-launch" title="Missions — objectifs quotidiens">
+          <span class="menu-launch-icon">
+            <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 5h9M9 12h9M9 19h9"></path>
+              <path d="M4 5.5 5 6.5 6.5 4.5M4 12l1 1 1.5-2M4 18.5l1 1 1.5-2"></path>
+            </svg>
+          </span>
+          <span class="menu-launch-text"><strong>Missions</strong><small>Objectifs quotidiens</small></span>
+          <em id="missions-badge">3</em>
+        </button>
+      </div>
     </div>
 
-    <div class="game-menu-actions">
-      <button id="upgrades-open" class="menu-launch-button upgrades-launch">
-        <span class="menu-launch-icon">⬡</span>
-        <span><strong>Améliorations</strong><small>Optimiser l’infrastructure</small></span>
-        <em id="upgrade-badge">0</em>
-      </button>
-      <button id="certifications-open" class="menu-launch-button certifications-launch">
-        <span class="menu-launch-icon">◆</span>
-        <span><strong>Certifications</strong><small>Bonus permanents</small></span>
-        <em id="cert-points">0</em>
-      </button>
-      <button id="missions-open" class="menu-launch-button missions-launch">
-        <span class="menu-launch-icon">✓</span>
-        <span><strong>Missions</strong><small>Objectifs quotidiens</small></span>
-        <em id="missions-badge">3</em>
-      </button>
+    <div class="ynov-figures" aria-hidden="true">
+      <div class="ynov-fig"><strong id="yf-req">0</strong><span>Requêtes traitées</span></div>
+      <div class="ynov-fig"><strong id="yf-rps">0</strong><span>Requêtes / sec</span></div>
+      <div class="ynov-fig"><strong id="yf-users">1</strong><span>Utilisateurs</span></div>
+      <div class="ynov-fig"><strong id="yf-cpu">4%</strong><span>Charge CPU</span></div>
+      <div class="ynov-fig"><strong id="yf-ram">128 MB</strong><span>Mémoire</span></div>
+      <div class="ynov-fig"><strong id="yf-bp">0 Kb/s</strong><span>Bande passante</span></div>
     </div>
   </section>
 
@@ -177,8 +233,26 @@
     </div>
     <div class="shop-guidance" id="shop-guidance">Commencez par un Script Bash.</div>
     <div id="building-list" class="building-list panel-scroll"></div>
+    <div id="ynov-menu-slot" class="ynov-menu-slot" aria-hidden="true">
+      <div class="ynov-cat">
+        <span class="ynov-cat-label">Tuning</span>
+        <div class="ynov-cat-items" id="ynov-cat-tuning"></div>
+      </div>
+      <div class="ynov-cat">
+        <span class="ynov-cat-label">Skills</span>
+        <div class="ynov-cat-items" id="ynov-cat-skills"></div>
+      </div>
+    </div>
   </aside>
 </main>
+
+<footer class="noc-statusline" aria-hidden="true">
+  <span class="noc-sl-cell"><i class="noc-sl-dot"></i> <span id="noc-sync">sync ok</span></span>
+  <span class="noc-sl-sep"></span>
+  <span class="noc-sl-cell noc-sl-mid">infra-clicker · build v2 · eu-west</span>
+  <span class="noc-sl-sep"></span>
+  <span class="noc-sl-cell noc-sl-keys"><kbd>Espace</kbd> injecter<i></i><kbd>T</kbd> terminal<i></i><kbd>P</kbd> prestige</span>
+</footer>
 
 <%- include('partials/modals') %>
 

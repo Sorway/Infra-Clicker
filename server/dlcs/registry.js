@@ -1,7 +1,10 @@
 const infra = require('./infra');
+const ynov = require('./ynov');
+const linear = require('./linear');
+const noc = require('./noc');
 
 const DEFAULT_DLC_ID = 'infra';
-const DLC_REGISTRY = Object.freeze({ infra });
+const DLC_REGISTRY = Object.freeze({ infra, ynov, linear, noc });
 
 function getDlc(id) {
   return DLC_REGISTRY[id] || DLC_REGISTRY[DEFAULT_DLC_ID];

@@ -1,0 +1,454 @@
+/* =============================================================
+   Thème surcouche — LINEAR (moderne / unslop)
+   -------------------------------------------------------------
+   Direction inspirée du langage visuel de Linear : sombre mat,
+   dense, net, profondeur subtile. Pensé pour neutraliser les
+   « tells » d'UI générée par IA (vibecoded-design-tells) :
+     ✗ glassmorphism (backdrop-filter)  → surfaces mates opaques
+     ✗ neon glow gratuit                → ombres réelles discrètes
+     ✗ gradients décoratifs / boutons   → aplats unis
+     ✗ « AI purple »                    → indigo de marque maîtrisé
+     ✗ halos/pulse-rings lumineux       → atténués
+   Hiérarchie par la TYPO, l'ESPACE et le CONTRASTE, pas la couleur.
+
+   Surcouche chargée après style.css, scopée [data-theme="linear"].
+   Aucun impact sur les autres thèmes.
+   ============================================================= */
+
+:root[data-theme="linear"] {
+  /* Surfaces — noir mat, échelle d'élévation discrète */
+  --ln-bg: #08090a;
+  --ln-surface: #0e0f11;
+  --ln-surface-2: #131416;
+  --ln-surface-3: #191a1c;
+  --ln-border: rgba(255, 255, 255, .07);
+  --ln-border-strong: rgba(255, 255, 255, .12);
+
+  /* Texte — fort contraste, lisibilité d'abord */
+  --ln-text: #f7f8f8;
+  --ln-muted: #8a8f98;
+  --ln-faint: #62666d;
+
+  /* Accent — indigo de marque (PAS un purple « IA ») + sémantique */
+  --ln-accent: #5e6ad2;
+  --ln-accent-bright: #828fff;
+  --ln-accent-rgb: 94, 106, 210;
+  --ln-green: #4cb782;
+  --ln-orange: #f2994a;
+  --ln-red: #eb5757;
+
+  /* Ombres réelles (pas de glow) — élévation crédible */
+  --ln-shadow-1: 0 1px 2px rgba(0, 0, 0, .4);
+  --ln-shadow-2: 0 4px 12px rgba(0, 0, 0, .5);
+  --ln-radius: 8px;
+  --ln-radius-sm: 6px;
+  --ln-ease: cubic-bezier(.2, .7, .3, 1);
+
+  /* Remappage des tokens du jeu vers la palette Linear */
+  --bg: var(--ln-bg);
+  --panel: var(--ln-surface);
+  --panel-2: var(--ln-surface-2);
+  --panel-3: var(--ln-surface-3);
+  --line: var(--ln-border);
+  --line-soft: var(--ln-border);
+  --text: var(--ln-text);
+  --muted: var(--ln-muted);
+  --cyan: var(--ln-accent);
+  --cyan-bright: var(--ln-accent-bright);
+  --green: var(--ln-green);
+  --orange: var(--ln-orange);
+  --red: var(--ln-red);
+  --purple: var(--ln-accent);
+  --accent-rgb: var(--ln-accent-rgb);
+  --accent-deep: #4954b8;
+  --accent-deep-2: #5e6ad2;
+
+  --radius-sm: var(--ln-radius-sm);
+  --radius-md: var(--ln-radius);
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+}
+
+/* ---------- TYPOGRAPHIE : Inter, dense et nette ---------- */
+:root[data-theme="linear"] body {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  letter-spacing: -.011em;
+  background: var(--ln-bg);   /* aplat mat — supprime les nappes radiales */
+}
+:root[data-theme="linear"] .ambient-grid { display: none; }  /* pas de grille déco */
+
+:root[data-theme="linear"] .request-counter > strong,
+:root[data-theme="linear"] .metric-card strong,
+:root[data-theme="linear"] .building-owned,
+:root[data-theme="linear"] h1,
+:root[data-theme="linear"] h2 {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  letter-spacing: -.02em;
+  font-weight: 600;
+}
+/* Chiffres tabulaires pour les compteurs (pas de saut de largeur) */
+:root[data-theme="linear"] .request-counter > strong,
+:root[data-theme="linear"] #header-rps,
+:root[data-theme="linear"] .metric-card strong,
+:root[data-theme="linear"] .building-price,
+:root[data-theme="linear"] .building-owned {
+  font-variant-numeric: tabular-nums;
+}
+:root[data-theme="linear"] .section-title span {
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: 11px;
+  color: var(--ln-muted);
+}
+
+/* ---------- TUER LE GLASSMORPHISM : surfaces mates opaques ---------- */
+:root[data-theme="linear"] .topbar,
+:root[data-theme="linear"] .left-panel,
+:root[data-theme="linear"] .right-panel,
+:root[data-theme="linear"] .modal,
+:root[data-theme="linear"] .terminal-window,
+:root[data-theme="linear"] .toast {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+:root[data-theme="linear"] .topbar { background: var(--ln-surface); border-color: var(--ln-border); box-shadow: var(--ln-shadow-1); }
+:root[data-theme="linear"] .left-panel,
+:root[data-theme="linear"] .right-panel { background: var(--ln-surface); border-color: var(--ln-border); box-shadow: none; }
+:root[data-theme="linear"] .center-stage { background: var(--ln-bg); border-color: var(--ln-border); box-shadow: none; }
+:root[data-theme="linear"] .modal { background: var(--ln-surface); border: 1px solid var(--ln-border-strong); box-shadow: var(--ln-shadow-2); }
+:root[data-theme="linear"] .modal-backdrop { background: rgba(0, 0, 0, .6); }
+:root[data-theme="linear"] .terminal-window { background: #0a0b0c; border-color: var(--ln-border-strong); }
+
+:root[data-theme="linear"] .metric-card,
+:root[data-theme="linear"] .upgrade-card,
+:root[data-theme="linear"] .cert-card,
+:root[data-theme="linear"] .achievement-item,
+:root[data-theme="linear"] .menu-launch-button,
+:root[data-theme="linear"] .building-card,
+:root[data-theme="linear"] .prestige-summary,
+:root[data-theme="linear"] .icon-button,
+:root[data-theme="linear"] .building-icon {
+  background: var(--ln-surface-2);
+  border-color: var(--ln-border);
+  box-shadow: none;
+}
+:root[data-theme="linear"] .panel-section:hover { background: rgba(255, 255, 255, .015); border-color: transparent; }
+
+/* ---------- TUER LES GLOWS / HALOS ---------- */
+:root[data-theme="linear"] .server-glow { display: none; }
+:root[data-theme="linear"] .pulse-ring { display: none; }
+:root[data-theme="linear"] .status-dot { box-shadow: none; background: var(--ln-green); }
+:root[data-theme="linear"] .metric-live-dot { box-shadow: none; background: var(--ln-green); }
+:root[data-theme="linear"] .brand-mark {
+  border: 1px solid var(--ln-border-strong);
+  background: var(--ln-surface-3);
+  box-shadow: none;
+}
+:root[data-theme="linear"] .brand-mark span { background: var(--ln-accent); box-shadow: 12px 0 0 -1px var(--ln-text); }
+:root[data-theme="linear"] .floating-number { text-shadow: none; color: var(--ln-accent-bright); }
+
+/* ---------- BOUTONS : aplats unis (pas de gradient) ---------- */
+:root[data-theme="linear"] .process-button {
+  background: var(--ln-accent);
+  border: 1px solid var(--ln-accent);
+  box-shadow: var(--ln-shadow-1);
+  transition: background .15s var(--ln-ease), transform .12s var(--ln-ease);
+}
+:root[data-theme="linear"] .process-button:hover { background: var(--ln-accent-bright); border-color: var(--ln-accent-bright); box-shadow: var(--ln-shadow-2); }
+:root[data-theme="linear"] .process-button:active { transform: translateY(1px); }
+:root[data-theme="linear"] .process-button strong { color: #fff; }
+
+:root[data-theme="linear"] .primary-button {
+  background: var(--ln-accent);
+  border-color: var(--ln-accent);
+  color: #fff;
+}
+:root[data-theme="linear"] .primary-button:hover { background: var(--ln-accent-bright); }
+
+/* ---------- ÉTATS : nets, pilotés contraste/bordure ---------- */
+:root[data-theme="linear"] .menu-launch-button,
+:root[data-theme="linear"] .upgrade-card,
+:root[data-theme="linear"] .building-card {
+  transition: background .14s var(--ln-ease), border-color .14s var(--ln-ease);
+}
+:root[data-theme="linear"] .menu-launch-button:hover,
+:root[data-theme="linear"] .upgrade-card:not(.locked):not(.owned):hover,
+:root[data-theme="linear"] .building-card.affordable:hover {
+  background: var(--ln-surface-3);
+  border-color: var(--ln-border-strong);
+}
+:root[data-theme="linear"] .building-card.recommended {
+  border-color: var(--ln-accent);
+  box-shadow: inset 2px 0 var(--ln-accent);
+}
+:root[data-theme="linear"] .filter-button.active,
+:root[data-theme="linear"] .buy-mode.active,
+:root[data-theme="linear"] .center-tab.active {
+  background: rgba(94, 106, 210, .14);
+  border-color: var(--ln-accent);
+  color: var(--ln-accent-bright);
+}
+
+/* ---------- VISUEL CENTRAL : net, sans glow ----------
+   L'image serveur a un halo cyan « baked in » qui jure avec le mat
+   Linear. On le neutralise par un léger désaturé + recadrage du
+   contraste, et on pose une ombre portée réelle (pas un glow). */
+:root[data-theme="linear"] .server-button img {
+  filter: saturate(.55) brightness(.92) contrast(1.05);
+  border-radius: 14px;
+}
+:root[data-theme="linear"] .server-button {
+  filter: drop-shadow(0 18px 26px rgba(0, 0, 0, .55));
+}
+:root[data-theme="linear"] .server-button:hover img { transform: scale(1.02); filter: saturate(.7) brightness(1) contrast(1.05); }
+
+/* ---------- ACCENTS multicolores → palette Linear sobre ---------- */
+:root[data-theme="linear"] .upgrade-icon.linux { color: var(--ln-accent); }
+:root[data-theme="linear"] .upgrade-icon.reseau { color: #4ea7e0; }
+:root[data-theme="linear"] .upgrade-icon.devops { color: var(--ln-orange); }
+:root[data-theme="linear"] .upgrade-icon.securite { color: var(--ln-green); }
+
+/* Pastille du sélecteur de thème (aplat indigo mat, anti-slop). */
+.theme-option[data-theme="linear"] i {
+  background: #5e6ad2;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+}
+
+/* ---------- CHIFFRES & MÉTRIQUES : sobres, pas néon ----------
+   Linear : les valeurs primaires sont en blanc cassé fort contraste,
+   l'accent (indigo) reste rare. On retire le vert fluo des compteurs. */
+:root[data-theme="linear"] .request-counter > strong,
+:root[data-theme="linear"] #main-counter,
+:root[data-theme="linear"] .metric-card strong,
+:root[data-theme="linear"] #requests-stat,
+:root[data-theme="linear"] #rps-stat,
+:root[data-theme="linear"] #users-stat,
+:root[data-theme="linear"] .shop-summary strong {
+  color: var(--ln-text);
+}
+/* Libellés secondaires (« par seconde », req/s) en gris, pas en vert. */
+:root[data-theme="linear"] .request-counter small,
+:root[data-theme="linear"] .request-counter small span,
+:root[data-theme="linear"] #main-rps,
+:root[data-theme="linear"] .global-status strong,
+:root[data-theme="linear"] #header-rps {
+  color: var(--ln-muted);
+}
+/* Icône de métrique : carré mat sobre, glyphe en accent discret. */
+:root[data-theme="linear"] .metric-icon {
+  background: var(--ln-surface-3);
+  border: 1px solid var(--ln-border);
+  color: var(--ln-muted);
+  box-shadow: none;
+}
+:root[data-theme="linear"] .metric-live-dot { background: var(--ln-muted); }
+
+/* Sparkline : trait fin neutre, aire quasi nulle (pas de fluo). */
+:root[data-theme="linear"] .spark-line { stroke: var(--ln-accent); }
+:root[data-theme="linear"] .spark-area { fill: rgba(94, 106, 210, .08); }
+:root[data-theme="linear"] .spark-point { fill: var(--ln-accent-bright); }
+
+/* ---------- PILULE PRESTIGE : retirer le « AI purple » ----------
+   Devient une surface mate avec un liseré indigo discret. */
+:root[data-theme="linear"] .header-prestige-button {
+  background: var(--ln-surface-3);
+  border-color: var(--ln-border);
+  color: var(--ln-muted);
+  box-shadow: none;
+}
+:root[data-theme="linear"] .header-prestige-button:not([disabled]) {
+  border-color: var(--ln-accent);
+  color: var(--ln-accent-bright);
+}
+:root[data-theme="linear"] .header-prestige-button span { color: var(--ln-faint); }
+
+/* Jauge de capacité : remplissage indigo mat. */
+:root[data-theme="linear"] #header-capacity-bar { background: var(--ln-accent); box-shadow: none; }
+
+/* Barres de ressources (CPU/RAM/réseau) : aplats neutres, pas de glow. */
+:root[data-theme="linear"] .progress span,
+:root[data-theme="linear"] .progress.cpu span,
+:root[data-theme="linear"] .progress.ram span,
+:root[data-theme="linear"] .progress.network span {
+  background: var(--ln-accent);
+  box-shadow: none;
+}
+
+/* =============================================================
+   SECTION JEU ACTIF — COMBO / SURCHARGE / CARTES DE MENU
+   Refonte moderne façon Linear : tuiles d'icône nettes, badges
+   pilules lisibles, identité couleur sobre par carte, profondeur
+   discrète, rail d'accent au survol. Pas de purple, pas de glow.
+   ============================================================= */
+
+/* ---- Disposition « command bar » : indicateurs fins + segments ---- */
+:root[data-theme="linear"] .action-bar { width: min(820px, 100%); gap: 8px; }
+:root[data-theme="linear"] .action-status { flex: 1 1 260px; gap: 8px; }
+:root[data-theme="linear"] .action-menus { flex: 1.6 1 380px; gap: 6px; }
+
+/* COMBO : indicateur fin (pas une grosse carte). */
+:root[data-theme="linear"] .combo-meter {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+:root[data-theme="linear"] .combo-meter small { display: none; }   /* hint retiré : trop bavard en barre */
+:root[data-theme="linear"] .combo-head span { font-size: 9px; letter-spacing: .1em; }
+
+/* Surcharge : compacte, ring + label, 2 colonnes. */
+:root[data-theme="linear"] .overclock-button {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 9px 11px;
+  grid-template-columns: 30px 1fr;
+  gap: 9px;
+}
+:root[data-theme="linear"] .overclock-button .overclock-ring { width: 28px; height: 28px; }
+:root[data-theme="linear"] .overclock-glyph { color: var(--ln-accent-bright); }
+
+/* Segments de menu : icône + label + compteur, compacts et égaux.
+   La sous-ligne (desc) est masquée en barre (le titre suffit, la desc
+   reste dans le title=tooltip) → labels lisibles, pas de troncature. */
+:root[data-theme="linear"] .action-menus .menu-launch-button {
+  min-height: 0;
+  padding: 9px 11px;
+  grid-template-columns: 28px 1fr auto;
+  gap: 9px;
+}
+:root[data-theme="linear"] .action-menus .menu-launch-icon { width: 28px; height: 28px; }
+:root[data-theme="linear"] .action-menus .menu-launch-text small { display: none; }
+:root[data-theme="linear"] .action-menus .menu-launch-text strong {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -.01em;
+}
+:root[data-theme="linear"] .action-menus .menu-launch-button em {
+  min-width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+/* Sous ~1280px le centre se resserre : on tombe en mode icône + compteur
+   (label masqué, découvrable via le tooltip) pour rester net. */
+@media (max-width: 1280px) {
+  :root[data-theme="linear"] .action-menus .menu-launch-text { display: none; }
+  :root[data-theme="linear"] .action-menus .menu-launch-button {
+    grid-template-columns: 28px auto;
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+/* ---- Bloc COMBO + Surcharge : surfaces mates, rayon resserré ---- */
+:root[data-theme="linear"] .combo-meter,
+:root[data-theme="linear"] .overclock-button {
+  background: var(--ln-surface-2);
+  border: 1px solid var(--ln-border);
+  border-radius: var(--ln-radius);
+  box-shadow: var(--ln-shadow-1);
+  transition: border-color .15s var(--ln-ease), background .15s var(--ln-ease);
+}
+:root[data-theme="linear"] .combo-meter.active {
+  border-color: rgba(94, 106, 210, .4);
+  background: rgba(94, 106, 210, .06);
+}
+:root[data-theme="linear"] .combo-meter strong {
+  color: var(--ln-text);
+  font-variant-numeric: tabular-nums;
+}
+:root[data-theme="linear"] .combo-track { background: rgba(255, 255, 255, .06); }
+:root[data-theme="linear"] .combo-track span {
+  background: var(--ln-accent);
+}
+
+/* Surcharge : tuile d'icône + anneau de charge bien visible. */
+:root[data-theme="linear"] .overclock-icon {
+  background: var(--ln-surface-3);
+  border: 1px solid var(--ln-border);
+  color: var(--ln-accent-bright);
+}
+:root[data-theme="linear"] .overclock-button strong { color: var(--ln-text); }
+:root[data-theme="linear"] .overclock-ring {
+  background: conic-gradient(var(--ln-accent) var(--charge), rgba(255, 255, 255, .09) 0);
+}
+:root[data-theme="linear"] .overclock-button:not([disabled]):hover {
+  border-color: var(--ln-border-strong);
+  background: var(--ln-surface-3);
+}
+/* Quand la surcharge est prête : liseré accent net (état clair). */
+:root[data-theme="linear"] .overclock-button.active,
+:root[data-theme="linear"] .overclock-button:not([disabled]) {
+  border-color: rgba(94, 106, 210, .35);
+}
+
+/* ---- Cartes de menu : tuiles d'icône + badges modernes ---- */
+:root[data-theme="linear"] .menu-launch-button {
+  position: relative;
+  background: var(--ln-surface-2);
+  border: 1px solid var(--ln-border);
+  border-radius: var(--ln-radius);
+  box-shadow: var(--ln-shadow-1);
+  overflow: hidden;
+  transition: border-color .15s var(--ln-ease), background .15s var(--ln-ease), transform .12s var(--ln-ease);
+}
+/* Rail d'accent à gauche, révélé au survol (affordance « cliquable »). */
+:root[data-theme="linear"] .menu-launch-button::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--card-accent, var(--ln-accent));
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform .16s var(--ln-ease);
+}
+:root[data-theme="linear"] .menu-launch-button:hover {
+  background: var(--ln-surface-3);
+  border-color: var(--ln-border-strong);
+  transform: translateY(-1px);
+}
+:root[data-theme="linear"] .menu-launch-button:hover::before { transform: scaleY(1); }
+:root[data-theme="linear"] .menu-launch-button:active { transform: translateY(0); }
+:root[data-theme="linear"] .menu-launch-button strong { color: var(--ln-text); }
+
+/* Tuile d'icône : carré mat, bord teinté de l'accent de la carte. */
+:root[data-theme="linear"] .menu-launch-icon {
+  border-radius: var(--ln-radius-sm);
+  background: color-mix(in srgb, var(--card-accent, var(--ln-accent)) 14%, var(--ln-surface-3));
+  border: 1px solid color-mix(in srgb, var(--card-accent, var(--ln-accent)) 35%, transparent);
+  color: var(--card-accent, var(--ln-accent));
+}
+
+/* Badge pilule : lisible, teinté de l'accent, chiffres tabulaires. */
+:root[data-theme="linear"] .menu-launch-button em {
+  border-radius: var(--ln-radius-sm);
+  font-family: "Inter", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--card-accent, var(--ln-accent-bright));
+  background: color-mix(in srgb, var(--card-accent, var(--ln-accent)) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-accent, var(--ln-accent)) 28%, transparent);
+}
+:root[data-theme="linear"] .menu-launch-button em.complete {
+  color: var(--ln-green);
+  background: rgba(76, 183, 130, .15);
+  border-color: rgba(76, 183, 130, .35);
+}
+
+/* Identité couleur par carte (palette Linear sobre, sans purple). */
+:root[data-theme="linear"] .upgrades-launch { --card-accent: #5e6ad2; }   /* indigo */
+:root[data-theme="linear"] .certifications-launch { --card-accent: #4ea7e0; } /* bleu doux (remplace le purple) */
+:root[data-theme="linear"] .missions-launch { --card-accent: #4cb782; }   /* vert */
+
+/* reduced-motion : neutralise nos transforms de confort. */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="linear"] .process-button:active,
+  :root[data-theme="linear"] .server-button:hover img,
+  :root[data-theme="linear"] .menu-launch-button:hover,
+  :root[data-theme="linear"] .menu-launch-button:active { transform: none; }
+  :root[data-theme="linear"] .menu-launch-button:hover::before { transform: scaleY(1); }
+}
