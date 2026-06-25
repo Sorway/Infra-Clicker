@@ -233,6 +233,7 @@ class InfraClicker {
         this.state.overclockCharge = Math.min(100, this.state.overclockCharge + (critical ? 8 : 1));
       }
       this.ui.clickEffect(x, y, power, { critical, comboMultiplier });
+      this.ui.ynovHammerStrike();
       this.audio.click();
     };
     document.querySelector('#server-button').addEventListener('click', clickHandler);
@@ -440,20 +441,12 @@ class InfraClicker {
   // Bandeau Ynov : fait défiler des messages aléatoires (gadget d'ambiance).
   startYnovTicker() {
     const messages = [
-      'Campus Infra · édition continue',
-      'Le cluster tient bon. Pour l’instant.',
-      'Rappel : sauvegardez avant un rm -rf.',
-      'Astreinte de nuit — tout est sous contrôle.',
-      'La fibre est enfin arrivée jusqu’au campus.',
-      'Ticket #4042 : « ça marche pas » → résolu.',
-      'Les pods Kubernetes vous remercient.',
-      'Déploiement du vendredi : courage à l’équipe.',
-      'Nouveau record de requêtes ce cycle.',
-      'Le café de l’étage 2 est de nouveau opérationnel.',
-      'Pensez à hydrater vos serveurs (et vous-même).',
-      'Le DDoS de la semaine dernière n’est qu’un souvenir.',
-      'Promo Ynov : objectif 100 % d’uptime.',
-      'Monitoring nominal sur toute la baie.'
+      'C\'est la météo des classes, à nous les madeleines !',
+      'La référente pédagogique vous a signalé qu\'on était pas un datacenter non plus...',
+      'Dommage ! Pas de place pour une salle informatique.',
+      'ça marche pas, c\'est pas documenté, poubelle ! N.L.',
+      'Tfaçon vous, vous êtes le groupe de la doc',
+      'C\'est de la merde ça poubelle !'
     ];
     const pick = () => {
       const el = document.querySelector('#ynov-ticker');
@@ -544,6 +537,7 @@ class InfraClicker {
       this.ui.toast('Budget insuffisant', `Il manque des requêtes pour ${building.name}.`, 'danger');
       return;
     }
+    const firstTime = (this.state.buildings[id] || 0) === 0;
     this.state.requests -= purchase.cost;
     this.state.buildings[id] += purchase.amount;
     this.state.totalBuildingsPurchased += purchase.amount;
@@ -551,6 +545,7 @@ class InfraClicker {
     this.ui.lastBuildingsUpdate = performance.now();
     this.ui.update();
     this.audio.purchase();
+    if (firstTime) this.ui.ynovItemUnlock('building', building);
     this.ui.toast('Infrastructure déployée', `${purchase.amount} × ${building.name}`, 'info');
     this.achievements.check();
   }
@@ -563,6 +558,7 @@ class InfraClicker {
     this.markCompletion();
     this.audio.purchase();
     this.ui.renderUpgrades();
+    this.ui.ynovItemUnlock('upgrade', upgrade);
     this.ui.toast(`${upgrade.name} installé`, upgrade.description, 'bonus');
     this.ui.update();
     this.achievements.check();
@@ -576,6 +572,7 @@ class InfraClicker {
     this.markCompletion();
     this.audio.achievement();
     this.ui.renderCertifications();
+    this.ui.ynovItemUnlock('cert', certification);
     this.ui.toast(`Certification ${certification.name}`, certification.description, 'achievement');
     this.ui.update();
     this.achievements.check();

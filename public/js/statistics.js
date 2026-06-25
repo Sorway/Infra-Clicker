@@ -123,6 +123,12 @@ function renderProductionChart(state) {
   setText('chart-end', formatDate(history.at(-1).time));
 }
 
+const BUILDING_IMAGES = {
+  bash: 'bash_script', pi: 'raspberry_pi', mini: 'mini_server', nas: 'nas', serverroom: 'salle_server',
+  switch: 'switch', firewall: 'firewall', rack: 'rack_42u', datacenter: 'datacenter',
+  kubernetes: 'cluster_kubernetes', privatecloud: 'cloud_private', worldcloud: 'cloud_mondial'
+};
+
 function renderBuildings(state, economy) {
   const maximum = Math.max(1, ...BUILDINGS.map(building => state.buildings[building.id] || 0));
   document.getElementById('building-stats').innerHTML = BUILDINGS.map(building => {
@@ -130,11 +136,15 @@ function renderBuildings(state, economy) {
     const production = count * building.baseProduction
       * economy.getBuildingMultiplier(building.id)
       * economy.getGlobalMultiplier();
+    const img = BUILDING_IMAGES[building.id];
+    const icon = img
+      ? `<img src="/img/buildings/${img}.png" alt="" loading="lazy" draggable="false" onerror="this.closest('.building-stat-icon').classList.remove('has-img');this.replaceWith(document.createTextNode('${building.icon}'))">`
+      : building.icon;
     return `
-      <div class="building-stat-row ${count ? '' : 'empty'}">
-        <span class="building-stat-icon">${building.icon}</span>
+      <div class="building-stat-row ${count ? '' : 'empty'}" data-building="${building.id}">
+        <span class="building-stat-icon${img ? ' has-img' : ''}">${icon}</span>
         <div class="building-stat-info">
-          <div><strong>${building.name}</strong><span>${count} possédé${count > 1 ? 's' : ''}</span></div>
+          <div><strong>${building.name}</strong><span>${count} déployé${count > 1 ? 's' : ''}</span></div>
           <div class="building-stat-bar"><span style="width:${count / maximum * 100}%"></span></div>
         </div>
         <strong class="building-stat-output">${formatNumber(production)}<small> req/s</small></strong>

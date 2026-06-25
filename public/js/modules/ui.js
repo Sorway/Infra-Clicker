@@ -116,25 +116,48 @@ export class GameUI {
 
   renderUpgrades() {
     const filtered = UPGRADES.filter(upgrade => this.activeUpgradeCategory === 'Tous' || upgrade.category === this.activeUpgradeCategory);
+    const images = {
+      ssd: 'ssd', raid: 'raid_ssd', nvme: 'nvme', ceph: 'ceph', zfs: 'zfs', 'distributed-storage': 'distributed_storage',
+      cat5: 'cat5', cat6: 'cat6', fiber: 'fiber', sfp: 'sfp', '10gb': '10gbe', '40gb': '40gbe', '100gb': '100gbe', backbone: 'backbone',
+      cron: 'cron', systemd: 'systemd', docker: 'docker', ansible: 'ansible', terraform: 'terraform', k8s: 'k8s', gitops: 'gitops', cicd: 'ci-cd',
+      fail2ban: 'fail2ban', ids: 'ids', ips: 'ips', mfa: 'mfa', 'zero-trust': '0trust', soc: 'soc', 'anti-ddos-ai': 'anti_ddos'
+    };
+    const effectText = (up) => {
+      const e = up.effect || {};
+      if (typeof e.production === 'number') return `+${Math.round((e.production - 1) * 100)} % production`;
+      if (typeof e.click === 'number') return `Clic ×${e.click}`;
+      if (e.building && e.multiplier) {
+        const b = BUILDINGS.find(item => item.id === e.building);
+        return `${b ? b.name : 'Bâtiment'} ×${e.multiplier}`;
+      }
+      if (e.multiplier) return `Production ×${e.multiplier}`;
+      return '';
+    };
     this.el['upgrade-grid'].innerHTML = filtered.map(upgrade => {
       const owned = this.state.upgrades.includes(upgrade.id);
+      const img = images[upgrade.id];
       const locked = upgrade.requires && !this.state.upgrades.includes(upgrade.requires);
       const requirement = locked ? UPGRADES.find(item => item.id === upgrade.requires)?.name : '';
+      const effect = effectText(upgrade);
       return `
         <button class="upgrade-card ${owned ? 'owned' : ''} ${locked ? 'locked' : ''}" data-upgrade="${upgrade.id}" title="${upgrade.description}">
-          <span class="upgrade-icon ${upgrade.category.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}">${upgrade.icon}</span>
-          <span><strong>${upgrade.name}</strong><small>${owned ? 'INSTALLÉ' : locked ? `REQUIS : ${requirement}` : formatNumber(upgrade.cost)}</small></span>
+          <span class="upgrade-icon ${upgrade.category.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}${img ? ' has-img' : ''}">${img ? `<img src="/img/buildings/${img}.png" alt="" loading="lazy" draggable="false" onerror="this.closest('.upgrade-icon').classList.remove('has-img');this.replaceWith(document.createTextNode('${upgrade.icon}'))">` : upgrade.icon}</span>
+          <span><strong>${upgrade.name}</strong>${effect ? `<em class="upgrade-effect">${effect}</em>` : ''}<small>${owned ? 'INSTALLÉ' : locked ? `REQUIS : ${requirement}` : formatNumber(upgrade.cost)}</small></span>
         </button>
       `;
     }).join('');
   }
 
   renderCertifications() {
+    const images = { lpic: 'lpic', rhcsa: 'rhcsa', rhce: 'rhce', ccna: 'ccna', ccnp: 'ccnp', cka: 'cka', ckad: 'ckad', cissp: 'cissp' };
     this.el['certification-grid'].innerHTML = CERTIFICATIONS.map(certification => {
       const owned = this.state.certifications.includes(certification.id);
+      const img = images[certification.id];
       return `
         <button class="cert-card ${owned ? 'owned' : ''}" data-certification="${certification.id}">
-          <span class="cert-icon">${certification.icon}</span>
+          <span class="cert-icon${img ? ' has-img' : ''}">${img
+            ? `<img src="/img/buildings/${img}.png" alt="" loading="lazy" draggable="false">`
+            : certification.icon}</span>
           <span><strong>${certification.name}</strong><small>${certification.description}</small></span>
           <em>${owned ? 'ACQUISE' : `${certification.cost} CP`}</em>
         </button>
@@ -537,7 +560,7 @@ export class GameUI {
       hist.push(p); hist.shift();
       const min = Math.min(...hist), max = Math.max(...hist), range = Math.max(1, max - min);
       const sx = i => (26 + i / (hist.length - 1) * 48).toFixed(1);
-      const sy = v => (50.5 - (v - min) / range * 6).toFixed(1);   // dans le bas de l'arc
+      const sy = v => (49 - (v - min) / range * 5).toFixed(1);   // bas de l'arc, sans passer sous la base (y=50)
       const pts = hist.map((v, i) => `${sx(i)},${sy(v)}`).join(' ');
       const lx = sx(hist.length - 1), ly = sy(hist[hist.length - 1]);
       // Taille de la valeur adaptée à sa longueur pour ne jamais toucher l'arc.
@@ -659,6 +682,29 @@ export class GameUI {
     setTimeout(() => el.remove(), 2200);
   }
 
+  // Coup de marteau (hammer.png) sur le logo central à chaque clic (thème Ynov).
+  // Position aléatoire sur le logo pour l'immersion ; léger et auto-nettoyé.
+  ynovHammerStrike() {
+    if (document.documentElement.dataset.theme !== 'ynov' || this.performanceMode) return;
+    const zone = document.querySelector('#server-zone');
+    if (!zone) return;
+    const rect = zone.getBoundingClientRect();
+    if (!rect.width) return;
+    const px = rect.left + rect.width * (0.28 + Math.random() * 0.44);
+    const py = rect.top + rect.height * (0.30 + Math.random() * 0.40);
+    const size = Math.max(46, Math.round(rect.width * 0.34));
+    const ham = document.createElement('img');
+    ham.src = '/img/buildings/hammer.png';
+    ham.alt = '';
+    ham.className = 'ynov-hammer';
+    ham.style.width = `${size}px`;
+    ham.style.left = `${px - size * 0.24}px`;   // tête (~24%,20% de l'image) sur le point d'impact
+    ham.style.top = `${py - size * 0.20}px`;
+    ham.style.setProperty('--ang', `${Math.round(randomBetween(-58, -38))}deg`);
+    document.body.appendChild(ham);
+    setTimeout(() => ham.remove(), 430);
+  }
+
   // Célébration plein écran à chaque montée de niveau (thème Ynov) :
   // bandeau « LEVEL UP! » + badge du niveau atteint + gerbe d'étoiles.
   // Gated Ynov + performanceMode (pas d'étoiles), pointer-events:none, auto-nettoyée.
@@ -693,6 +739,95 @@ export class GameUI {
     document.body.appendChild(el);
     setTimeout(() => el.classList.add('leaving'), 1700);
     setTimeout(() => el.remove(), 2400);
+  }
+
+  // Première obtention d'un équipement infra ou d'une certif (thème Ynov) :
+  // overlay avec l'image + les stats de l'objet et une phrase loufoque aléatoire.
+  ynovItemUnlock(kind, item) {
+    if (!item || document.documentElement.dataset.theme !== 'ynov') return;
+    document.querySelector('.ynov-unlock')?.remove();
+    const buildingImages = {
+      bash: 'bash_script', pi: 'raspberry_pi', mini: 'mini_server', nas: 'nas', serverroom: 'salle_server',
+      switch: 'switch', firewall: 'firewall', rack: 'rack_42u', datacenter: 'datacenter',
+      kubernetes: 'cluster_kubernetes', privatecloud: 'cloud_private', worldcloud: 'cloud_mondial'
+    };
+    const certImages = { lpic: 'lpic', rhcsa: 'rhcsa', rhce: 'rhce', ccna: 'ccna', ccnp: 'ccnp', cka: 'cka', ckad: 'ckad', cissp: 'cissp' };
+    const upgradeImages = {
+      ssd: 'ssd', raid: 'raid_ssd', nvme: 'nvme', ceph: 'ceph', zfs: 'zfs', 'distributed-storage': 'distributed_storage',
+      cat5: 'cat5', cat6: 'cat6', fiber: 'fiber', sfp: 'sfp', '10gb': '10gbe', '40gb': '40gbe', '100gb': '100gbe', backbone: 'backbone',
+      cron: 'cron', systemd: 'systemd', docker: 'docker', ansible: 'ansible', terraform: 'terraform', k8s: 'k8s', gitops: 'gitops', cicd: 'ci-cd',
+      fail2ban: 'fail2ban', ids: 'ids', ips: 'ips', mfa: 'mfa', 'zero-trust': '0trust', soc: 'soc', 'anti-ddos-ai': 'anti_ddos'
+    };
+    const categoryAccents = { stockage: '#5ec5ea', réseau: '#2bc7b6', reseau: '#2bc7b6', devops: '#b98cff', sécurité: '#ff8a5c', securite: '#ff8a5c' };
+    const quotes = [
+      'C\'est pas un datacenter, mais on fait avec.',
+      'Pas de salle info ? On improvise.',
+      'ça marche, mais c\'est pas documenté. On garde.',
+      'Validé par le groupe de la doc.',
+      'À nous les madeleines !',
+      'La référente pédagogique ne saura jamais.',
+      'Poubelle ? Non : promotion !',
+      'Un grand savant N.L hocherait la tête.',
+      'Encore un truc qui tourne par miracle.',
+      'C\'est de la qualité, ça, madame.'
+    ];
+    const isCert = kind === 'cert';
+    const isUpgrade = kind === 'upgrade';
+    const file = isCert ? certImages[item.id] : isUpgrade ? upgradeImages[item.id] : buildingImages[item.id];
+    const upgradeStat = (up) => {
+      const e = up.effect || {};
+      if (typeof e.production === 'number') return `+${Math.round((e.production - 1) * 100)}% production`;
+      if (typeof e.click === 'number') return `Clic ×${e.click}`;
+      if (e.multiplier) return `Boost ×${e.multiplier}`;
+      return 'Setup optimisé';
+    };
+    const stat = isCert
+      ? (item.bonus >= 1 ? 'Production ×2' : `+${Math.round((item.bonus || 0) * 100)}% production`)
+      : isUpgrade
+        ? upgradeStat(item)
+        : `${formatNumber(item.baseProduction || 0)} req/s`;
+    const kicker = isCert ? 'CERTIFICATION OBTENUE' : isUpgrade ? 'AMÉLIORATION INSTALLÉE' : 'NOUVEL ÉQUIPEMENT';
+    const quote = quotes[Math.floor(Math.random() * quotes.length)];
+    const el = document.createElement('div');
+    el.className = 'ynov-unlock' + (isCert ? ' is-cert' : '') + (isUpgrade ? ' is-upgrade' : '');
+    if (isUpgrade) {
+      const accent = categoryAccents[(item.category || '').toLowerCase()];
+      if (accent) el.style.setProperty('--ac', accent);
+    }
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = `
+      <div class="ynov-unlock-rays"></div>
+      <div class="ynov-unlock-stars"></div>
+      <div class="ynov-unlock-card">
+        <span class="ynov-unlock-kicker">${kicker}</span>
+        <div class="ynov-unlock-media">
+          <span class="ynov-unlock-ring"></span>
+          ${file
+            ? `<img src="/img/buildings/${file}.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ynov-unlock-glyph',textContent:'${item.icon || '◆'}'}))">`
+            : `<span class="ynov-unlock-glyph">${item.icon || '◆'}</span>`}
+        </div>
+        <strong class="ynov-unlock-name">${item.name}</strong>
+        <span class="ynov-unlock-stat">${stat}</span>
+        <small class="ynov-unlock-desc">${item.description || ''}</small>
+        <p class="ynov-unlock-quote">« ${quote} »</p>
+      </div>`;
+    if (!this.performanceMode) {
+      const starbox = el.querySelector('.ynov-unlock-stars');
+      for (let i = 0; i < 22; i += 1) {
+        const star = document.createElement('i');
+        star.className = 'ynov-star' + (i % 2 ? ' alt' : '');
+        const angle = randomBetween(0, Math.PI * 2);
+        const distance = randomBetween(150, 330);
+        star.style.setProperty('--tx', `${Math.round(Math.cos(angle) * distance)}px`);
+        star.style.setProperty('--ty', `${Math.round(Math.sin(angle) * distance)}px`);
+        star.style.setProperty('--spin', `${Math.round(randomBetween(180, 560))}deg`);
+        star.style.setProperty('--delay', `${Math.round(randomBetween(0, 160))}ms`);
+        starbox.appendChild(star);
+      }
+    }
+    document.body.appendChild(el);
+    setTimeout(() => el.classList.add('leaving'), 2900);
+    setTimeout(() => el.remove(), 3500);
   }
 
   celebrateMaxProgress() {
