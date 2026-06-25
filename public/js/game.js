@@ -417,10 +417,17 @@ class InfraClicker {
   }
 
   initTheme() {
-    const themes = ['ruby', 'sunset', 'lavender', 'mint', 'ocean', 'ynov', 'linear', 'noc'];
+    // Les skins Ynov / Linear / NOC sont désormais des DLC : un DLC à skin impose
+    // son thème ; le DLC de base (infra) laisse le choix parmi les palettes couleur.
+    const palettes = ['ruby', 'sunset', 'lavender', 'mint', 'ocean'];
+    if (ACTIVE_DLC.theme) {
+      this.applyTheme(ACTIVE_DLC.theme);
+      const themeSettings = document.querySelector('.theme-settings');
+      if (themeSettings) themeSettings.style.display = 'none';
+      return;
+    }
     const savedTheme = localStorage.getItem('infra-clicker-theme');
-    const initialTheme = themes.includes(savedTheme) ? savedTheme : 'noc';
-    this.applyTheme(initialTheme);
+    this.applyTheme(palettes.includes(savedTheme) ? savedTheme : 'ocean');
 
     document.querySelector('#theme-picker').addEventListener('click', event => {
       const option = event.target.closest('[data-theme]');
@@ -446,7 +453,13 @@ class InfraClicker {
       'Dommage ! Pas de place pour une salle informatique.',
       'ça marche pas, c\'est pas documenté, poubelle ! N.L.',
       'Tfaçon vous, vous êtes le groupe de la doc',
-      'C\'est de la merde ça poubelle !'
+      'C\'est de la merde ça poubelle !',
+      'C\'est un vrai sujet, ça',
+      'C\'était présenté aux assises de Monaco ?',
+      'Aussi p\'tit que le micro-p',
+      '+ efficace + ergonomique',
+      'C\'est clarinette !',
+      'Le prochain qui fait ça je le monte en l\'air !'
     ];
     const pick = () => {
       const el = document.querySelector('#ynov-ticker');

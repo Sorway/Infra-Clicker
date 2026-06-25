@@ -646,21 +646,19 @@
   overflow: hidden;
   isolation: isolate;
   --fam: var(--ynov-primary-bright);
-  /* fond qui CHANGE DE COULEUR EN COULISSANT (gauche → droite) au survol */
-  background: linear-gradient(90deg, color-mix(in srgb, var(--fam) 26%, var(--panel-2)) 0 50%, var(--panel-2) 50% 100%);
-  background-size: 200% 100%;
-  background-position: 100% 0;
-  transition: background-position .3s cubic-bezier(.22, .61, .36, 1), border-color .2s ease;
+  --msg: "Go !";
+  background: var(--panel-2);
+  transition: border-color .2s ease;
 }
-:root[data-theme="ynov"] .ynov-menu-slot .upgrades-launch { --fam: #2bc7b6; }
-:root[data-theme="ynov"] .ynov-menu-slot .certifications-launch { --fam: #5ec5ea; }
-:root[data-theme="ynov"] .ynov-menu-slot .missions-launch { --fam: #5affb6; }
+:root[data-theme="ynov"] .ynov-menu-slot .upgrades-launch { --fam: #2bc7b6; --msg: "Tune ton infra !"; }
+:root[data-theme="ynov"] .ynov-menu-slot .certifications-launch { --fam: #5ec5ea; --msg: "Valide tes skills !"; }
+:root[data-theme="ynov"] .ynov-menu-slot .missions-launch { --fam: #5affb6; --msg: "Relève le défi !"; }
 
-/* bordure + le fond coloré coulisse au survol */
+/* survol : liseré famille (le fond plein + le message arrivent via ::after) */
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover,
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible,
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover {
-  border-color: var(--fam); background-position: 0 0;
+  border-color: var(--fam);
 }
 /* compteur 0/x : pastille rouge pleine, en gras, dans l'angle haut-droit */
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button em {
@@ -672,39 +670,41 @@
 }
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button em.complete { background: var(--ynov-cyber); color: #04201d; }
 
-/* (1) SHINE : traînée lumineuse diagonale qui traverse le bouton */
+/* COULEUR PLEINE + MESSAGE : le fond plein et le message se révèlent de GAUCHE À DROITE.
+   Décalé à droite du logo + des traits ; le logo reste visible au-dessus (z-index 4). */
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::after {
-  content: "";
-  position: absolute; top: 0; bottom: 0; left: 0; width: 45%;
-  z-index: 3; pointer-events: none;
-  background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, .16) 50%, transparent 100%);
-  transform: translateX(-220%) skewX(-14deg);
+  content: var(--msg);
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  display: flex; align-items: center; justify-content: center; padding: 0 14px 0 78px;
+  background: var(--fam); color: #04201d;
+  font-family: var(--ynov-font); font-weight: 800; font-size: 12.5px;
+  letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path .34s cubic-bezier(.22, .61, .36, 1);
 }
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover::after,
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible::after,
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover::after {
-  transform: translateX(430%) skewX(-14deg);
-  transition: transform .55s ease;
+  clip-path: inset(0 0 0 0);
 }
 
-/* (2) DEUX TRAITS DIAGONAUX, collés juste après le logo */
+/* (2) DEUX TRAITS PENCHÉS PARALLÈLES, juste après le logo, au-dessus du fond plein */
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::before {
-  content: "";
-  display: block;   /* annule le display:none du ::before de base */
-  position: absolute; left: 54px; top: 50%;
-  width: 14px; height: 24px;
-  transform: translateY(-50%) translateX(-6px);
+  content: ""; display: block;
+  position: absolute; left: 56px; top: 50%; z-index: 4;
+  width: 15px; height: 22px;
+  transform: translateY(-50%);
   background: linear-gradient(118deg,
-    transparent 0 24%, var(--fam) 24% 40%,
-    transparent 40% 60%, var(--fam) 60% 76%,
+    transparent 0 26%, #04201d 26% 42%,
+    transparent 42% 60%, #04201d 60% 76%,
     transparent 76%);
-  opacity: 0; z-index: 2;
-  transition: opacity .2s ease, transform .26s cubic-bezier(.22, .61, .36, 1);
+  opacity: 0;
+  transition: opacity .2s ease .12s;
 }
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover::before,
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible::before,
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover::before {
-  opacity: 1; transform: translateY(-50%) translateX(0);
+  opacity: 1;
 }
 
 /* (3) LIBELLÉ en typo YNOV gras MAJUSCULE coloré, décalé après les traits */
@@ -719,28 +719,19 @@
   transform: translateX(16px);
 }
 
-/* l'icône reste nette au-dessus, léger pop */
+/* le LOGO reste visible au-dessus du fond plein (z-index 4), léger pop */
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button .menu-launch-icon {
-  position: relative; z-index: 2; transition: transform .2s ease;
+  position: relative; z-index: 4; transition: transform .2s ease;
 }
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover .menu-launch-icon,
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible .menu-launch-icon,
 :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover .menu-launch-icon { transform: scale(1.06); }
 
-/* Accessibilité : mouvement réduit → pas de balayage ni de glissement */
+/* Accessibilité : mouvement réduit → fond + message instantanés (pas de balayage) */
 @media (prefers-reduced-motion: reduce) {
   :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button { transition: border-color .2s ease; }
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::after { display: none; }
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::before,
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover::before,
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible::before,
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover::before {
-    transform: translateY(-50%); transition: opacity .15s ease;
-  }
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button .menu-launch-text strong,
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover .menu-launch-text strong,
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible .menu-launch-text strong,
-  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover .menu-launch-text strong { transform: none; }
+  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::after { transition: none; }
+  :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button::before { transition: opacity .12s ease; }
   :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:hover .menu-launch-icon,
   :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button:focus-visible .menu-launch-icon,
   :root[data-theme="ynov"] .ynov-menu-slot .menu-launch-button.is-hover .menu-launch-icon { transform: none; }
@@ -756,8 +747,8 @@
 :root[data-theme="ynov"] .buy-mode.active { background: var(--ynov-primary); color: #04201d; }
 /* Résumé Infra (PRODUCTION + ÉQUIPEMENTS) entièrement retiré */
 :root[data-theme="ynov"] .shop-summary { display: none; }
-:root[data-theme="ynov"] .shop-guidance { padding: 8px 18px; background: var(--panel); border-bottom: 1px solid var(--line); color: var(--muted); }
-:root[data-theme="ynov"] .shop-guidance span { color: var(--ynov-primary); font-weight: 700; }
+/* bandeau de recommandation (« Conseillé … est disponible ») masqué */
+:root[data-theme="ynov"] .shop-guidance { display: none; }
 
 :root[data-theme="ynov"] .right-panel { display: flex; flex-direction: column; }
 :root[data-theme="ynov"] .building-list {

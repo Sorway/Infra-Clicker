@@ -154,8 +154,12 @@ function renderBuildings(state, economy) {
 }
 
 function render() {
-  const theme = localStorage.getItem('infra-clicker-theme') || 'noc';
+  // Un DLC à skin (Ynov/Linear/NOC) impose son thème ; sinon palette du DLC de base.
+  const palettes = ['ruby', 'sunset', 'lavender', 'mint', 'ocean'];
+  const saved = localStorage.getItem('infra-clicker-theme');
+  const theme = ACTIVE_DLC.theme || (palettes.includes(saved) ? saved : 'ocean');
   document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.dlc = ACTIVE_DLC.id;
   const state = loadState();
   const empty = document.getElementById('stats-empty');
   const content = document.getElementById('stats-content');
